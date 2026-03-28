@@ -3,6 +3,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import JoinButton from "../JoinButton";
 import RecruitmentSection from "./RecruitmentSection";
+import OrgChart from "@/components/org-chart/OrgChart";
+import OrgRolesManager from "@/components/org-chart/OrgRolesManager";
+import OrgDetailTabs from "./OrgDetailTabs";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -60,7 +63,6 @@ export default async function OrganizationDetailPage({ params }: Props) {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-    // Fetch Published Events
     const { data: events } = await supabase
         .from("events")
         .select("*")
@@ -68,13 +70,59 @@ export default async function OrganizationDetailPage({ params }: Props) {
         .eq("status", "published")
         .order("start_datetime", { ascending: true });
 
-    // Fetch Published News
     const { data: news } = await supabase
         .from("news")
         .select("*")
         .eq("organization_id", id)
         .eq("status", "published")
         .order("published_at", { ascending: false });
+
+    const { data: orgRoles } = await supabase
+        .from("organization_roles")
+        .select("*, profiles(full_name, avatar_url)")
+        .eq("organization_id", id)
+        .order("hierarchy_level");
+
+    const chartRoles = (orgRoles || []).map((r) => ({
+        id: r.id,
+        title: r.title,
+        hierarchy_level: r.hierarchy_level,
+        can_manage_roles: r.can_manage_roles,
+        assigned_user_id: r.assigned_user_id,
+        assigned_user_name: r.profiles?.full_name || null,
+        assigned_user_avatar: r.profiles?.avatar_url || null,
+    }));
+
+    let canManageRoles = isAdmin;
+    if (!isAdmin) {
+        const hasManagerRole = (orgRoles || []).some(
+            (r) => r.assigned_user_id === user!.id && r.can_manage_roles
+        );
+        canManageRoles = hasManagerRole;
+    }
+
+    let orgMembers: { user_id: string; full_name: string }[] = [];
+    if (canManageRoles) {
+        const { data: membersData } = await supabase
+            .from("memberships")
+            .select("user_id, profiles(full_name)")
+            .eq("organization_id", id)
+            .eq("status", "approved");
+
+        orgMembers = (membersData || []).map((m) => ({
+            user_id: m.user_id,
+            full_name: (m.profiles as any)?.full_name || "Unknown",
+        }));
+    }
+
+    const managerRoles = (orgRoles || []).map((r) => ({
+        id: r.id,
+        title: r.title,
+        hierarchy_level: r.hierarchy_level,
+        can_manage_roles: r.can_manage_roles,
+        assigned_user_id: r.assigned_user_id,
+        assigned_user_name: r.profiles?.full_name || null,
+    }));
 
     return (
         <div className="space-y-6 pb-12">
@@ -85,9 +133,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                 ← Back to Organizations
             </Link>
 
-            {/* Header Area */}
             <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-                {/* Cover Photo */}
                 <div className="h-44 md:h-56 bg-gray-200 relative">
                     {org.cover_photo_url ? (
                         <img src={org.cover_photo_url} alt="Cover" className="w-full h-full object-cover" />
@@ -96,9 +142,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                     )}
                 </div>
 
-                {/* Profile Info — sits below the cover photo */}
                 <div className="px-6 pb-6 relative">
-                    {/* Logo overlapping boundary */}
                     <div className="flex items-end -mt-14 mb-4">
                         <div className="w-28 h-28 rounded-2xl border-4 border-white bg-white shrink-0 overflow-hidden shadow-lg z-10">
                             {org.logo_url ? (
@@ -109,7 +153,6 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         </div>
                     </div>
 
-                    {/* Org Name + Description + Actions */}
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">{org.name}</h1>
@@ -142,7 +185,6 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         </div>
                     </div>
 
-                    {/* Stats row */}
                     <div className="flex items-center gap-4 text-sm mt-5 border-t pt-4">
                         <div className="flex items-center gap-1.5 text-gray-600">
                             <span className="font-semibold text-gray-900">{memberCount ?? 0}</span> member{memberCount !== 1 ? "s" : ""}
@@ -160,108 +202,124 @@ export default async function OrganizationDetailPage({ params }: Props) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: About & Details */}
-                <div className="space-y-6">
-                    <div className="rounded-xl border bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-bold mb-4">About</h2>
+            <OrgDetailTabs
+                aboutContent={
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="space-y-6">
+                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                                <h2 className="text-lg font-bold mb-4">About</h2>
 
-                        <div className="space-y-4">
-                            {org.mission && (
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900">Mission</h3>
-                                    <p className="text-sm text-gray-600 mt-1">{org.mission}</p>
-                                </div>
-                            )}
-                            {org.vision && (
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900">Vision</h3>
-                                    <p className="text-sm text-gray-600 mt-1">{org.vision}</p>
-                                </div>
-                            )}
-                            {org.core_values && (
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900">Core Values</h3>
-                                    <p className="text-sm text-gray-600 mt-1">{org.core_values}</p>
-                                </div>
-                            )}
-                            {(!org.mission && !org.vision && !org.core_values) && (
-                                <p className="text-sm text-gray-400 italic">No detailed about information provided.</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <RecruitmentSection
-                        organizationId={id}
-                        recruitments={recruitments || []}
-                        isOfficer={isOfficer}
-                        membershipStatus={membershipStatus}
-                    />
-                </div>
-
-                {/* Right Column: Feed (News & Events) */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Events Section */}
-                    <div className="rounded-xl border bg-white p-6 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold">Upcoming Events</h2>
-                        </div>
-
-                        {events && events.length > 0 ? (
-                            <div className="space-y-3">
-                                {events.map(ev => (
-                                    <div key={ev.id} className="flex gap-4 p-4 rounded-lg border hover:shadow-sm transition-shadow">
-                                        <div className="w-12 h-12 bg-red-50 text-red-700 rounded-lg flex flex-col items-center justify-center shrink-0">
-                                            <span className="text-xs font-bold uppercase">{new Date(ev.start_datetime).toLocaleString('default', { month: 'short' })}</span>
-                                            <span className="text-lg font-bold leading-none">{new Date(ev.start_datetime).getDate()}</span>
-                                        </div>
+                                <div className="space-y-4">
+                                    {org.mission && (
                                         <div>
-                                            <h3 className="font-semibold">{ev.title}</h3>
-                                            <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{ev.description}</p>
-                                            <p className="text-xs text-gray-400 mt-1">📍 {ev.location}</p>
+                                            <h3 className="text-sm font-semibold text-gray-900">Mission</h3>
+                                            <p className="text-sm text-gray-600 mt-1">{org.mission}</p>
                                         </div>
-                                    </div>
-                                ))}
+                                    )}
+                                    {org.vision && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-gray-900">Vision</h3>
+                                            <p className="text-sm text-gray-600 mt-1">{org.vision}</p>
+                                        </div>
+                                    )}
+                                    {org.core_values && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-gray-900">Core Values</h3>
+                                            <p className="text-sm text-gray-600 mt-1">{org.core_values}</p>
+                                        </div>
+                                    )}
+                                    {(!org.mission && !org.vision && !org.core_values) && (
+                                        <p className="text-sm text-gray-400 italic">No detailed about information provided.</p>
+                                    )}
+                                </div>
                             </div>
-                        ) : (
-                            <div className="text-center py-6 border rounded-lg bg-gray-50">
-                                <p className="text-sm text-gray-500">No upcoming events.</p>
-                            </div>
-                        )}
-                    </div>
 
-                    {/* News Section */}
-                    <div className="rounded-xl border bg-white p-6 shadow-sm">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold">Latest News</h2>
+                            <RecruitmentSection
+                                organizationId={id}
+                                recruitments={recruitments || []}
+                                isOfficer={isOfficer}
+                                membershipStatus={membershipStatus}
+                            />
                         </div>
 
-                        {news && news.length > 0 ? (
-                            <div className="space-y-4">
-                                {news.map(item => (
-                                    <div key={item.id} className="p-4 rounded-lg border hover:shadow-sm transition-shadow">
-                                        <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-                                            <span className="font-medium text-[#C9A227]">News</span>
-                                            <span>•</span>
-                                            <span>{new Date(item.published_at || item.created_at).toLocaleDateString()}</span>
-                                        </div>
-                                        <h3 className="font-bold text-lg mb-2">{item.title}</h3>
-                                        <p className="text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{item.content}</p>
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-bold">Upcoming Events</h2>
+                                </div>
 
-                                        {item.image_url && (
-                                            <img src={item.image_url} alt={item.title} className="mt-3 w-full h-48 object-cover rounded-lg border" />
-                                        )}
+                                {events && events.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {events.map(ev => (
+                                            <div key={ev.id} className="flex gap-4 p-4 rounded-lg border hover:shadow-sm transition-shadow">
+                                                <div className="w-12 h-12 bg-red-50 text-red-700 rounded-lg flex flex-col items-center justify-center shrink-0">
+                                                    <span className="text-xs font-bold uppercase">{new Date(ev.start_datetime).toLocaleString('default', { month: 'short' })}</span>
+                                                    <span className="text-lg font-bold leading-none">{new Date(ev.start_datetime).getDate()}</span>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold">{ev.title}</h3>
+                                                    <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{ev.description}</p>
+                                                    <p className="text-xs text-gray-400 mt-1">📍 {ev.location}</p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="text-center py-6 border rounded-lg bg-gray-50">
+                                        <p className="text-sm text-gray-500">No upcoming events.</p>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="text-center py-6 border rounded-lg bg-gray-50">
-                                <p className="text-sm text-gray-500">No news articles published yet.</p>
+
+                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-bold">Latest News</h2>
+                                </div>
+
+                                {news && news.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {news.map(item => (
+                                            <div key={item.id} className="p-4 rounded-lg border hover:shadow-sm transition-shadow">
+                                                <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+                                                    <span className="font-medium text-[#C9A227]">News</span>
+                                                    <span>•</span>
+                                                    <span>{new Date(item.published_at || item.created_at).toLocaleDateString()}</span>
+                                                </div>
+                                                <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                                                <p className="text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{item.content}</p>
+
+                                                {item.image_url && (
+                                                    <img src={item.image_url} alt={item.title} className="mt-3 w-full h-48 object-cover rounded-lg border" />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 border rounded-lg bg-gray-50">
+                                        <p className="text-sm text-gray-500">No news articles published yet.</p>
+                                    </div>
+                                )}
                             </div>
+                        </div>
+                    </div>
+                }
+                structureContent={
+                    <div className="space-y-6">
+                        <div className="rounded-xl border bg-white p-6 shadow-sm">
+                            <h2 className="text-lg font-bold mb-6">Organizational Structure</h2>
+                            <OrgChart roles={chartRoles} orgName={org.name} />
+                        </div>
+
+                        {canManageRoles && (
+                            <OrgRolesManager
+                                organizationId={id}
+                                roles={managerRoles}
+                                members={orgMembers}
+                            />
                         )}
                     </div>
-                </div>
-            </div>
+                }
+            />
         </div>
     );
 }

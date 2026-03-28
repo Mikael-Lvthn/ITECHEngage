@@ -14,6 +14,10 @@ export default function SignupPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [schoolEmail, setSchoolEmail] = useState("");
+    const [personalEmail, setPersonalEmail] = useState("");
+    const [contactNumber, setContactNumber] = useState("");
+    const [lrn, setLrn] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -32,6 +36,25 @@ export default function SignupPage() {
             return;
         }
 
+        if (registrationType === "student") {
+            if (!schoolEmail.trim()) {
+                setError("School email is required");
+                return;
+            }
+            if (!personalEmail.trim()) {
+                setError("Personal email is required");
+                return;
+            }
+            if (!contactNumber.trim()) {
+                setError("Contact number is required");
+                return;
+            }
+            if (!lrn.trim()) {
+                setError("LRN is required");
+                return;
+            }
+        }
+
         setLoading(true);
 
         const supabase = createClient();
@@ -42,6 +65,12 @@ export default function SignupPage() {
                 data: {
                     full_name: fullName,
                     registration_type: registrationType,
+                    ...(registrationType === "student" && {
+                        school_email: schoolEmail,
+                        personal_email: personalEmail,
+                        contact_number: contactNumber,
+                        lrn: lrn,
+                    }),
                 },
             },
         });
@@ -55,9 +84,10 @@ export default function SignupPage() {
         router.push("/login?message=Check your email to confirm your account");
     };
 
+    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
+
     return (
         <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
-            {/* PUP Header Strip */}
             <div className="bg-[#800000] px-6 py-2 text-center">
                 <p className="text-xs text-white/80">
                     Polytechnic University of the Philippines — Institute of Technology
@@ -67,7 +97,6 @@ export default function SignupPage() {
             <div className="flex-1 flex items-center justify-center px-4 py-8">
                 <div className="w-full max-w-lg animate-slide-up">
                     <div className="bg-white rounded-2xl shadow-xl border border-border/50 p-8 space-y-6">
-                        {/* Logo */}
                         <div className="text-center">
                             <Image
                                 src="/logo.png"
@@ -165,14 +194,12 @@ export default function SignupPage() {
                                     </span>
                                 </div>
 
-                                {/* Error */}
                                 {error && (
                                     <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive animate-scale-in">
                                         {error}
                                     </div>
                                 )}
 
-                                {/* Form */}
                                 <form onSubmit={handleSignup} className="space-y-4">
                                     <div className="space-y-2">
                                         <label htmlFor="fullName" className="text-sm font-medium text-foreground">
@@ -185,12 +212,13 @@ export default function SignupPage() {
                                             onChange={(e) => setFullName(e.target.value)}
                                             placeholder="Juan Dela Cruz"
                                             required
-                                            className="flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            className={inputClasses}
                                         />
                                     </div>
+
                                     <div className="space-y-2">
                                         <label htmlFor="email" className="text-sm font-medium text-foreground">
-                                            Email
+                                            Login Email
                                         </label>
                                         <input
                                             id="email"
@@ -203,9 +231,87 @@ export default function SignupPage() {
                                                     : "faculty@pup.edu.ph"
                                             }
                                             required
-                                            className="flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            className={inputClasses}
                                         />
+                                        <p className="text-xs text-muted-foreground">This will be used to sign in to your account</p>
                                     </div>
+
+                                    {registrationType === "student" && (
+                                        <>
+                                            <div className="rounded-xl border border-[#800000]/20 bg-[#800000]/5 p-4 space-y-4">
+                                                <p className="text-xs font-semibold text-[#800000] uppercase tracking-wider flex items-center gap-1.5">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                    Student Information
+                                                </p>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="schoolEmail" className="text-sm font-medium text-foreground">
+                                                            School Email <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <input
+                                                            id="schoolEmail"
+                                                            type="email"
+                                                            value={schoolEmail}
+                                                            onChange={(e) => setSchoolEmail(e.target.value)}
+                                                            placeholder="student@iskolar.pup.edu.ph"
+                                                            required
+                                                            className={inputClasses}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="personalEmail" className="text-sm font-medium text-foreground">
+                                                            Personal Email <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <input
+                                                            id="personalEmail"
+                                                            type="email"
+                                                            value={personalEmail}
+                                                            onChange={(e) => setPersonalEmail(e.target.value)}
+                                                            placeholder="name@gmail.com"
+                                                            required
+                                                            className={inputClasses}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="contactNumber" className="text-sm font-medium text-foreground">
+                                                            Contact Number <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <input
+                                                            id="contactNumber"
+                                                            type="tel"
+                                                            value={contactNumber}
+                                                            onChange={(e) => setContactNumber(e.target.value)}
+                                                            placeholder="+63 9XX XXX XXXX"
+                                                            required
+                                                            className={inputClasses}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="lrn" className="text-sm font-medium text-foreground">
+                                                            LRN <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <input
+                                                            id="lrn"
+                                                            type="text"
+                                                            value={lrn}
+                                                            onChange={(e) => setLrn(e.target.value)}
+                                                            placeholder="12-digit LRN"
+                                                            required
+                                                            maxLength={12}
+                                                            className={inputClasses}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
                                     <div className="space-y-2">
                                         <label htmlFor="password" className="text-sm font-medium text-foreground">
                                             Password
@@ -217,7 +323,7 @@ export default function SignupPage() {
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="••••••••"
                                             required
-                                            className="flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            className={inputClasses}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -231,7 +337,7 @@ export default function SignupPage() {
                                             onChange={(e) => setConfirmPassword(e.target.value)}
                                             placeholder="••••••••"
                                             required
-                                            className="flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            className={inputClasses}
                                         />
                                     </div>
 
@@ -267,7 +373,6 @@ export default function SignupPage() {
                         )}
                     </div>
 
-                    {/* Back to homepage */}
                     <div className="text-center mt-6">
                         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
