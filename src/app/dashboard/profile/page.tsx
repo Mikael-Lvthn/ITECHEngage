@@ -7,6 +7,7 @@ import { useToast } from "@/components/Toast";
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
+    const [student, setStudent] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -21,22 +22,32 @@ export default function ProfilePage() {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                const { data } = await supabase
+                const { data: profileData } = await supabase
                     .from("profiles")
                     .select("*")
                     .eq("id", user.id)
                     .single();
 
-                if (data) {
-                    setProfile(data);
-                    setAvatarUrl(data.avatar_url || "");
-                    if (data.social_links) {
+                if (profileData) {
+                    setProfile(profileData);
+                    setAvatarUrl(profileData.avatar_url || "");
+                    if (profileData.social_links) {
                         setSocialLinks({
-                            facebook: data.social_links.facebook || "",
-                            twitter: data.social_links.twitter || "",
-                            linkedin: data.social_links.linkedin || ""
+                            facebook: profileData.social_links.facebook || "",
+                            twitter: profileData.social_links.twitter || "",
+                            linkedin: profileData.social_links.linkedin || ""
                         });
                     }
+                }
+
+                const { data: studentData } = await supabase
+                    .from("students")
+                    .select("*")
+                    .eq("id", user.id)
+                    .single();
+
+                if (studentData) {
+                    setStudent(studentData);
                 }
             }
             setLoading(false);
@@ -77,6 +88,7 @@ export default function ProfilePage() {
             const formData = new FormData(event.currentTarget);
             formData.set("avatar_url", avatarUrl);
             formData.set("social_links", JSON.stringify(socialLinks));
+            formData.set("is_student", student ? "true" : "false");
             await updateProfile(formData);
             showToast("Profile updated successfully!", "success");
         } catch (error: any) {
@@ -184,6 +196,80 @@ export default function ProfilePage() {
                             />
                         </div>
                     </div>
+
+                    {student && (
+                        <div className="pt-4 border-t">
+                            <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                <svg className="w-4 h-4 text-[#800000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Student Information
+                            </label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">School Email</label>
+                                    <input
+                                        type="email"
+                                        name="school_email"
+                                        defaultValue={student?.school_email || ""}
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        placeholder="student@iskolar.pup.edu.ph"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Personal Email</label>
+                                    <input
+                                        type="email"
+                                        name="personal_email"
+                                        defaultValue={student?.personal_email || ""}
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        placeholder="name@gmail.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Contact Number</label>
+                                    <input
+                                        type="tel"
+                                        name="contact_number"
+                                        defaultValue={student?.contact_number || ""}
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        placeholder="+63 9XX XXX XXXX"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">LRN (Learner Reference Number)</label>
+                                    <input
+                                        type="text"
+                                        name="lrn"
+                                        defaultValue={student?.lrn || ""}
+                                        maxLength={12}
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        placeholder="12-digit LRN"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Student Number</label>
+                                    <input
+                                        type="text"
+                                        name="student_number"
+                                        defaultValue={student?.student_number || ""}
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        placeholder="20XX-XXXXX-MN-X"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">Program</label>
+                                    <input
+                                        type="text"
+                                        name="program"
+                                        defaultValue={student?.program || ""}
+                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        placeholder="BSIT, BSCS, etc."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="pt-4 border-t">
                         <label className="block text-sm font-medium text-gray-700 mb-3">Social Links</label>

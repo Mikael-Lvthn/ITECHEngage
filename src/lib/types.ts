@@ -26,6 +26,10 @@ export interface Student {
     student_number: string;
     program: string;
     year_level: number;
+    school_email?: string | null;
+    personal_email?: string | null;
+    contact_number?: string | null;
+    lrn?: string | null;
 }
 
 export interface Organization {
@@ -77,13 +81,27 @@ export interface EventParticipation {
     events?: Event;
 }
 
+export interface OrganizationRole {
+    id: string;
+    organization_id: string;
+    title: string;
+    hierarchy_level: number;
+    can_manage_roles: boolean;
+    assigned_user_id: string | null;
+    created_at: string;
+    profiles?: Profile;
+    organizations?: Organization;
+}
+
 export interface Election {
     id: string;
     organization_id: string;
     title: string;
+    description: string | null;
     start_date: string;
     end_date: string;
     status: ElectionStatus;
+    created_by: string | null;
     created_at: string;
     organizations?: Organization;
 }
@@ -93,8 +111,11 @@ export interface Candidate {
     election_id: string;
     user_id: string;
     position: string;
+    organization_role_id: string | null;
+    platform: string | null;
     created_at: string;
     profiles?: Profile;
+    organization_roles?: OrganizationRole;
 }
 
 export interface Vote {
@@ -102,6 +123,7 @@ export interface Vote {
     election_id: string;
     membership_id: string;
     candidate_id: string;
+    organization_role_id: string | null;
     created_at: string;
 }
 

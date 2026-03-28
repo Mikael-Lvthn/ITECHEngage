@@ -47,6 +47,32 @@ export async function updateProfile(formData: FormData) {
         throw new Error(error.message);
     }
 
+    const isStudent = formData.get("is_student") === "true";
+    if (isStudent) {
+        const school_email = formData.get("school_email") as string;
+        const personal_email = formData.get("personal_email") as string;
+        const contact_number = formData.get("contact_number") as string;
+        const lrn = formData.get("lrn") as string;
+        const student_number = formData.get("student_number") as string;
+        const program = formData.get("program") as string;
+
+        const { error: studentError } = await supabase
+            .from("students")
+            .update({
+                school_email: school_email?.trim() || null,
+                personal_email: personal_email?.trim() || null,
+                contact_number: contact_number?.trim() || null,
+                lrn: lrn?.trim() || null,
+                student_number: student_number?.trim() || "",
+                program: program?.trim() || "",
+            })
+            .eq("id", user.id);
+
+        if (studentError) {
+            throw new Error(studentError.message);
+        }
+    }
+
     revalidatePath("/dashboard/profile");
     revalidatePath("/");
 }

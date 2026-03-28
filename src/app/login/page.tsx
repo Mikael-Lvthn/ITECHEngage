@@ -82,6 +82,11 @@ function LoginForm() {
                         className="flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
                     />
                 </div>
+                <div className="flex justify-end">
+                    <Link href="/forgot-password" className="text-xs text-[#800000] font-medium hover:underline transition-colors">
+                        Forgot Password?
+                    </Link>
+                </div>
                 <button
                     type="submit"
                     disabled={loading}
