@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { LoadingSpinner } from "@/components/loading/LoadingSpinner";
+import { LoadingButton } from "@/components/loading/LoadingButton";
 
 export default function ResetPasswordPage() {
     const [password, setPassword] = useState("");
@@ -70,11 +72,7 @@ export default function ResetPasswordPage() {
                 </div>
                 <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                        <svg className="animate-spin h-8 w-8 mx-auto text-[#800000]" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        <p className="mt-3 text-sm text-muted-foreground">Verifying reset link...</p>
+                        <LoadingSpinner size="lg" label="Verifying reset link…" />
                     </div>
                 </div>
             </div>
@@ -168,23 +166,14 @@ export default function ResetPasswordPage() {
                                         </p>
                                     </div>
 
-                                    <button
+                                    <LoadingButton
                                         type="submit"
-                                        disabled={loading}
+                                        isLoading={loading}
+                                        loadingText="Updating password…"
                                         className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-[#800000] text-white font-semibold text-sm hover:bg-[#700000] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none"
                                     >
-                                        {loading ? (
-                                            <span className="flex items-center gap-2">
-                                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                                </svg>
-                                                Updating password...
-                                            </span>
-                                        ) : (
-                                            "Update Password"
-                                        )}
-                                    </button>
+                                        Update Password
+                                    </LoadingButton>
                                 </form>
                             </>
                         )}
