@@ -175,6 +175,18 @@
 }
 
 @layer utilities {
+    .loading-skeleton {
+        background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s linear infinite;
+    }
+
+    .dark .loading-skeleton {
+        background: linear-gradient(110deg, #333333 8%, #404040 18%, #333333 33%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s linear infinite;
+    }
+
     .animate-fade-in {
         animation: fade-in 0.5s ease-out both;
     }

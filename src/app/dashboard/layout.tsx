@@ -22,11 +22,29 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, role")
-        .eq("id", user.id)
-        .single();
+    const [profileResult, prefsResult, officerResult] = await Promise.all([
+        supabase
+            .from("profiles")
+            .select("full_name, role")
+            .eq("id", user.id)
+            .single(),
+        supabase
+            .from("user_preferences")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        supabase
+            .from("memberships")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("role", "officer")
+            .eq("status", "approved")
+            .limit(1),
+    ]);
+
+    const profile = profileResult.data;
+    const prefs = prefsResult.data;
+    const officerships = officerResult.data;
 
     let userRole: UserRole = (profile?.role as UserRole) || "student";
     const userName: string = profile?.full_name || "User";
@@ -39,14 +57,6 @@ export default async function DashboardLayout({
     }
 
     if (userRole !== "admin") {
-        const { data: officerships } = await supabase
-            .from("memberships")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("role", "officer")
-            .eq("status", "approved")
-            .limit(1);
-
         if (officerships && officerships.length > 0) {
             userRole = "officer";
         } else {
@@ -55,12 +65,6 @@ export default async function DashboardLayout({
     }
 
     const userEmail: string = user.email || "";
-
-    const { data: prefs } = await supabase
-        .from("user_preferences")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
 
     return (
         <ThemeProvider initialPrefs={prefs}>
