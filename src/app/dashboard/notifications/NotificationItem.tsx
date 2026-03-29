@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import Link from "next/link";
 import { markAsRead } from "@/lib/actions/notifications";
+import { Loader2 } from "lucide-react";
 
 interface Notification {
     id: string;
@@ -90,7 +91,7 @@ export default function NotificationItem({ notification }: { notification: Notif
                 >
                     <span className="sr-only">Mark as read</span>
                     {isPending ? (
-                        <span className="block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#C9A227]" aria-hidden="true" />
                     ) : (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

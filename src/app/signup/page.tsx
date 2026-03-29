@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { LoadingButton } from "@/components/loading/LoadingButton";
 
 type RegistrationType = "student" | "faculty";
 
@@ -341,26 +342,17 @@ export default function SignupPage() {
                                         />
                                     </div>
 
-                                    <button
+                                    <LoadingButton
                                         type="submit"
-                                        disabled={loading}
+                                        isLoading={loading}
+                                        loadingText="Creating account…"
                                         className={`inline-flex items-center justify-center w-full h-11 rounded-xl text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none ${registrationType === "student"
                                             ? "bg-[#800000] hover:bg-[#700000]"
                                             : "bg-[#C9A227] text-[#2B2B2B] hover:bg-[#b8911f]"
                                             }`}
                                     >
-                                        {loading ? (
-                                            <span className="flex items-center gap-2">
-                                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                                </svg>
-                                                Creating account...
-                                            </span>
-                                        ) : (
-                                            `Create ${registrationType === "student" ? "Student" : "Faculty"} Account`
-                                        )}
-                                    </button>
+                                        {`Create ${registrationType === "student" ? "Student" : "Faculty"} Account`}
+                                    </LoadingButton>
                                 </form>
 
                                 <p className="text-center text-sm text-muted-foreground">

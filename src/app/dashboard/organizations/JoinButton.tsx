@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { joinOrganization, leaveOrganization } from "@/lib/actions/organizations";
+import { LoadingSpinner } from "@/components/loading/LoadingSpinner";
 
 interface JoinButtonProps {
     organizationId: string;
@@ -42,9 +43,13 @@ export default function JoinButton({ organizationId, membershipStatus }: JoinBut
             <button
                 onClick={handleLeave}
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 rounded-lg border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
             >
-                {loading ? "Leaving..." : "Leave Organization"}
+                {loading ? (
+                    <><LoadingSpinner size="sm" className="text-destructive" /> Leaving…</>
+                ) : (
+                    "Leave Organization"
+                )}
             </button>
         );
     }
@@ -61,9 +66,13 @@ export default function JoinButton({ organizationId, membershipStatus }: JoinBut
         <button
             onClick={handleJoin}
             disabled={loading}
-            className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-            {loading ? "Joining..." : "Join Organization"}
+            {loading ? (
+                <><LoadingSpinner size="sm" className="text-primary-foreground" /> Joining…</>
+            ) : (
+                "Join Organization"
+            )}
         </button>
     );
 }

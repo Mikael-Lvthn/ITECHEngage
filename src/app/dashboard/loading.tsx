@@ -1,6 +1,9 @@
+import { PageLoader } from "@/components/loading/PageLoader";
+
 export default function Loading() {
     return (
         <div className="space-y-8 animate-fade-in">
+            <PageLoader label="Loading dashboard…" className="py-6" />
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#800000] to-[#A52A2A] p-6 sm:p-8">
                 <div className="h-4 w-28 rounded loading-skeleton" />
                 <div className="h-8 w-60 rounded loading-skeleton mt-3" />
