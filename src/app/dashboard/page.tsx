@@ -77,11 +77,26 @@ export default async function DashboardPage() {
         data: { user },
     } = await supabase.auth.getUser();
 
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, role")
-        .eq("id", user!.id)
-        .single();
+    const [profileResult, orgCountResult, membershipCountResult] = await Promise.all([
+        supabase
+            .from("profiles")
+            .select("full_name, role")
+            .eq("id", user!.id)
+            .single(),
+        supabase
+            .from("organizations")
+            .select("*", { count: "exact", head: true })
+            .eq("visibility", "public"),
+        supabase
+            .from("memberships")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user!.id)
+            .eq("status", "approved"),
+    ]);
+
+    const profile = profileResult.data;
+    const orgCount = orgCountResult.count;
+    const membershipCount = membershipCountResult.count;
 
     let userRole: UserRole = (profile?.role as UserRole) || "student";
     if (!profile) {
@@ -90,17 +105,6 @@ export default async function DashboardPage() {
             userRole = rpcRole as UserRole;
         }
     }
-
-    const { count: orgCount } = await supabase
-        .from("organizations")
-        .select("*", { count: "exact", head: true })
-        .eq("visibility", "public");
-
-    const { count: membershipCount } = await supabase
-        .from("memberships")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user!.id)
-        .eq("status", "approved");
 
     const filteredActions = quickActions.filter((action) =>
         action.roles.includes(userRole)

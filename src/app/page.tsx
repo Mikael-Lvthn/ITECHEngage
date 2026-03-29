@@ -1,17 +1,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { getHomepagePublicData } from "@/lib/homepage-data";
 import UserMenu from "@/components/UserMenu";
 import HomepageSearch from "@/components/HomepageSearch";
-
-export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
     const supabase = await createClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const userResultPromise = supabase.auth.getUser();
+    const homepageDataPromise = getHomepagePublicData();
+
+    const [
+        {
+            data: { user },
+        },
+        { events, organizations, newsItems, activeElections },
+    ] = await Promise.all([userResultPromise, homepageDataPromise]);
 
     let profile: { full_name: string; role: string } | null = null;
     if (user) {
@@ -22,34 +27,6 @@ export default async function HomePage() {
             .single();
         profile = data;
     }
-
-    const { data: events } = await supabase
-        .from("events")
-        .select("id, title, description, start_datetime, location, organizations(name)")
-        .eq("status", "published")
-        .order("start_datetime", { ascending: true })
-        .limit(4);
-
-    const { data: organizations } = await supabase
-        .from("organizations")
-        .select("id, name, description, logo_url, accreditation_status")
-        .eq("visibility", "public")
-        .order("name", { ascending: true })
-        .limit(6);
-
-    const { data: newsItems } = await supabase
-        .from("news")
-        .select("id, title, content, published_at, created_at, organizations(name)")
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .limit(3);
-
-    const { data: activeElections } = await supabase
-        .from("elections")
-        .select("id, title, status, start_date, end_date, organizations(name)")
-        .in("status", ["active", "completed"])
-        .order("start_date", { ascending: false })
-        .limit(3);
 
     return (
         <div className="min-h-screen bg-white">
@@ -135,9 +112,21 @@ export default async function HomePage() {
 
                     {/* Search Bar */}
                     <HomepageSearch
-                        organizations={(organizations || []).map(o => ({ id: o.id, name: o.name, description: o.description }))}
-                        events={(events || []).map(e => ({ id: e.id, title: e.title, location: e.location }))}
-                        news={(newsItems || []).map(n => ({ id: n.id, title: n.title, content: n.content }))}
+                        organizations={organizations.map((o) => ({
+                            id: o.id,
+                            name: o.name,
+                            description: o.description,
+                        }))}
+                        events={events.map((e) => ({
+                            id: e.id,
+                            title: e.title,
+                            location: e.location,
+                        }))}
+                        news={newsItems.map((n) => ({
+                            id: n.id,
+                            title: n.title,
+                            content: n.content.slice(0, 140),
+                        }))}
                         isLoggedIn={!!user}
                     />
                 </div>
@@ -218,7 +207,7 @@ export default async function HomePage() {
                                         {election.title}
                                     </h3>
                                     <p className="text-xs text-[#6E6E6E] flex items-center gap-1.5">
-                                        <span>⏳</span> {end ? new Date(election.end_date).toLocaleDateString() : "Ongoing"}
+                                        <span>⏳</span> {end ? end.toLocaleDateString() : "Ongoing"}
                                     </p>
                                 </Link>
                             );
@@ -280,7 +269,13 @@ export default async function HomePage() {
                             >
                                 <div className="w-20 h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 mb-4">
                                     {org.logo_url ? (
-                                        <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+                                        <img
+                                            src={org.logo_url}
+                                            alt={org.name}
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            decoding="async"
+                                        />
                                     ) : (
                                         <span className="text-3xl">🏢</span>
                                     )}
