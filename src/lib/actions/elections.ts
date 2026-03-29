@@ -12,8 +12,18 @@ async function getAuthUser() {
     return { supabase, user };
 }
 
+async function requireAdmin(supabase: any) {
+    const { data: role } = await supabase.rpc("get_my_role");
+    if (role !== "admin") {
+        throw new Error("Only administrators can perform this action.");
+    }
+}
+
 export async function createElection(formData: FormData) {
     const { supabase, user } = await getAuthUser();
+
+    // Admin only
+    await requireAdmin(supabase);
 
     const organizationId = formData.get("organization_id") as string;
     const title = formData.get("title") as string;
@@ -21,32 +31,12 @@ export async function createElection(formData: FormData) {
     const startDate = formData.get("start_date") as string;
     const endDate = formData.get("end_date") as string;
 
-    if (!organizationId || !title || !startDate || !endDate) {
-        throw new Error("All fields are required.");
+    if (!organizationId || !title || !startDate) {
+        throw new Error("Organization, title, and start date are required.");
     }
 
-    if (new Date(endDate) <= new Date(startDate)) {
+    if (endDate && new Date(endDate) <= new Date(startDate)) {
         throw new Error("End date must be after start date.");
-    }
-
-    const { data: role } = await supabase.rpc("get_my_role");
-    const isAdmin = role === "admin";
-
-    let canManage = isAdmin;
-    if (!isAdmin) {
-        const { data: managerRole } = await supabase
-            .from("organization_roles")
-            .select("id")
-            .eq("organization_id", organizationId)
-            .eq("assigned_user_id", user.id)
-            .eq("can_manage_roles", true)
-            .limit(1);
-
-        canManage = !!(managerRole && managerRole.length > 0);
-    }
-
-    if (!canManage) {
-        throw new Error("You are not authorized to create elections for this organization.");
     }
 
     const { error } = await supabase.from("elections").insert({
@@ -54,7 +44,7 @@ export async function createElection(formData: FormData) {
         title: title.trim(),
         description: description?.trim() || null,
         start_date: startDate,
-        end_date: endDate,
+        end_date: endDate || null,
         status: "active",
         created_by: user.id,
     });
@@ -86,9 +76,10 @@ export async function nominateCandidate(formData: FormData) {
         throw new Error("Election is not currently active.");
     }
 
+    // Must be an approved officer member (not admin)
     const { data: membership } = await supabase
         .from("memberships")
-        .select("id")
+        .select("id, role")
         .eq("user_id", user.id)
         .eq("organization_id", election.organization_id)
         .eq("status", "approved")
@@ -96,6 +87,16 @@ export async function nominateCandidate(formData: FormData) {
 
     if (!membership) {
         throw new Error("You must be an approved member of this organization to nominate yourself.");
+    }
+
+    if (membership.role !== "officer") {
+        throw new Error("Only student officers can nominate themselves.");
+    }
+
+    // Check admin — admins cannot nominate
+    const { data: role } = await supabase.rpc("get_my_role");
+    if (role === "admin") {
+        throw new Error("Administrators cannot nominate themselves in elections.");
     }
 
     const { data: existingCandidate } = await supabase
@@ -131,8 +132,54 @@ export async function nominateCandidate(formData: FormData) {
 }
 
 export async function castVote(electionId: string, candidateId: string, organizationRoleId: string) {
-    const { supabase } = await getAuthUser();
+    const { supabase, user } = await getAuthUser();
 
+    // Verify the user is an officer, not an admin
+    const { data: role } = await supabase.rpc("get_my_role");
+    if (role === "admin") {
+        throw new Error("Administrators cannot vote in elections.");
+    }
+
+    // Get the election
+    const { data: election } = await supabase
+        .from("elections")
+        .select("organization_id, status")
+        .eq("id", electionId)
+        .single();
+
+    if (!election || election.status !== "active") {
+        throw new Error("Election is not currently active.");
+    }
+
+    // Verify user is an approved officer member
+    const { data: membership } = await supabase
+        .from("memberships")
+        .select("id, role")
+        .eq("user_id", user.id)
+        .eq("organization_id", election.organization_id)
+        .eq("status", "approved")
+        .maybeSingle();
+
+    if (!membership || membership.role !== "officer") {
+        throw new Error("Only officers can vote in elections.");
+    }
+
+    // Prevent voting for yourself: check if the candidate being voted for is the current user
+    const { data: candidate } = await supabase
+        .from("candidates")
+        .select("id, user_id")
+        .eq("id", candidateId)
+        .single();
+
+    if (!candidate) {
+        throw new Error("Candidate not found.");
+    }
+
+    if (candidate.user_id === user.id) {
+        throw new Error("You cannot vote for yourself.");
+    }
+
+    // Cast the vote via RPC (handles duplicate vote prevention)
     const { data, error } = await supabase.rpc("cast_vote", {
         p_election_id: electionId,
         p_candidate_id: candidateId,
@@ -150,8 +197,40 @@ export async function castVote(electionId: string, candidateId: string, organiza
     revalidatePath("/dashboard/elections");
 }
 
+export async function closeElection(electionId: string) {
+    const { supabase } = await getAuthUser();
+
+    // Admin only
+    await requireAdmin(supabase);
+
+    const { data: election } = await supabase
+        .from("elections")
+        .select("organization_id, status")
+        .eq("id", electionId)
+        .single();
+
+    if (!election) throw new Error("Election not found");
+    if (election.status !== "active") throw new Error("Election is not active.");
+
+    const { error } = await supabase
+        .from("elections")
+        .update({
+            status: "completed",
+            end_date: new Date().toISOString(),
+        })
+        .eq("id", electionId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/elections");
+    revalidatePath(`/dashboard/elections/${electionId}`);
+}
+
 export async function publishElectionResults(electionId: string) {
     const { supabase } = await getAuthUser();
+
+    // Admin only
+    await requireAdmin(supabase);
 
     const { data, error } = await supabase.rpc("publish_election_results", {
         p_election_id: electionId,

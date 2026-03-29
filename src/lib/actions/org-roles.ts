@@ -35,6 +35,7 @@ export async function createOrgRole(formData: FormData) {
     const hierarchyLevel = parseInt(formData.get("hierarchy_level") as string) || 1;
     const canManageRoles = formData.get("can_manage_roles") === "true";
     const assignedUserId = formData.get("assigned_user_id") as string;
+    const parentRoleId = formData.get("parent_role_id") as string;
 
     if (!organizationId || !title) {
         throw new Error("Organization ID and role title are required.");
@@ -51,6 +52,7 @@ export async function createOrgRole(formData: FormData) {
         hierarchy_level: hierarchyLevel,
         can_manage_roles: canManageRoles,
         assigned_user_id: assignedUserId || null,
+        parent_role_id: parentRoleId || null,
     });
 
     if (error) {
@@ -73,6 +75,7 @@ export async function updateOrgRole(formData: FormData) {
     const hierarchyLevel = parseInt(formData.get("hierarchy_level") as string) || 1;
     const canManageRoles = formData.get("can_manage_roles") === "true";
     const assignedUserId = formData.get("assigned_user_id") as string;
+    const parentRoleId = formData.get("parent_role_id") as string;
 
     if (!roleId || !organizationId) {
         throw new Error("Role ID and Organization ID are required.");
@@ -88,6 +91,7 @@ export async function updateOrgRole(formData: FormData) {
     if (hierarchyLevel) updateData.hierarchy_level = hierarchyLevel;
     updateData.can_manage_roles = canManageRoles;
     if (assignedUserId !== undefined) updateData.assigned_user_id = assignedUserId || null;
+    if (parentRoleId !== undefined) updateData.parent_role_id = parentRoleId || null;
 
     const { error } = await supabase
         .from("organization_roles")

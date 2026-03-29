@@ -6,6 +6,7 @@ import RecruitmentSection from "./RecruitmentSection";
 import OrgChart from "@/components/org-chart/OrgChart";
 import OrgRolesManager from "@/components/org-chart/OrgRolesManager";
 import OrgDetailTabs from "./OrgDetailTabs";
+import FollowButton from "@/components/organizations/FollowButton";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -56,6 +57,20 @@ export default async function OrganizationDetailPage({ params }: Props) {
         .eq("organization_id", id)
         .eq("status", "approved");
 
+    const { data: followData } = await supabase
+        .from("organization_follows")
+        .select("id")
+        .eq("user_id", user!.id)
+        .eq("organization_id", id)
+        .maybeSingle();
+
+    const isFollowing = !!followData;
+
+    const { count: followerCount } = await supabase
+        .from("organization_follows")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", id);
+
     const { data: recruitments } = await supabase
         .from("recruitment_requests")
         .select("*")
@@ -91,6 +106,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
         assigned_user_id: r.assigned_user_id,
         assigned_user_name: r.profiles?.full_name || null,
         assigned_user_avatar: r.profiles?.avatar_url || null,
+        parent_role_id: r.parent_role_id || null,
     }));
 
     let canManageRoles = isAdmin;
@@ -122,6 +138,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
         can_manage_roles: r.can_manage_roles,
         assigned_user_id: r.assigned_user_id,
         assigned_user_name: r.profiles?.full_name || null,
+        parent_role_id: r.parent_role_id || null,
     }));
 
     return (
@@ -162,6 +179,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
+                            {!isAdmin && <FollowButton organizationId={id} isFollowing={isFollowing} isOfficer={isOfficer} />}
                             {isOfficer && (
                                 <Link
                                     href={`/dashboard/organizations/${id}/members`}
@@ -188,6 +206,9 @@ export default async function OrganizationDetailPage({ params }: Props) {
                     <div className="flex items-center gap-4 text-sm mt-5 border-t pt-4">
                         <div className="flex items-center gap-1.5 text-gray-600">
                             <span className="font-semibold text-gray-900">{memberCount ?? 0}</span> member{memberCount !== 1 ? "s" : ""}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                            <span className="font-semibold text-gray-900">{followerCount ?? 0}</span> follower{followerCount !== 1 ? "s" : ""}
                         </div>
                         <div className="flex items-center gap-1.5">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider ${org.accreditation_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'

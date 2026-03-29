@@ -15,6 +15,7 @@ interface Role {
     can_manage_roles: boolean;
     assigned_user_id: string | null;
     assigned_user_name: string | null;
+    parent_role_id?: string | null;
 }
 
 interface OrgRolesManagerProps {
@@ -25,6 +26,7 @@ interface OrgRolesManagerProps {
 
 export default function OrgRolesManager({ organizationId, roles, members }: OrgRolesManagerProps) {
     const [showCreate, setShowCreate] = useState(false);
+    const [selectedLevel, setSelectedLevel] = useState(1);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                 await createOrgRole(formData);
                 setSuccess("Role created successfully!");
                 setShowCreate(false);
+                setSelectedLevel(1);
             } catch (err: any) {
                 setError(err.message || "Failed to create role.");
             }
@@ -76,6 +79,9 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
         });
     };
 
+    // Find parent roles (roles with a lower/higher hierarchy level)
+    const potentialParents = roles.filter(r => r.hierarchy_level < selectedLevel);
+
     return (
         <div className="rounded-xl border bg-card overflow-hidden">
             <div className="px-6 py-4 border-b flex items-center justify-between">
@@ -104,8 +110,8 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
             )}
 
             {showCreate && (
-                <form onSubmit={handleCreateRole} className="mx-6 mt-4 p-4 rounded-lg border bg-muted/30 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                <form onSubmit={handleCreateRole} className="mx-6 mt-4 p-4 rounded-lg border bg-muted/30 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-medium mb-1">Role Title *</label>
                             <input
@@ -122,14 +128,15 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                                 type="number"
                                 min="1"
                                 max="10"
-                                defaultValue="1"
+                                value={selectedLevel}
+                                onChange={(e) => setSelectedLevel(parseInt(e.target.value) || 1)}
                                 className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                             <p className="text-[10px] text-muted-foreground mt-0.5">1 = Highest (e.g. President)</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-medium mb-1">Assign To (optional)</label>
                             <select
@@ -144,31 +151,53 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                                 ))}
                             </select>
                         </div>
-                        <div className="flex items-end pb-0.5">
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="can_manage_roles"
-                                    value="true"
-                                    className="rounded border-gray-300"
-                                />
-                                <span className="text-xs font-medium">Can manage roles & elections</span>
-                            </label>
-                        </div>
+                        {selectedLevel > 1 && (
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Parent Role (Branch under)</label>
+                                <select
+                                    name="parent_role_id"
+                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                >
+                                    {potentialParents.length === 0 ? (
+                                        <option value="">No roles at level {selectedLevel - 1}</option>
+                                    ) : (
+                                        <>
+                                            <option value="">None (Independent)</option>
+                                            {potentialParents.map(r => (
+                                                <option key={r.id} value={r.id}>{r.title}</option>
+                                            ))}
+                                        </>
+                                    )}
+                                </select>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">Select a role for this position to report to</p>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-1">
+                    <div className="flex items-center gap-2 pt-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="can_manage_roles"
+                                value="true"
+                                className="rounded border-gray-300"
+                            />
+                            <span className="text-xs font-medium text-foreground">Can manage roles & elections</span>
+                        </label>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t">
                         <button
                             type="button"
                             onClick={() => setShowCreate(false)}
-                            className="px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-accent transition-colors"
+                            className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-accent transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                         >
                             {isPending ? "Creating..." : "Create Role"}
                         </button>
@@ -184,52 +213,64 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {[...roles].sort((a, b) => a.hierarchy_level - b.hierarchy_level).map((role) => (
-                            <div key={role.id} className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-sm transition-shadow">
-                                <div className="flex items-center gap-1 shrink-0 w-8 text-center">
-                                    <span className="text-xs font-bold text-muted-foreground">L{role.hierarchy_level}</span>
-                                </div>
+                        {[...roles].sort((a, b) => a.hierarchy_level - b.hierarchy_level).map((role) => {
+                            const parent = roles.find(r => r.id === role.parent_role_id);
+                            
+                            return (
+                                <div key={role.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-lg border hover:shadow-sm transition-shadow">
+                                    <div className="flex items-center gap-1 shrink-0 w-8 text-center sm:self-auto self-start">
+                                        <span className="text-xs font-bold text-muted-foreground">L{role.hierarchy_level}</span>
+                                    </div>
 
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-semibold text-sm">{role.title}</p>
-                                        {role.can_manage_roles && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#C9A227]/10 text-[#C9A227] font-semibold">
-                                                ⭐ Manager
-                                            </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="font-semibold text-sm">{role.title}</p>
+                                            {role.can_manage_roles && (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#C9A227]/10 text-[#C9A227] font-semibold tracking-wide whitespace-nowrap">
+                                                    ⭐ MANAGER
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs font-medium text-muted-foreground mt-1">
+                                            👤 {role.assigned_user_name || "Vacant"}
+                                        </p>
+                                        {parent && (
+                                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                ↪ Reports to: <span className="font-medium text-foreground/80">{parent.title}</span>
+                                            </p>
                                         )}
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        {role.assigned_user_name || "Vacant"}
-                                    </p>
+
+                                    <div className="flex items-center gap-3 sm:self-auto self-end mt-2 sm:mt-0">
+                                        <select
+                                            title="Assign member"
+                                            value={role.assigned_user_id || ""}
+                                            onChange={(e) => handleAssignUser(role.id, e.target.value || null)}
+                                            disabled={isPending}
+                                            className="px-2 py-1.5 rounded border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-[150px]"
+                                        >
+                                            <option value="">Vacant</option>
+                                            {members.map((m) => (
+                                                <option key={m.user_id} value={m.user_id}>
+                                                    {m.full_name}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        <button
+                                            onClick={() => handleDeleteRole(role.id, role.title)}
+                                            disabled={isPending}
+                                            className="shrink-0 p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                            title="Delete Role"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
-
-                                <select
-                                    value={role.assigned_user_id || ""}
-                                    onChange={(e) => handleAssignUser(role.id, e.target.value || null)}
-                                    disabled={isPending}
-                                    className="px-2 py-1 rounded border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 max-w-[150px]"
-                                >
-                                    <option value="">Vacant</option>
-                                    {members.map((m) => (
-                                        <option key={m.user_id} value={m.user_id}>
-                                            {m.full_name}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <button
-                                    onClick={() => handleDeleteRole(role.id, role.title)}
-                                    disabled={isPending}
-                                    className="shrink-0 p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-                                    title="Delete Role"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
