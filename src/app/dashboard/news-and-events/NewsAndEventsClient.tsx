@@ -7,6 +7,7 @@ import { createEvent, deleteEvent, approveEvent, rejectEvent } from "@/lib/actio
 import LikeShareButtons from "@/components/LikeShareButtons";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
+import { LoadingButton } from "@/components/loading/LoadingButton";
 
 interface NewsItem {
     id: string;
@@ -282,17 +283,9 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-4 border-t">
-                                    <button type="submit" disabled={loading || uploading} className="px-6 py-2.5 bg-[#800000] text-white rounded-xl font-bold shadow-sm hover:bg-[#600000] disabled:opacity-50 transition-colors">
-                                        {loading ? (
-                                            <span className="inline-flex items-center gap-2">
-                                                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                </svg>
-                                                Submitting...
-                                            </span>
-                                        ) : "Submit News for Review"}
-                                    </button>
+                                    <LoadingButton type="submit" isLoading={loading} loadingText="Submitting…" disabled={loading || uploading} className="px-6 py-2.5 bg-[#800000] text-white rounded-xl font-bold shadow-sm hover:bg-[#600000] disabled:opacity-50 transition-colors">
+                                        Submit News for Review
+                                    </LoadingButton>
                                 </div>
                             </form>
                         ) : (
@@ -328,17 +321,9 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-4 border-t">
-                                    <button type="submit" disabled={loading} className="px-6 py-2.5 bg-[#800000] text-white rounded-xl font-bold shadow-sm hover:bg-[#600000] disabled:opacity-50 transition-colors">
-                                        {loading ? (
-                                            <span className="inline-flex items-center gap-2">
-                                                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                </svg>
-                                                Submitting...
-                                            </span>
-                                        ) : "Submit Event for Approval"}
-                                    </button>
+                                    <LoadingButton type="submit" isLoading={loading} loadingText="Submitting…" disabled={loading} className="px-6 py-2.5 bg-[#800000] text-white rounded-xl font-bold shadow-sm hover:bg-[#600000] disabled:opacity-50 transition-colors">
+                                        Submit Event for Approval
+                                    </LoadingButton>
                                 </div>
                             </form>
                         )}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { updateProfile } from "@/lib/actions/profile";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
+import { LoadingButton } from "@/components/loading/LoadingButton";
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
@@ -308,21 +309,15 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="pt-6 flex justify-end">
-                        <button
+                        <LoadingButton
                             type="submit"
+                            isLoading={saving}
+                            loadingText="Saving…"
                             disabled={saving || uploading}
                             className="bg-[#800000] text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-[#600000] disabled:opacity-50 transition-colors"
                         >
-                            {saving ? (
-                                <span className="inline-flex items-center gap-2">
-                                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                    Saving...
-                                </span>
-                            ) : "Save Changes"}
-                        </button>
+                            Save Changes
+                        </LoadingButton>
                     </div>
                 </form>
             </div>

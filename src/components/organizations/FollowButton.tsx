@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { followOrganization, unfollowOrganization } from "@/lib/actions/follows";
+import { LoadingSpinner } from "@/components/loading/LoadingSpinner";
 
 interface FollowButtonProps {
     organizationId: string;
@@ -45,7 +46,7 @@ export default function FollowButton({ organizationId, isFollowing, isOfficer }:
             } disabled:opacity-50`}
         >
             {isPending ? (
-                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                <LoadingSpinner size="sm" />
             ) : isFollowing ? (
                 <>
                     <span className="text-[#C9A227]">★</span> Following

@@ -1,3 +1,5 @@
+import { PageLoader } from "@/components/loading/PageLoader";
+
 export default function Loading() {
     return (
         <div className="min-h-screen bg-white animate-fade-in">
@@ -28,6 +30,7 @@ export default function Loading() {
 
             <section className="bg-gradient-to-b from-[#800000] to-[#600000] pb-16 pt-8">
                 <div className="max-w-3xl mx-auto px-6 text-center">
+                    <PageLoader label="Loading…" className="py-4 text-white [&_svg]:text-white [&_p]:text-white/80" />
                     <div className="h-10 w-4/5 mx-auto rounded loading-skeleton" />
                     <div className="h-5 w-3/5 mx-auto rounded loading-skeleton mt-4" />
                     <div className="h-14 rounded-xl loading-skeleton mt-8" />
