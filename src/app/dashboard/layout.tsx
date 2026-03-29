@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import type { UserRole } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -55,22 +56,30 @@ export default async function DashboardLayout({
 
     const userEmail: string = user.email || "";
 
+    const { data: prefs } = await supabase
+        .from("user_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
     return (
-        <div className="min-h-screen bg-background">
-            <Sidebar userRole={userRole} userName={userName} userEmail={userEmail} />
+        <ThemeProvider initialPrefs={prefs}>
+            <div className="min-h-screen bg-background">
+                <Sidebar userRole={userRole} userName={userName} userEmail={userEmail} />
 
-            <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-card shadow-sm sticky top-0 z-30">
-                <MobileNav userRole={userRole} userName={userName} userEmail={userEmail} />
-                <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-primary">iE</span>
-                    <span className="text-sm font-semibold">ITECHEngage</span>
+                <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-card shadow-sm sticky top-0 z-30">
+                    <MobileNav userRole={userRole} userName={userName} userEmail={userEmail} />
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-primary">iE</span>
+                        <span className="text-sm font-semibold">ITECHEngage</span>
+                    </div>
+                    <div className="w-10" />
                 </div>
-                <div className="w-10" />
-            </div>
 
-            <main className="lg:pl-64">
-                <div className="max-w-6xl mx-auto p-6 lg:p-8">{children}</div>
-            </main>
-        </div>
+                <main className="lg:pl-64">
+                    <div className="max-w-6xl mx-auto p-6 lg:p-8">{children}</div>
+                </main>
+            </div>
+        </ThemeProvider>
     );
 }

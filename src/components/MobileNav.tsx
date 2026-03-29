@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -20,11 +20,13 @@ const navItems: NavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: "📊", roles: ["student", "officer", "admin"] },
     { label: "Organizations", href: "/dashboard/organizations", icon: "🏢", roles: ["student", "officer", "admin"] },
     { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["student", "officer"] },
-    { label: "Membership Requests", href: "/dashboard/memberships", icon: "📋", roles: ["admin"] },
+    { label: "Membership Requests", href: "/dashboard/requests", icon: "📋", roles: ["officer", "admin"] },
     { label: "News & Events", href: "/dashboard/news-and-events", icon: "📰", roles: ["student", "officer", "admin"] },
-    { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["officer", "admin"] },
+    { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["student", "officer", "admin"] },
+    { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", roles: ["student", "officer", "admin"] },
     { label: "Accreditation", href: "/dashboard/accreditation", icon: "📑", roles: ["officer", "admin"] },
     { label: "Admin Panel", href: "/dashboard/admin", icon: "⚙️", roles: ["admin"] },
+    { label: "Settings", href: "/dashboard/settings", icon: "🎨", roles: ["student", "officer", "admin"] },
 ];
 
 interface MobileNavProps {
@@ -36,8 +38,20 @@ interface MobileNavProps {
 export default function MobileNav({ userRole, userName, userEmail }: MobileNavProps) {
     const [open, setOpen] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const pathname = usePathname();
     const router = useRouter();
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase
+            .from("notifications")
+            .select("*", { count: "exact", head: true })
+            .eq("is_read", false)
+            .then(({ count }) => {
+                setUnreadCount(count || 0);
+            });
+    }, [pathname]);
 
     const filteredNavItems = navItems.filter((item) =>
         item.roles.includes(userRole)
@@ -117,7 +131,12 @@ export default function MobileNav({ userRole, userName, userEmail }: MobileNavPr
                                         )}
                                     >
                                         <span className="text-lg">{item.icon}</span>
-                                        {item.label}
+                                        <span className="flex-1">{item.label}</span>
+                                        {item.label === "Notifications" && unreadCount > 0 && (
+                                            <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                                {unreadCount > 99 ? "99+" : unreadCount}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             })}

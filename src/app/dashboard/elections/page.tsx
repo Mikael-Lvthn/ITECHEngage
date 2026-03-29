@@ -74,6 +74,7 @@ export default async function ElectionsPage() {
         }
     }
 
+    // Only admins can create elections
     let manageableOrgs: { id: string; name: string }[] = [];
     if (isAdmin) {
         const { data: orgs } = await supabase
@@ -81,21 +82,6 @@ export default async function ElectionsPage() {
             .select("id, name")
             .order("name");
         manageableOrgs = orgs || [];
-    } else {
-        const { data: roleManagerOrgs } = await supabase
-            .from("organization_roles")
-            .select("organization_id, organizations(id, name)")
-            .eq("assigned_user_id", user.id)
-            .eq("can_manage_roles", true);
-
-        if (roleManagerOrgs) {
-            manageableOrgs = roleManagerOrgs
-                .filter((r) => r.organizations)
-                .map((r) => ({
-                    id: (r.organizations as any).id,
-                    name: (r.organizations as any).name,
-                }));
-        }
     }
 
     const activeElections = visibleElections.filter((e) => e.status === "active");

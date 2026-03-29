@@ -70,6 +70,20 @@ export async function createOrganization(formData: FormData) {
         throw new Error("Failed to assign initial student. Organization creation rolled back.");
     }
 
+    // Phase 2: Create initial President role and assign to initial student
+    const { error: roleError } = await supabase.from("organization_roles").insert({
+        organization_id: orgData.id,
+        title: "President",
+        hierarchy_level: 1,
+        can_manage_roles: true,
+        assigned_user_id: initial_student_id,
+    });
+
+    if (roleError) {
+        // We won't rollback the whole org just for the role, but we'll log it
+        console.error("Failed to create initial President role:", roleError);
+    }
+
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/organizations");
     revalidatePath("/");

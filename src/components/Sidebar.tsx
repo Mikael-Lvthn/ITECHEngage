@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -42,9 +42,9 @@ const navItems: NavItem[] = [
     },
     {
         label: "Membership Requests",
-        href: "/dashboard/memberships",
+        href: "/dashboard/requests",
         icon: "📋",
-        roles: ["admin"],
+        roles: ["officer", "admin"],
     },
     {
         label: "News & Events",
@@ -56,7 +56,13 @@ const navItems: NavItem[] = [
         label: "Elections",
         href: "/dashboard/elections",
         icon: "🗳️",
-        roles: ["officer", "admin"],
+        roles: ["student", "officer", "admin"],
+    },
+    {
+        label: "Notifications",
+        href: "/dashboard/notifications",
+        icon: "🔔",
+        roles: ["student", "officer", "admin"],
     },
     {
         label: "Accreditation",
@@ -69,6 +75,12 @@ const navItems: NavItem[] = [
         href: "/dashboard/admin",
         icon: "⚙️",
         roles: ["admin"],
+    },
+    {
+        label: "Settings",
+        href: "/dashboard/settings",
+        icon: "🎨",
+        roles: ["student", "officer", "admin"],
     },
 ];
 
@@ -83,6 +95,18 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     const router = useRouter();
     const [showMenu, setShowMenu] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase
+            .from("notifications")
+            .select("*", { count: "exact", head: true })
+            .eq("is_read", false)
+            .then(({ count }) => {
+                setUnreadCount(count || 0);
+            });
+    }, [pathname]);
 
     const filteredNavItems = navItems.filter((item) =>
         item.roles.includes(userRole)
@@ -105,7 +129,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
     return (
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border hover:bg-sidebar-accent/30 transition-colors">
                 <Image
                     src="/logo.png"
@@ -120,7 +143,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 </div>
             </Link>
 
-            {/* Navigation */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 {filteredNavItems.map((item, i) => {
                     const isActive =
@@ -132,7 +154,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
                     return (
                         <Link
-                            key={item.href}
+                            key={`${item.href}-${item.label}`}
                             href={item.href}
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -143,7 +165,12 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                             style={{ animationDelay: `${i * 50}ms` }}
                         >
                             <span className="text-lg">{item.icon}</span>
-                            {item.label}
+                            <span className="flex-1">{item.label}</span>
+                            {item.label === "Notifications" && unreadCount > 0 && (
+                                <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                    {unreadCount > 99 ? "99+" : unreadCount}
+                                </span>
+                            )}
                         </Link>
                     );
                 })}
@@ -151,7 +178,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 <div className="my-2 border-t border-sidebar-border" />
             </nav>
 
-            {/* User Profile + Sign Out */}
             <div className="relative px-3 py-3 border-t border-sidebar-border">
                 <button
                     onClick={() => setShowMenu(!showMenu)}
@@ -176,7 +202,6 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                     </svg>
                 </button>
 
-                {/* Popover Menu */}
                 {showMenu && (
                     <div className="absolute bottom-full left-3 right-3 mb-2 rounded-lg bg-white shadow-xl border border-border overflow-hidden animate-scale-in">
                         <div className="px-4 py-3 border-b border-border">
@@ -194,6 +219,14 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                             >
                                 <span className="text-base">🏠</span>
                                 Go to Homepage
+                            </Link>
+                            <Link
+                                href="/dashboard/profile"
+                                onClick={() => setShowMenu(false)}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#2B2B2B] rounded-md hover:bg-[#F0F0F0] transition-colors"
+                            >
+                                <span className="text-base">👤</span>
+                                My Profile
                             </Link>
                             <button
                                 onClick={handleSignOut}

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import VotingDialog from "@/components/elections/VotingDialog";
 import NominateDialog from "@/components/elections/NominateDialog";
 import PublishResultsButton from "@/components/elections/PublishResultsButton";
+import CloseElectionButton from "@/components/elections/CloseElectionButton";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -51,15 +52,8 @@ export default async function ElectionDetailPage({ params }: Props) {
     const isOfficer = membership?.role === "officer";
     const isMember = !!membership;
 
-    const { data: roleManagerCheck } = await supabase
-        .from("organization_roles")
-        .select("id")
-        .eq("organization_id", election.organization_id)
-        .eq("assigned_user_id", user.id)
-        .eq("can_manage_roles", true)
-        .limit(1);
-
-    const canManage = isAdmin || (roleManagerCheck && roleManagerCheck.length > 0);
+    // Only admin can manage elections (create, close, publish)
+    const canManage = isAdmin;
 
     const { data: orgRoles } = await supabase
         .from("organization_roles")
@@ -78,6 +72,11 @@ export default async function ElectionDetailPage({ params }: Props) {
 
     const votedRoles: string[] = Array.isArray(votedRolesData) ? votedRolesData : [];
 
+    // Get candidate IDs for the current user (to prevent self-voting in UI)
+    const myNominatedCandidateIds = (candidates || [])
+        .filter((c) => c.user_id === user.id)
+        .map((c) => c.id);
+
     let electionResults: any[] = [];
     const isClosed = election.status === "closed";
     if (isClosed || canManage) {
@@ -89,24 +88,31 @@ export default async function ElectionDetailPage({ params }: Props) {
 
     const now = new Date();
     const start = new Date(election.start_date);
-    const end = new Date(election.end_date);
-    const isVotingOpen = election.status === "active" && now >= start && now <= end;
+    const end = election.end_date ? new Date(election.end_date) : null;
+    const isVotingOpen = election.status === "active" && now >= start && (!end || now <= end);
     const isUpcoming = election.status === "active" && now < start;
 
     const statusLabel = isClosed
-        ? "Closed"
-        : isUpcoming
-            ? "Upcoming"
-            : isVotingOpen
-                ? "Voting Open"
-                : "Active";
+        ? "Closed & Published"
+        : election.status === "completed"
+            ? "Completed (Pending Publish)"
+            : isUpcoming
+                ? "Upcoming"
+                : isVotingOpen
+                    ? "Voting Open"
+                    : "Active";
+
     const statusColor = isClosed
         ? "bg-gray-100 text-gray-600"
-        : isUpcoming
-            ? "bg-blue-100 text-blue-700"
-            : isVotingOpen
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700";
+        : election.status === "completed"
+            ? "bg-purple-100 text-purple-700"
+            : isUpcoming
+                ? "bg-blue-100 text-blue-700"
+                : isVotingOpen
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700";
+
+    const showVotingResults = isClosed || (canManage && election.status === "completed");
 
     const roleIds = [...new Set((candidates || []).map((c) => c.organization_role_id).filter(Boolean))];
     const availableRoles = (orgRoles || []).filter((r) => roleIds.includes(r.id) || election.status === "active");
@@ -161,8 +167,7 @@ export default async function ElectionDetailPage({ params }: Props) {
                             <span>📅</span>
                             <span>
                                 {start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                                {" — "}
-                                {end.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                                {end ? ` — ${end.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : " (Ongoing)"}
                             </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -174,7 +179,8 @@ export default async function ElectionDetailPage({ params }: Props) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-                {isMember && isVotingOpen && (
+                {/* Officers can nominate (not admin) */}
+                {isOfficer && !isAdmin && isVotingOpen && (
                     <NominateDialog
                         electionId={id}
                         roles={availableRoles}
@@ -182,14 +188,27 @@ export default async function ElectionDetailPage({ params }: Props) {
                     />
                 )}
 
-                {canManage && election.status === "active" && now > end && (
+                {/* Only admin can close election */}
+                {canManage && election.status === "active" && (
+                    <CloseElectionButton electionId={id} />
+                )}
+
+                {/* Only admin can publish results */}
+                {canManage && election.status === "completed" && (
                     <PublishResultsButton electionId={id} />
+                )}
+
+                {/* Admin info notice */}
+                {isAdmin && isVotingOpen && (
+                    <div className="px-4 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm text-gray-600 flex items-center gap-2">
+                        <span>🔒</span> Admins cannot vote or nominate in elections.
+                    </div>
                 )}
             </div>
 
             <div className="space-y-6">
                 <h2 className="text-lg font-semibold">
-                    {isClosed ? "Results by Role" : "Candidates by Role"}
+                    {showVotingResults ? "Results by Role" : "Candidates by Role"}
                 </h2>
 
                 {availableRoles.length === 0 ? (
@@ -199,7 +218,7 @@ export default async function ElectionDetailPage({ params }: Props) {
                     </div>
                 ) : (
                     availableRoles.map((role) => {
-                        const roleCandidates = isClosed
+                        const roleCandidates = showVotingResults
                             ? (resultsByRole[role.id] || []).map((r) => ({
                                 id: r.candidate_id,
                                 user_id: r.candidate_user_id,
@@ -224,9 +243,11 @@ export default async function ElectionDetailPage({ params }: Props) {
                                 roleTitle={role.title}
                                 candidates={roleCandidates}
                                 hasVoted={votedRoles.includes(role.id)}
-                                isOfficer={isOfficer || isAdmin}
-                                isClosed={isClosed}
+                                isOfficer={isOfficer}
+                                isAdmin={isAdmin}
+                                isClosed={showVotingResults}
                                 isVotingOpen={isVotingOpen}
+                                currentUserId={user.id}
                             />
                         );
                     })

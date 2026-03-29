@@ -97,11 +97,12 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium mb-1.5">End Date *</label>
+                                            <label className="block text-sm font-medium mb-1.5 flex items-center gap-1">
+                                                End Date <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                                            </label>
                                             <input
                                                 type="datetime-local"
                                                 name="end_date"
-                                                required
                                                 className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                             />
                                         </div>
