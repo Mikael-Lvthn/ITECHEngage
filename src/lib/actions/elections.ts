@@ -39,20 +39,85 @@ export async function createElection(formData: FormData) {
         throw new Error("End date must be after start date.");
     }
 
-    const { error } = await supabase.from("elections").insert({
+    // Create election in 'draft' status - immediately visible in org's Elections tab
+    const { data: election, error } = await supabase.from("elections").insert({
         organization_id: organizationId,
         title: title.trim(),
         description: description?.trim() || null,
         start_date: startDate,
         end_date: endDate || null,
-        status: "active",
+        status: "draft",
         created_by: user.id,
-    });
+    }).select().single();
 
     if (error) throw new Error(error.message);
 
     revalidatePath("/dashboard/elections");
     revalidatePath(`/dashboard/organizations/${organizationId}`);
+    
+    return election;
+}
+
+export async function publishElection(electionId: string) {
+    const { supabase } = await getAuthUser();
+
+    // Admin only
+    await requireAdmin(supabase);
+
+    const { data: election } = await supabase
+        .from("elections")
+        .select("organization_id, status")
+        .eq("id", electionId)
+        .single();
+
+    if (!election) throw new Error("Election not found");
+    if (election.status !== "draft") {
+        throw new Error("Only draft elections can be published.");
+    }
+
+    // Transition from draft to published - visible on Homepage
+    const { error } = await supabase
+        .from("elections")
+        .update({ status: "published" })
+        .eq("id", electionId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/elections");
+    revalidatePath(`/dashboard/elections/${electionId}`);
+    revalidatePath(`/dashboard/organizations/${election.organization_id}`);
+    revalidatePath("/"); // Homepage
+}
+
+export async function startVoting(electionId: string) {
+    const { supabase } = await getAuthUser();
+
+    // Admin only
+    await requireAdmin(supabase);
+
+    const { data: election } = await supabase
+        .from("elections")
+        .select("organization_id, status")
+        .eq("id", electionId)
+        .single();
+
+    if (!election) throw new Error("Election not found");
+    if (election.status !== "published") {
+        throw new Error("Only published elections can start voting.");
+    }
+
+    // Transition from published to voting - triggers notification to followers
+    const { error } = await supabase
+        .from("elections")
+        .update({ status: "voting" })
+        .eq("id", electionId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/elections");
+    revalidatePath(`/dashboard/elections/${electionId}`);
+    revalidatePath(`/dashboard/organizations/${election.organization_id}`);
+    revalidatePath("/"); // Homepage
 }
 
 export async function nominateCandidate(formData: FormData) {
@@ -72,8 +137,9 @@ export async function nominateCandidate(formData: FormData) {
         .eq("id", electionId)
         .single();
 
-    if (!election || election.status !== "active") {
-        throw new Error("Election is not currently active.");
+    // Allow nominations in draft, published, and voting phases
+    if (!election || !["draft", "published", "voting"].includes(election.status)) {
+        throw new Error("Nominations are not open for this election.");
     }
 
     // Must be an approved officer member (not admin)
@@ -147,8 +213,9 @@ export async function castVote(electionId: string, candidateId: string, organiza
         .eq("id", electionId)
         .single();
 
-    if (!election || election.status !== "active") {
-        throw new Error("Election is not currently active.");
+    // Only allow voting in 'voting' status
+    if (!election || election.status !== "voting") {
+        throw new Error("Voting is not currently open for this election.");
     }
 
     // Verify user is an approved officer member
@@ -210,12 +277,15 @@ export async function closeElection(electionId: string) {
         .single();
 
     if (!election) throw new Error("Election not found");
-    if (election.status !== "active") throw new Error("Election is not active.");
+    if (election.status !== "voting") {
+        throw new Error("Only elections in voting phase can be closed.");
+    }
 
+    // Transition from voting to closed - triggers notification to members
     const { error } = await supabase
         .from("elections")
         .update({
-            status: "completed",
+            status: "closed",
             end_date: new Date().toISOString(),
         })
         .eq("id", electionId);
@@ -224,6 +294,44 @@ export async function closeElection(electionId: string) {
 
     revalidatePath("/dashboard/elections");
     revalidatePath(`/dashboard/elections/${electionId}`);
+    revalidatePath(`/dashboard/organizations/${election.organization_id}`);
+    revalidatePath("/"); // Homepage
+}
+
+export async function deleteElection(electionId: string) {
+    const { supabase } = await getAuthUser();
+
+    // Admin only
+    await requireAdmin(supabase);
+
+    const { data: election } = await supabase
+        .from("elections")
+        .select("organization_id, status")
+        .eq("id", electionId)
+        .single();
+
+    if (!election) throw new Error("Election not found");
+    if (election.status !== "closed") {
+        throw new Error("Only closed elections can be deleted.");
+    }
+
+    // Delete candidates first (foreign key constraint)
+    await supabase
+        .from("candidates")
+        .delete()
+        .eq("election_id", electionId);
+
+    // Delete votes via the election's candidates (already deleted above, but clean up)
+    const { error } = await supabase
+        .from("elections")
+        .delete()
+        .eq("id", electionId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/elections");
+    revalidatePath(`/dashboard/organizations/${election.organization_id}`);
+    revalidatePath("/");
 }
 
 export async function publishElectionResults(electionId: string) {
@@ -268,4 +376,33 @@ export async function withdrawNomination(candidateId: string) {
 
     revalidatePath("/dashboard/elections");
     revalidatePath(`/dashboard/elections/${candidate.election_id}`);
+}
+
+export async function getElectionWithDetails(electionId: string) {
+    const { supabase, user } = await getAuthUser();
+
+    const { data: election } = await supabase
+        .from("elections")
+        .select("*, organizations(id, name)")
+        .eq("id", electionId)
+        .single();
+
+    if (!election) return null;
+
+    const { data: candidates } = await supabase
+        .from("candidates")
+        .select("*, profiles(full_name, avatar_url)")
+        .eq("election_id", electionId);
+
+    const { data: orgRoles } = await supabase
+        .from("organization_roles")
+        .select("id, title, hierarchy_level")
+        .eq("organization_id", election.organization_id)
+        .order("hierarchy_level");
+
+    return {
+        election,
+        candidates: candidates || [],
+        roles: orgRoles || [],
+    };
 }

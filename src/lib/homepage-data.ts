@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createClient } from "@/lib/supabase/server";
 
 type RelatedOrganization = { name: string | null } | { name: string | null }[] | null;
 
@@ -34,10 +35,13 @@ export interface HomepageNews {
 export interface HomepageElection {
     id: string;
     title: string;
+    description: string | null;
     status: string;
     start_date: string;
     end_date: string | null;
+    organization_id: string;
     organizations: RelatedOrganization;
+    isFollowed?: boolean;
 }
 
 export interface HomepagePublicData {
@@ -72,10 +76,10 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .limit(3),
             supabase
                 .from("elections")
-                .select("id, title, status, start_date, end_date, organizations(name)")
-                .in("status", ["active", "completed"])
+                .select("id, title, description, status, start_date, end_date, organization_id, organizations(name)")
+                .in("status", ["published", "voting"])
                 .order("start_date", { ascending: false })
-                .limit(3),
+                .limit(6),
         ]);
 
     return {
@@ -88,9 +92,49 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
 
 export const getHomepagePublicData = unstable_cache(
     fetchHomepagePublicData,
-    ["homepage-public-data-v1"],
+    ["homepage-public-data-v2"],
     {
         revalidate: 180,
         tags: ["homepage-public-data"],
     }
 );
+
+// Get elections with follow status for authenticated users
+export async function getHomepageElectionsWithFollowStatus(userId: string): Promise<HomepageElection[]> {
+    const supabase = await createClient();
+
+    // Get elections that are published or in voting phase
+    const { data: elections } = await supabase
+        .from("elections")
+        .select("id, title, description, status, start_date, end_date, organization_id, organizations(name)")
+        .in("status", ["published", "voting"])
+        .order("start_date", { ascending: false })
+        .limit(12);
+
+    if (!elections || elections.length === 0) {
+        return [];
+    }
+
+    // Get user's followed organizations
+    const { data: follows } = await supabase
+        .from("organization_follows")
+        .select("organization_id")
+        .eq("user_id", userId);
+
+    const followedOrgIds = new Set((follows || []).map(f => f.organization_id));
+
+    // Mark elections as followed or not and sort
+    const electionsWithFollow = (elections as HomepageElection[]).map(e => ({
+        ...e,
+        isFollowed: followedOrgIds.has(e.organization_id),
+    }));
+
+    // Sort: followed organizations first, then by start_date
+    electionsWithFollow.sort((a, b) => {
+        if (a.isFollowed && !b.isFollowed) return -1;
+        if (!a.isFollowed && b.isFollowed) return 1;
+        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+    });
+
+    return electionsWithFollow;
+}

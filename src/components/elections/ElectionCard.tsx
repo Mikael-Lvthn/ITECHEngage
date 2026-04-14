@@ -8,7 +8,7 @@ interface ElectionCardProps {
     description: string | null;
     orgName: string;
     startDate: string;
-    endDate: string;
+    endDate: string | null;
     status: string;
     candidateCount: number;
     roleCount: number;
@@ -27,28 +27,42 @@ export default function ElectionCard({
     roleCount,
     index,
 }: ElectionCardProps) {
-    const now = new Date();
     const start = new Date(startDate);
-    const end = new Date(endDate);
+    const end = endDate ? new Date(endDate) : null;
 
-    const isUpcoming = status === "active" && now < start;
-    const isOngoing = status === "active" && now >= start && now <= end;
-    const isClosed = status === "closed" || (status === "active" && now > end);
+    // Status-based display using new enum values
+    const isDraft = status === "draft";
+    const isPublished = status === "published";
+    const isVoting = status === "voting";
+    const isClosed = status === "closed";
 
-    const statusLabel = isClosed ? "Closed" : isUpcoming ? "Upcoming" : isOngoing ? "Voting Open" : status;
+    const statusLabel = isClosed
+        ? "Closed"
+        : isVoting
+            ? "Voting Open"
+            : isPublished
+                ? "Published"
+                : isDraft
+                    ? "Draft"
+                    : status;
+
     const statusColor = isClosed
-        ? "bg-gray-100 text-gray-600"
-        : isUpcoming
-            ? "bg-blue-100 text-blue-700"
-            : isOngoing
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700";
+        ? "bg-purple-100 text-purple-700"
+        : isVoting
+            ? "bg-green-100 text-green-700"
+            : isPublished
+                ? "bg-blue-100 text-blue-700"
+                : isDraft
+                    ? "bg-gray-100 text-gray-600"
+                    : "bg-yellow-100 text-yellow-700";
 
     const gradientClass = isClosed
-        ? "from-gray-400 to-gray-500"
-        : isUpcoming
-            ? "from-blue-500 to-blue-600"
-            : "from-[#800000] to-[#C9A227]";
+        ? "from-purple-400 to-purple-500"
+        : isVoting
+            ? "from-[#800000] to-[#C9A227]"
+            : isPublished
+                ? "from-blue-500 to-blue-600"
+                : "from-gray-400 to-gray-500";
 
     return (
         <Link
@@ -90,8 +104,12 @@ export default function ElectionCard({
                 <div className="mt-3 pt-3 border-t flex items-center justify-between text-[11px] text-muted-foreground">
                     <span>
                         {start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        {" — "}
-                        {end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {end && (
+                            <>
+                                {" — "}
+                                {end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </>
+                        )}
                     </span>
                     <span className="text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                         View details

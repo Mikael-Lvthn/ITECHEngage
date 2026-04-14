@@ -26,12 +26,10 @@ function buildTree(roles: RoleNode[]): TreeNode[] {
     const map = new Map<string, TreeNode>();
     const roots: TreeNode[] = [];
 
-    // Create tree nodes
     roles.forEach((role) => {
         map.set(role.id, { ...role, children: [] });
     });
 
-    // Build tree structure
     roles.forEach((role) => {
         const node = map.get(role.id)!;
         if (role.parent_role_id && map.has(role.parent_role_id)) {
@@ -41,7 +39,6 @@ function buildTree(roles: RoleNode[]): TreeNode[] {
         }
     });
 
-    // Sort roots & children by hierarchy_level then title
     const sortFn = (a: TreeNode, b: TreeNode) =>
         a.hierarchy_level - b.hierarchy_level || a.title.localeCompare(b.title);
     roots.sort(sortFn);
@@ -71,7 +68,7 @@ function RoleCard({ role, nodeRef }: { role: TreeNode; nodeRef: (el: HTMLDivElem
             data-role-id={role.id}
             className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all min-w-[140px] max-w-[200px] ${hasAssignee
                 ? "border-primary/20 bg-card shadow-sm hover:shadow-md"
-                : "border-dashed border-gray-300 bg-gray-50/50"
+                : "border-dashed border-muted-foreground/30 bg-muted/50"
                 }`}
         >
             {role.can_manage_roles && (
@@ -86,7 +83,7 @@ function RoleCard({ role, nodeRef }: { role: TreeNode; nodeRef: (el: HTMLDivElem
             <div
                 className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${hasAssignee
                     ? "bg-[#C9A227] text-[#2B2B2B]"
-                    : "bg-gray-200 text-gray-400"
+                    : "bg-muted text-muted-foreground"
                     }`}
             >
                 {role.assigned_user_avatar ? (
@@ -171,7 +168,6 @@ export default function OrgChart({ roles, orgName }: OrgChartProps) {
 
             const lines: { top: number; left: number; width: number }[] = [];
 
-            // For every node with multiple children, calculate the horizontal bar
             const tree = buildTree(roles);
             const findMultiChildNodes = (nodes: TreeNode[]): TreeNode[] => {
                 const result: TreeNode[] = [];
@@ -227,7 +223,7 @@ export default function OrgChart({ roles, orgName }: OrgChartProps) {
     const tree = buildTree(roles);
 
     return (
-        <div className="relative" ref={containerRef}>
+        <div className="relative min-h-[200px] max-h-[50vh] md:max-h-[60vh] lg:max-h-[70vh] overflow-y-auto overflow-x-auto" ref={containerRef} style={{ scrollbarWidth: 'thin' }}>
             <div className="text-center mb-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#800000] to-[#A52A2A] text-white shadow-lg">
                     <span className="text-lg">🏢</span>

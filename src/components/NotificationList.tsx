@@ -10,7 +10,7 @@ interface Notification {
     title: string;
     message: string | null;
     link: string | null;
-    is_read: boolean;
+    status: "unread" | "read" | "archived";
     created_at: string;
 }
 
@@ -48,20 +48,20 @@ export default function NotificationList({ notifications }: NotificationListProp
     const [isPending, startTransition] = useTransition();
 
     const handleMarkRead = (id: string) => {
-        setItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+        setItems((prev) => prev.map((n) => (n.id === id ? { ...n, status: "read" as const } : n)));
         startTransition(async () => {
             await markAsRead(id);
         });
     };
 
     const handleMarkAllRead = () => {
-        setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        setItems((prev) => prev.map((n) => ({ ...n, status: "read" as const })));
         startTransition(async () => {
             await markAllAsRead();
         });
     };
 
-    const unreadCount = items.filter((n) => !n.is_read).length;
+    const unreadCount = items.filter((n) => n.status === "unread").length;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -88,19 +88,19 @@ export default function NotificationList({ notifications }: NotificationListProp
                             <div
                                 key={n.id}
                                 className={`flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
-                                    n.is_read ? "hover:bg-accent/50" : "bg-[#800000]/5 hover:bg-[#800000]/10"
+                                    n.status !== "unread" ? "hover:bg-accent/50" : "bg-[#800000]/5 hover:bg-[#800000]/10"
                                 }`}
-                                onClick={() => !n.is_read && handleMarkRead(n.id)}
+                                onClick={() => n.status === "unread" && handleMarkRead(n.id)}
                             >
                                 <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0 text-lg">
                                     {getTypeIcon(n.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <p className={`text-sm leading-tight ${n.is_read ? "font-normal" : "font-semibold"}`}>
+                                        <p className={`text-sm leading-tight ${n.status !== "unread" ? "font-normal" : "font-semibold"}`}>
                                             {n.title}
                                         </p>
-                                        {!n.is_read && (
+                                        {n.status === "unread" && (
                                             <span className="w-2 h-2 rounded-full bg-[#800000] shrink-0" />
                                         )}
                                     </div>
@@ -115,7 +115,7 @@ export default function NotificationList({ notifications }: NotificationListProp
                         );
 
                         return n.link ? (
-                            <Link key={n.id} href={n.link} onClick={() => !n.is_read && handleMarkRead(n.id)}>
+                            <Link key={n.id} href={n.link} onClick={() => n.status === "unread" && handleMarkRead(n.id)}>
                                 {inner}
                             </Link>
                         ) : (

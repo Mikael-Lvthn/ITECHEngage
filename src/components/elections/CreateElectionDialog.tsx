@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createElection } from "@/lib/actions/elections";
 
 interface CreateElectionDialogProps {
@@ -11,16 +12,25 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
+    const router = useRouter();
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null);
+        setSuccess(false);
         const formData = new FormData(e.currentTarget);
 
         startTransition(async () => {
             try {
-                await createElection(formData);
-                setOpen(false);
+                const election = await createElection(formData);
+                setSuccess(true);
+                // Navigate to the organization's page to see the election in the Elections tab
+                const orgId = formData.get("organization_id");
+                setTimeout(() => {
+                    setOpen(false);
+                    router.push(`/dashboard/organizations/${orgId}`);
+                }, 1500);
             } catch (err: any) {
                 setError(err.message || "Failed to create election.");
             }
@@ -45,7 +55,9 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
                         <div className="w-full max-w-lg bg-card rounded-2xl shadow-2xl border animate-scale-in overflow-hidden">
                             <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/10 to-transparent">
                                 <h2 className="text-lg font-bold">Create Election</h2>
-                                <p className="text-sm text-muted-foreground mt-0.5">Set up a new election for an organization</p>
+                                <p className="text-sm text-muted-foreground mt-0.5">
+                                    Set up a new election for an organization. It will start in draft mode.
+                                </p>
                             </div>
 
                             <form onSubmit={handleSubmit}>
@@ -108,9 +120,24 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
                                         </div>
                                     </div>
 
+                                    {/* Info about election workflow */}
+                                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                        <p className="text-xs text-blue-800">
+                                            <strong>How it works:</strong> The election will be created in <strong>draft</strong> mode. 
+                                            Visit the organization's Elections tab to manage nominations, publish the election, 
+                                            start voting, or directly assign roles.
+                                        </p>
+                                    </div>
+
                                     {error && (
                                         <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                                             {error}
+                                        </div>
+                                    )}
+
+                                    {success && (
+                                        <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+                                            ✓ Election created! Redirecting to organization page...
                                         </div>
                                     )}
                                 </div>
@@ -125,7 +152,7 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={isPending}
+                                        disabled={isPending || success}
                                         className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                                     >
                                         {isPending ? "Creating..." : "Create Election"}

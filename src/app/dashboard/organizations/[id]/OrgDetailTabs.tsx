@@ -6,14 +6,16 @@ import { cn } from "@/lib/utils";
 interface OrgDetailTabsProps {
     aboutContent: ReactNode;
     structureContent: ReactNode;
+    electionsContent: ReactNode;
 }
 
 const tabs = [
     { key: "overview", label: "Overview", icon: "📋" },
     { key: "structure", label: "Structure", icon: "🏛️" },
+    { key: "elections", label: "Elections", icon: "🗳️" },
 ];
 
-export default function OrgDetailTabs({ aboutContent, structureContent }: OrgDetailTabsProps) {
+export default function OrgDetailTabs({ aboutContent, structureContent, electionsContent }: OrgDetailTabsProps) {
     const [activeTab, setActiveTab] = useState("overview");
 
     return (
@@ -39,6 +41,7 @@ export default function OrgDetailTabs({ aboutContent, structureContent }: OrgDet
             <div className="animate-fade-in">
                 {activeTab === "overview" && aboutContent}
                 {activeTab === "structure" && structureContent}
+                {activeTab === "elections" && electionsContent}
             </div>
         </div>
     );

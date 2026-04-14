@@ -258,4 +258,27 @@
     .gradient-dark {
         background: linear-gradient(135deg, #2B2B2B, #4A4A4A);
     }
+
+    /* Force light mode during PDF export */
+    .pdf-export-light,
+    .pdf-export-light * {
+        background-color: white !important;
+        color: #2B2B2B !important;
+        border-color: #e5e7eb !important;
+    }
+    .pdf-export-light .bg-gradient-to-r,
+    .pdf-export-light .h-2 {
+        background: linear-gradient(to right, #800000, #C9A227) !important;
+        color: white !important;
+    }
+    .pdf-export-light .bg-muted,
+    .pdf-export-light .bg-card {
+        background-color: #f9fafb !important;
+    }
+    .pdf-export-light .text-muted-foreground {
+        color: #6b7280 !important;
+    }
+    .pdf-export-light .text-foreground {
+        color: #2B2B2B !important;
+    }
 }

@@ -1,10 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import VotingDialog from "@/components/elections/VotingDialog";
 import NominateDialog from "@/components/elections/NominateDialog";
-import PublishResultsButton from "@/components/elections/PublishResultsButton";
-import CloseElectionButton from "@/components/elections/CloseElectionButton";
+import ElectionBoard from "@/components/elections/ElectionBoard";
+import ElectionResultsSection from "@/components/elections/ElectionResultsSection";
+import ElectionAdminControls from "@/components/elections/ElectionAdminControls";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -52,12 +52,11 @@ export default async function ElectionDetailPage({ params }: Props) {
     const isOfficer = membership?.role === "officer";
     const isMember = !!membership;
 
-    // Only admin can manage elections (create, close, publish)
     const canManage = isAdmin;
 
     const { data: orgRoles } = await supabase
         .from("organization_roles")
-        .select("id, title")
+        .select("id, title, hierarchy_level, assigned_user_id, profiles(full_name, avatar_url)")
         .eq("organization_id", election.organization_id)
         .order("hierarchy_level");
 
@@ -72,11 +71,6 @@ export default async function ElectionDetailPage({ params }: Props) {
 
     const votedRoles: string[] = Array.isArray(votedRolesData) ? votedRolesData : [];
 
-    // Get candidate IDs for the current user (to prevent self-voting in UI)
-    const myNominatedCandidateIds = (candidates || [])
-        .filter((c) => c.user_id === user.id)
-        .map((c) => c.id);
-
     let electionResults: any[] = [];
     const isClosed = election.status === "closed";
     if (isClosed || canManage) {
@@ -86,73 +80,140 @@ export default async function ElectionDetailPage({ params }: Props) {
         electionResults = results || [];
     }
 
+    // Fetch members for admin direct assign
+    let orgMembers: { user_id: string; full_name: string }[] = [];
+    if (isAdmin) {
+        const { data: membersData } = await supabase
+            .from("memberships")
+            .select("user_id, profiles(full_name)")
+            .eq("organization_id", election.organization_id)
+            .eq("status", "approved");
+        orgMembers = (membersData || []).map((m: any) => {
+            const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+            return {
+                user_id: m.user_id,
+                full_name: profile?.full_name || "Unknown",
+            };
+        });
+    }
+
     const now = new Date();
     const start = new Date(election.start_date);
     const end = election.end_date ? new Date(election.end_date) : null;
-    const isVotingOpen = election.status === "active" && now >= start && (!end || now <= end);
-    const isUpcoming = election.status === "active" && now < start;
+    
+    // Update status checks for new enum values
+    const isVotingOpen = election.status === "voting";
+    const isDraft = election.status === "draft";
+    const isPublished = election.status === "published";
+    const isUpcoming = isPublished && now < start;
 
     const statusLabel = isClosed
-        ? "Closed & Published"
-        : election.status === "completed"
-            ? "Completed (Pending Publish)"
-            : isUpcoming
-                ? "Upcoming"
+        ? "Closed"
+        : isDraft
+            ? "Draft"
+            : isPublished
+                ? "Published"
                 : isVotingOpen
                     ? "Voting Open"
-                    : "Active";
+                    : "Unknown";
 
     const statusColor = isClosed
-        ? "bg-gray-100 text-gray-600"
-        : election.status === "completed"
-            ? "bg-purple-100 text-purple-700"
-            : isUpcoming
+        ? "bg-purple-100 text-purple-700"
+        : isDraft
+            ? "bg-gray-100 text-gray-600"
+            : isPublished
                 ? "bg-blue-100 text-blue-700"
                 : isVotingOpen
                     ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700";
+                    : "bg-gray-100 text-gray-600";
 
-    const showVotingResults = isClosed || (canManage && election.status === "completed");
+    // Prepare roles data with assigned user info
+    const rolesWithAssignments = (orgRoles || []).map((r) => {
+        const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+        return {
+            id: r.id,
+            title: r.title,
+            hierarchy_level: r.hierarchy_level,
+            assigned_user_id: r.assigned_user_id,
+            assigned_user_name: profile?.full_name || null,
+            assigned_user_avatar: profile?.avatar_url || null,
+        };
+    });
 
-    const roleIds = [...new Set((candidates || []).map((c) => c.organization_role_id).filter(Boolean))];
-    const availableRoles = (orgRoles || []).filter((r) => roleIds.includes(r.id) || election.status === "active");
+    // Prepare candidates by role
+    const candidatesByRole: Record<string, any[]> = {};
+    (candidates || []).forEach((c) => {
+        const key = c.organization_role_id || "other";
+        if (!candidatesByRole[key]) candidatesByRole[key] = [];
+        candidatesByRole[key].push({
+            id: c.id,
+            user_id: c.user_id,
+            name: c.profiles?.full_name || "Unknown",
+            avatar_url: c.profiles?.avatar_url || null,
+            platform: c.platform,
+        });
+    });
+
+    // Prepare results by role
+    const resultsByRole: Record<string, any> = {};
+    electionResults.forEach((r) => {
+        if (!resultsByRole[r.role_id]) {
+            resultsByRole[r.role_id] = {
+                role_id: r.role_id,
+                winner_id: null,
+                winner_name: null,
+                winner_avatar: null,
+                candidates: [],
+            };
+        }
+        resultsByRole[r.role_id].candidates.push({
+            id: r.candidate_id,
+            user_id: r.candidate_user_id,
+            name: r.candidate_name,
+            avatar_url: r.candidate_avatar,
+            platform: r.candidate_platform,
+            vote_count: Number(r.vote_count),
+        });
+        // Winner is the one with most votes
+        if (resultsByRole[r.role_id].candidates.length === 1 || 
+            Number(r.vote_count) > (resultsByRole[r.role_id].winner_vote_count || 0)) {
+            resultsByRole[r.role_id].winner_id = r.candidate_id;
+            resultsByRole[r.role_id].winner_name = r.candidate_name;
+            resultsByRole[r.role_id].winner_avatar = r.candidate_avatar;
+            resultsByRole[r.role_id].winner_vote_count = Number(r.vote_count);
+        }
+    });
 
     const myCandidateRoleIds = (candidates || [])
         .filter((c) => c.user_id === user.id)
         .map((c) => c.organization_role_id)
         .filter(Boolean) as string[];
 
-    const candidatesByRole: Record<string, any[]> = {};
-    (candidates || []).forEach((c) => {
-        const key = c.organization_role_id || "other";
-        if (!candidatesByRole[key]) candidatesByRole[key] = [];
-        candidatesByRole[key].push(c);
-    });
-
-    const resultsByRole: Record<string, any[]> = {};
-    electionResults.forEach((r) => {
-        if (!resultsByRole[r.role_id]) resultsByRole[r.role_id] = [];
-        resultsByRole[r.role_id].push(r);
-    });
+    // Nominations can happen in draft, published, and voting phases
+    const canNominate = ["draft", "published", "voting"].includes(election.status);
 
     return (
         <div className="space-y-6 pb-12">
             <Link
                 href="/dashboard/elections"
-                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 ← Back to Elections
             </Link>
 
+            {/* Election header */}
             <div className="rounded-xl border bg-card overflow-hidden">
                 <div className="h-2 bg-gradient-to-r from-[#800000] to-[#C9A227]" />
                 <div className="p-6">
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold">{election.title}</h1>
-                            <p className="text-muted-foreground text-sm mt-1">
+                            <Link 
+                                href={`/dashboard/organizations/${election.organization_id}`}
+                                className="text-muted-foreground text-sm mt-1 hover:text-primary transition-colors"
+                            >
                                 {election.organizations?.name || "Unknown Organization"}
-                            </p>
+                            </Link>
                             {election.description && (
                                 <p className="text-sm text-muted-foreground mt-2">{election.description}</p>
                             )}
@@ -178,81 +239,66 @@ export default async function ElectionDetailPage({ params }: Props) {
                 </div>
             </div>
 
+            {/* Admin controls */}
+            {canManage && (
+                <ElectionAdminControls
+                    electionId={id}
+                    status={election.status}
+                />
+            )}
+
+            {/* Actions bar */}
             <div className="flex flex-wrap items-center gap-3">
                 {/* Officers can nominate (not admin) */}
-                {isOfficer && !isAdmin && isVotingOpen && (
+                {isOfficer && !isAdmin && canNominate && (
                     <NominateDialog
                         electionId={id}
-                        roles={availableRoles}
+                        roles={rolesWithAssignments.map(r => ({ id: r.id, title: r.title }))}
                         alreadyNominated={myCandidateRoleIds}
                     />
                 )}
 
-                {/* Only admin can close election */}
-                {canManage && election.status === "active" && (
-                    <CloseElectionButton electionId={id} />
-                )}
-
-                {/* Only admin can publish results */}
-                {canManage && election.status === "completed" && (
-                    <PublishResultsButton electionId={id} />
-                )}
-
                 {/* Admin info notice */}
                 {isAdmin && isVotingOpen && (
-                    <div className="px-4 py-2 rounded-lg bg-gray-100 border border-gray-200 text-sm text-gray-600 flex items-center gap-2">
+                    <div className="px-4 py-2 rounded-lg bg-muted border border-border text-sm text-muted-foreground flex items-center gap-2">
                         <span>🔒</span> Admins cannot vote or nominate in elections.
                     </div>
                 )}
             </div>
 
+            {/* Election Board */}
             <div className="space-y-6">
                 <h2 className="text-lg font-semibold">
-                    {showVotingResults ? "Results by Role" : "Candidates by Role"}
+                    {isClosed ? "Election Results" : "Election Board"}
                 </h2>
 
-                {availableRoles.length === 0 ? (
-                    <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
-                        <p className="text-sm">No roles have been assigned to this election yet.</p>
-                        <p className="text-xs mt-1">Candidates need to nominate themselves for specific organization roles.</p>
-                    </div>
-                ) : (
-                    availableRoles.map((role) => {
-                        const roleCandidates = showVotingResults
-                            ? (resultsByRole[role.id] || []).map((r) => ({
-                                id: r.candidate_id,
-                                user_id: r.candidate_user_id,
-                                name: r.candidate_name,
-                                avatar_url: r.candidate_avatar,
-                                platform: r.candidate_platform,
-                                vote_count: Number(r.vote_count),
-                            }))
-                            : (candidatesByRole[role.id] || []).map((c) => ({
-                                id: c.id,
-                                user_id: c.user_id,
-                                name: c.profiles?.full_name || "Unknown",
-                                avatar_url: c.profiles?.avatar_url || null,
-                                platform: c.platform,
-                            }));
-
-                        return (
-                            <VotingDialog
-                                key={role.id}
-                                electionId={id}
-                                roleId={role.id}
-                                roleTitle={role.title}
-                                candidates={roleCandidates}
-                                hasVoted={votedRoles.includes(role.id)}
-                                isOfficer={isOfficer}
-                                isAdmin={isAdmin}
-                                isClosed={showVotingResults}
-                                isVotingOpen={isVotingOpen}
-                                currentUserId={user.id}
-                            />
-                        );
-                    })
-                )}
+                <ElectionBoard
+                    electionId={id}
+                    roles={rolesWithAssignments}
+                    candidatesByRole={candidatesByRole}
+                    resultsByRole={isClosed ? resultsByRole : undefined}
+                    votedRoles={votedRoles}
+                    currentUserId={user.id}
+                    isVotingOpen={isVotingOpen}
+                    isClosed={isClosed}
+                    isOfficer={isOfficer}
+                    isAdmin={isAdmin}
+                    organizationId={election.organization_id}
+                    members={orgMembers}
+                    canNominate={canNominate}
+                    alreadyNominated={myCandidateRoleIds}
+                />
             </div>
+
+            {/* Results analytics section */}
+            {isClosed && (
+                <ElectionResultsSection
+                    electionId={id}
+                    electionTitle={election.title}
+                    resultsByRole={resultsByRole}
+                    roles={rolesWithAssignments}
+                />
+            )}
         </div>
     );
 }

@@ -4,7 +4,8 @@ export type MembershipStatus = "pending" | "approved";
 export type OrgVisibility = "public" | "private";
 export type AccreditationStatus = "pending" | "approved" | "rejected" | "expired";
 export type EventStatus = "draft" | "published" | "cancelled" | "completed";
-export type ElectionStatus = "draft" | "active" | "closed";
+export type ElectionStatus = "draft" | "published" | "voting" | "closed";
+export type NotificationStatus = "unread" | "read" | "archived";
 export type ParticipationStatus = "registered" | "attended" | "absent";
 export type NewsStatus = "draft" | "pending" | "published" | "rejected";
 
@@ -153,4 +154,15 @@ export interface News {
     published_at: string | null;
     organizations?: Organization;
     creator?: Profile;
+}
+
+export interface Notification {
+    id: string;
+    user_id: string;
+    type: string;
+    title: string;
+    message: string | null;
+    link: string | null;
+    status: NotificationStatus;
+    created_at: string;
 }

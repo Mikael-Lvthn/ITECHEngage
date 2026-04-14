@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { getHomepagePublicData } from "@/lib/homepage-data";
+import { getHomepagePublicData, getHomepageElectionsWithFollowStatus } from "@/lib/homepage-data";
 import UserMenu from "@/components/UserMenu";
 import HomepageSearch from "@/components/HomepageSearch";
+import HomepageElectionsSection from "@/components/HomepageElectionsSection";
 
 export default async function HomePage() {
     const supabase = await createClient();
@@ -19,13 +20,19 @@ export default async function HomePage() {
     ] = await Promise.all([userResultPromise, homepageDataPromise]);
 
     let profile: { full_name: string; role: string } | null = null;
+    let electionsWithFollow = activeElections;
+    
     if (user) {
-        const { data } = await supabase
-            .from("profiles")
-            .select("full_name, role")
-            .eq("id", user.id)
-            .single();
-        profile = data;
+        const [profileData, followedElections] = await Promise.all([
+            supabase
+                .from("profiles")
+                .select("full_name, role")
+                .eq("id", user.id)
+                .single(),
+            getHomepageElectionsWithFollowStatus(user.id),
+        ]);
+        profile = profileData.data;
+        electionsWithFollow = followedElections;
     }
 
     return (
@@ -168,53 +175,8 @@ export default async function HomePage() {
                 ))}
             </section>
 
-            {/* ═══ Live Elections ═══ */}
-            {activeElections && activeElections.length > 0 && (
-                <section id="elections" className="max-w-5xl mx-auto px-6 mt-14">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-[#2B2B2B]">
-                            Live Elections
-                        </h2>
-                        <span className="flex items-center gap-2 text-sm text-[#800000] font-semibold animate-pulse">
-                            <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span> Active Now
-                        </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {activeElections.map((election) => {
-                            const now = new Date();
-                            const start = new Date(election.start_date);
-                            const end = election.end_date ? new Date(election.end_date) : null;
-                            const isVotingOpen = election.status === "active" && now >= start && (!end || now <= end);
-                            const statusColor = isVotingOpen ? "bg-green-100 text-green-700" : "bg-purple-100 text-purple-700";
-                            const statusLabel = isVotingOpen ? "Voting Open" : "Completed";
-
-                            return (
-                                <Link
-                                    key={election.id}
-                                    href={user ? `/dashboard/elections/${election.id}` : "/login"}
-                                    className="block p-5 rounded-xl border border-primary/20 bg-white hover:border-primary/50 hover:shadow-md transition-all group relative overflow-hidden"
-                                >
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#800000] to-[#C9A227]"></div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${statusColor}`}>
-                                            {statusLabel}
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground truncate">
-                                            {election.organizations && typeof election.organizations === 'object' && !Array.isArray(election.organizations) ? (election.organizations as { name?: string }).name : ""}
-                                        </span>
-                                    </div>
-                                    <h3 className="font-bold text-[#2B2B2B] text-lg leading-tight group-hover:text-[#800000] transition-colors mb-2">
-                                        {election.title}
-                                    </h3>
-                                    <p className="text-xs text-[#6E6E6E] flex items-center gap-1.5">
-                                        <span>⏳</span> {end ? end.toLocaleDateString() : "Ongoing"}
-                                    </p>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </section>
-            )}
+            {/* ═══ Ongoing Elections ═══ */}
+            <HomepageElectionsSection elections={electionsWithFollow} isLoggedIn={!!user} />
 
             {/* ═══ Events ═══ */}
             <section id="events" className="max-w-5xl mx-auto px-6 mt-14">

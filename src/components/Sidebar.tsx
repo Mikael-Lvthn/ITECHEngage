@@ -99,13 +99,17 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
 
     useEffect(() => {
         const supabase = createClient();
-        supabase
-            .from("notifications")
-            .select("*", { count: "exact", head: true })
-            .eq("is_read", false)
-            .then(({ count }) => {
-                setUnreadCount(count || 0);
-            });
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) return;
+            supabase
+                .from("notifications")
+                .select("*", { count: "exact", head: true })
+                .eq("user_id", user.id)
+                .eq("status", "unread")
+                .then(({ count }) => {
+                    setUnreadCount(count || 0);
+                });
+        });
     }, [pathname]);
 
     const filteredNavItems = navItems.filter((item) =>

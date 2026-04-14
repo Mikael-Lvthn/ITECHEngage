@@ -2,8 +2,9 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { markAsRead } from "@/lib/actions/notifications";
-import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { markAsRead, archiveNotification } from "@/lib/actions/notifications";
+import { Loader2, Archive } from "lucide-react";
 
 interface Notification {
     id: string;
@@ -11,25 +12,42 @@ interface Notification {
     title: string;
     message: string | null;
     link: string | null;
-    is_read: boolean;
+    status: "unread" | "read" | "archived";
     created_at: string;
 }
 
 export default function NotificationItem({ notification }: { notification: Notification }) {
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
 
-    const handleMarkAsRead = (e: React.MouseEvent) => {
+    const isUnread = notification.status === "unread";
+
+    const handleClick = () => {
+        // Mark as read when clicking
+        if (isUnread && !isPending) {
+            startTransition(() => {
+                markAsRead(notification.id).catch(console.error);
+            });
+        }
+        // Navigate to linked content
+        if (notification.link) {
+            router.push(notification.link);
+        }
+    };
+
+    const handleArchive = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (notification.is_read || isPending) return;
+        if (isPending) return;
         
         startTransition(() => {
-            markAsRead(notification.id).catch(console.error);
+            archiveNotification(notification.id).catch(console.error);
         });
     };
 
     const iconMap: Record<string, string> = {
         election_started: "🗳️",
+        election_results: "📊",
         event_created: "📅",
         news_published: "📰",
         membership_approved: "✅",
@@ -38,36 +56,25 @@ export default function NotificationItem({ notification }: { notification: Notif
     };
 
     const icon = iconMap[notification.type] || "🔔";
-    
-    const Wrapper = ({ children, className }: { children: React.ReactNode, className: string }) => {
-        if (notification.link) {
-            return (
-                <Link href={notification.link} className={className} onClick={() => {
-                    if (!notification.is_read) startTransition(() => { markAsRead(notification.id).catch(console.error); });
-                }}>
-                    {children}
-                </Link>
-            );
-        }
-        return <div className={className}>{children}</div>;
-    };
 
     return (
-        <Wrapper className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
-            !notification.is_read 
-                ? "bg-[#C9A227]/5 border-[#C9A227]/30 hover:bg-[#C9A227]/10" 
-                : "bg-white border-gray-100 hover:bg-gray-50"
-        } ${notification.link ? "cursor-pointer" : ""}`}>
-            
+        <div
+            onClick={handleClick}
+            className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
+                isUnread
+                    ? "bg-[#C9A227]/5 border-[#C9A227]/30 hover:bg-[#C9A227]/10"
+                    : "bg-white border-gray-100 hover:bg-gray-50"
+            }`}
+        >
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg ${
-                !notification.is_read ? "bg-[#C9A227] text-[#2B2B2B]" : "bg-gray-100 text-gray-500"
+                isUnread ? "bg-[#C9A227] text-[#2B2B2B]" : "bg-gray-100 text-gray-500"
             }`}>
                 {icon}
             </div>
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className={`text-sm font-semibold truncate ${!notification.is_read ? "text-[#800000]" : "text-gray-900"}`}>
+                    <h3 className={`text-sm font-semibold truncate ${isUnread ? "text-[#800000]" : "text-gray-900"}`}>
                         {notification.title}
                     </h3>
                     <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
@@ -76,29 +83,38 @@ export default function NotificationItem({ notification }: { notification: Notif
                 </div>
                 
                 {notification.message && (
-                    <p className={`text-sm mt-1 line-clamp-2 ${!notification.is_read ? "text-gray-700" : "text-gray-500"}`}>
+                    <p className={`text-sm mt-1 line-clamp-2 ${isUnread ? "text-gray-700" : "text-gray-500"}`}>
                         {notification.message}
+                    </p>
+                )}
+
+                {notification.link && (
+                    <p className="text-xs text-[#800000]/70 mt-2 flex items-center gap-1">
+                        <span>→</span> Click to view
                     </p>
                 )}
             </div>
 
-            {!notification.is_read && (
-                <button 
-                    onClick={handleMarkAsRead}
-                    disabled={isPending}
-                    className="shrink-0 p-1.5 rounded-full text-[#C9A227] hover:bg-[#C9A227]/10 hover:text-[#B8911E] transition-colors tooltip-trigger"
-                    title="Mark as read"
-                >
-                    <span className="sr-only">Mark as read</span>
-                    {isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-[#C9A227]" aria-hidden="true" />
-                    ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                    )}
-                </button>
-            )}
-        </Wrapper>
+            <div className="flex items-center gap-2 shrink-0">
+                {isUnread && (
+                    <span className="w-2 h-2 rounded-full bg-[#C9A227]" title="Unread" />
+                )}
+                
+                {notification.status !== "archived" && (
+                    <button 
+                        onClick={handleArchive}
+                        disabled={isPending}
+                        className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                        title="Archive"
+                    >
+                        {isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                            <Archive className="w-4 h-4" aria-hidden="true" />
+                        )}
+                    </button>
+                )}
+            </div>
+        </div>
     );
 }

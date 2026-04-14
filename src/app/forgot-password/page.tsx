@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
         router.push("/reset-password");
     };
 
-    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-white px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
+    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
 
     return (
         <div className="min-h-screen flex flex-col bg-[#FAFAFA]">

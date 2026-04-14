@@ -7,6 +7,7 @@ import OrgChart from "@/components/org-chart/OrgChart";
 import OrgRolesManager from "@/components/org-chart/OrgRolesManager";
 import OrgDetailTabs from "./OrgDetailTabs";
 import FollowButton from "@/components/organizations/FollowButton";
+import ElectionsTabContent from "./ElectionsTabContent";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -141,17 +142,24 @@ export default async function OrganizationDetailPage({ params }: Props) {
         parent_role_id: r.parent_role_id || null,
     }));
 
+    // Fetch elections for this organization
+    const { data: elections } = await supabase
+        .from("elections")
+        .select("*")
+        .eq("organization_id", id)
+        .order("created_at", { ascending: false });
+
     return (
         <div className="space-y-6 pb-12">
             <Link
                 href="/dashboard/organizations"
-                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 ← Back to Organizations
             </Link>
 
-            <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-                <div className="h-44 md:h-56 bg-gray-200 relative">
+            <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <div className="h-44 md:h-56 bg-muted relative">
                     {org.cover_photo_url ? (
                         <img src={org.cover_photo_url} alt="Cover" className="w-full h-full object-cover" />
                     ) : (
@@ -161,7 +169,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
                 <div className="px-6 pb-6 relative">
                     <div className="flex items-end -mt-14 mb-4">
-                        <div className="w-28 h-28 rounded-2xl border-4 border-white bg-white shrink-0 overflow-hidden shadow-lg z-10">
+                        <div className="w-28 h-28 rounded-2xl border-4 border-card bg-card shrink-0 overflow-hidden shadow-lg z-10">
                             {org.logo_url ? (
                                 <img src={org.logo_url} alt="Logo" className="w-full h-full object-cover" />
                             ) : (
@@ -172,9 +180,9 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">{org.name}</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">{org.name}</h1>
                             {org.description && (
-                                <p className="text-gray-500 mt-1.5 text-sm md:text-base max-w-2xl line-clamp-2">{org.description}</p>
+                                <p className="text-muted-foreground mt-1.5 text-sm md:text-base max-w-2xl line-clamp-2">{org.description}</p>
                             )}
                         </div>
 
@@ -183,17 +191,17 @@ export default async function OrganizationDetailPage({ params }: Props) {
                             {isOfficer && (
                                 <Link
                                     href={`/dashboard/organizations/${id}/members`}
-                                    className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-gray-50 transition-colors bg-white shadow-sm"
+                                    className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors bg-card shadow-sm"
                                 >
                                     Manage Members
                                 </Link>
                             )}
                             {isAdmin ? (
-                                <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-semibold border border-gray-200">
+                                <div className="px-4 py-2 bg-muted text-muted-foreground rounded-lg text-sm font-semibold border border-border">
                                     Admin View
                                 </div>
                             ) : (
-                                <div className="bg-white rounded-lg shadow-sm">
+                                <div className="bg-card rounded-lg shadow-sm">
                                     <JoinButton
                                         organizationId={org.id}
                                         membershipStatus={membershipStatus as "none" | "pending" | "approved"}
@@ -204,11 +212,11 @@ export default async function OrganizationDetailPage({ params }: Props) {
                     </div>
 
                     <div className="flex items-center gap-4 text-sm mt-5 border-t pt-4">
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                            <span className="font-semibold text-gray-900">{memberCount ?? 0}</span> member{memberCount !== 1 ? "s" : ""}
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <span className="font-semibold text-foreground">{memberCount ?? 0}</span> member{memberCount !== 1 ? "s" : ""}
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                            <span className="font-semibold text-gray-900">{followerCount ?? 0}</span> follower{followerCount !== 1 ? "s" : ""}
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <span className="font-semibold text-foreground">{followerCount ?? 0}</span> follower{followerCount !== 1 ? "s" : ""}
                         </div>
                         <div className="flex items-center gap-1.5">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider ${org.accreditation_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
@@ -227,25 +235,25 @@ export default async function OrganizationDetailPage({ params }: Props) {
                 aboutContent={
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="space-y-6">
-                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                            <div className="rounded-xl border bg-card p-6 shadow-sm">
                                 <h2 className="text-lg font-bold mb-4">About</h2>
 
                                 <div className="space-y-4">
                                     {org.mission && (
                                         <div>
-                                            <h3 className="text-sm font-semibold text-gray-900">Mission</h3>
+                                            <h3 className="text-sm font-semibold text-foreground">Mission</h3>
                                             <p className="text-sm text-gray-600 mt-1">{org.mission}</p>
                                         </div>
                                     )}
                                     {org.vision && (
                                         <div>
-                                            <h3 className="text-sm font-semibold text-gray-900">Vision</h3>
+                                            <h3 className="text-sm font-semibold text-foreground">Vision</h3>
                                             <p className="text-sm text-gray-600 mt-1">{org.vision}</p>
                                         </div>
                                     )}
                                     {org.core_values && (
                                         <div>
-                                            <h3 className="text-sm font-semibold text-gray-900">Core Values</h3>
+                                            <h3 className="text-sm font-semibold text-foreground">Core Values</h3>
                                             <p className="text-sm text-gray-600 mt-1">{org.core_values}</p>
                                         </div>
                                     )}
@@ -264,7 +272,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         </div>
 
                         <div className="lg:col-span-2 space-y-6">
-                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                            <div className="rounded-xl border bg-card p-6 shadow-sm">
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-bold">Upcoming Events</h2>
                                 </div>
@@ -292,7 +300,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                 )}
                             </div>
 
-                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                            <div className="rounded-xl border bg-card p-6 shadow-sm">
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-bold">Latest News</h2>
                                 </div>
@@ -326,7 +334,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                 }
                 structureContent={
                     <div className="space-y-6">
-                        <div className="rounded-xl border bg-white p-6 shadow-sm">
+                        <div className="rounded-xl border bg-card p-6 shadow-sm">
                             <h2 className="text-lg font-bold mb-6">Organizational Structure</h2>
                             <OrgChart roles={chartRoles} orgName={org.name} />
                         </div>
@@ -339,6 +347,17 @@ export default async function OrganizationDetailPage({ params }: Props) {
                             />
                         )}
                     </div>
+                }
+                electionsContent={
+                    <ElectionsTabContent
+                        organizationId={id}
+                        organizationName={org.name}
+                        elections={elections || []}
+                        roles={managerRoles}
+                        members={orgMembers}
+                        isAdmin={isAdmin}
+                        canManageRoles={canManageRoles}
+                    />
                 }
             />
         </div>

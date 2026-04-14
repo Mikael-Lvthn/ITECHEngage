@@ -84,8 +84,14 @@ export default async function ElectionsPage() {
         manageableOrgs = orgs || [];
     }
 
-    const activeElections = visibleElections.filter((e) => e.status === "active");
+    // Group elections by status for display
+    const draftElections = visibleElections.filter((e) => e.status === "draft");
+    const publishedElections = visibleElections.filter((e) => e.status === "published");
+    const votingElections = visibleElections.filter((e) => e.status === "voting");
     const closedElections = visibleElections.filter((e) => e.status === "closed");
+    
+    // "Active" means voting or published (visible/ongoing)
+    const activeElections = [...votingElections, ...publishedElections];
 
     return (
         <div className="space-y-6">
@@ -107,21 +113,34 @@ export default async function ElectionsPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                {isAdmin && (
+                    <div className="rounded-xl border bg-card p-5 card-hover">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
+                                <span className="text-lg">📝</span>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Draft</p>
+                                <p className="text-2xl font-bold mt-0.5">{draftElections.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="rounded-xl border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
                             <span className="text-lg">🗳️</span>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active</p>
-                            <p className="text-2xl font-bold mt-0.5">{activeElections.length}</p>
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Voting</p>
+                            <p className="text-2xl font-bold mt-0.5">{votingElections.length}</p>
                         </div>
                     </div>
                 </div>
                 <div className="rounded-xl border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
                             <span className="text-lg">📊</span>
                         </div>
                         <div>
@@ -143,14 +162,15 @@ export default async function ElectionsPage() {
                 </div>
             </div>
 
-            {activeElections.length > 0 && (
+            {/* Draft Elections - Admin only */}
+            {isAdmin && draftElections.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        Active Elections
+                        <span className="w-2 h-2 rounded-full bg-gray-400" />
+                        Draft Elections
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {activeElections.map((election, i) => (
+                        {draftElections.map((election, i) => (
                             <ElectionCard
                                 key={election.id}
                                 id={election.id}
@@ -169,6 +189,61 @@ export default async function ElectionsPage() {
                 </div>
             )}
 
+            {/* Voting Elections */}
+            {votingElections.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        Voting Open
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {votingElections.map((election, i) => (
+                            <ElectionCard
+                                key={election.id}
+                                id={election.id}
+                                title={election.title}
+                                description={election.description}
+                                orgName={election.organizations?.name || "Unknown Org"}
+                                startDate={election.start_date}
+                                endDate={election.end_date}
+                                status={election.status}
+                                candidateCount={candidateCounts[election.id] || 0}
+                                roleCount={roleCounts[election.id] || 0}
+                                index={i}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Published Elections */}
+            {publishedElections.length > 0 && (
+                <div>
+                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        Published (Nominations Open)
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {publishedElections.map((election, i) => (
+                            <ElectionCard
+                                key={election.id}
+                                id={election.id}
+                                title={election.title}
+                                description={election.description}
+                                orgName={election.organizations?.name || "Unknown Org"}
+                                startDate={election.start_date}
+                                endDate={election.end_date}
+                                status={election.status}
+                                candidateCount={candidateCounts[election.id] || 0}
+                                roleCount={roleCounts[election.id] || 0}
+                                index={i}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Closed Elections */}
             {closedElections.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-4">Past Elections</h2>

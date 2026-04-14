@@ -145,3 +145,93 @@ export async function deleteEvent(eventId: string) {
     revalidatePath("/dashboard/news-and-events");
     revalidatePath("/");
 }
+
+export async function registerForEvent(eventId: string) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    const { error } = await supabase
+        .from("event_participations")
+        .insert({
+            event_id: eventId,
+            user_id: user.id,
+            status: "registered",
+        });
+
+    if (error) {
+        if (error.code === "23505") {
+            throw new Error("You are already registered for this event");
+        }
+        throw new Error(error.message);
+    }
+
+    revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/news-and-events");
+}
+
+export async function unregisterFromEvent(eventId: string) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    const { error } = await supabase
+        .from("event_participations")
+        .delete()
+        .eq("event_id", eventId)
+        .eq("user_id", user.id);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/news-and-events");
+}
+
+export async function updateParticipationStatus(
+    participationId: string,
+    status: "registered" | "attended" | "absent",
+    orgId: string
+) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    // Check if admin
+    const { data: role } = await supabase.rpc("get_my_role");
+    const isAdmin = role === "admin";
+
+    if (!isAdmin) {
+        // Check if officer of this org
+        const { data: membership } = await supabase
+            .from("memberships")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("organization_id", orgId)
+            .eq("role", "officer")
+            .eq("status", "approved")
+            .maybeSingle();
+
+        if (!membership) {
+            throw new Error("Only officers or admins can update participation status");
+        }
+    }
+
+    const { error } = await supabase
+        .from("event_participations")
+        .update({ status })
+        .eq("id", participationId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/news-and-events");
+}
