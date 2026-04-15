@@ -336,7 +336,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                     <div className="space-y-6">
                         <div className="rounded-xl border bg-card p-6 shadow-sm">
                             <h2 className="text-lg font-bold mb-6">Organizational Structure</h2>
-                            <OrgChart roles={chartRoles} orgName={org.name} />
+                            <OrgChart roles={chartRoles} orgName={org.name} canDownload={isAdmin || isOfficer} />
                         </div>
 
                         {canManageRoles && (
@@ -356,6 +356,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         roles={managerRoles}
                         members={orgMembers}
                         isAdmin={isAdmin}
+                        isOfficer={isOfficer}
                         canManageRoles={canManageRoles}
                     />
                 }

@@ -30,6 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local reports / outputs
+build_output.txt
+lint_output.txt
+eslint_out.json
+eslint_report.json
+
 # env files (can opt-in for committing if needed)
 .env*
 

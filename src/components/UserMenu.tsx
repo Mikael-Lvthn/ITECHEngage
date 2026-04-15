@@ -52,9 +52,9 @@ export default function UserMenu({ userName, userRole }: UserMenuProps) {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white shadow-xl border border-border overflow-hidden animate-scale-in z-50">
+                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-popover shadow-xl border border-border overflow-hidden animate-scale-in z-50">
                     <div className="px-4 py-3 border-b border-border">
-                        <p className="text-sm font-semibold text-[#2B2B2B]">{userName}</p>
+                        <p className="text-sm font-semibold text-popover-foreground">{userName}</p>
                         <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#800000]/10 text-[#800000] capitalize">
                             {userRole}
                         </span>
@@ -63,7 +63,7 @@ export default function UserMenu({ userName, userRole }: UserMenuProps) {
                         <Link
                             href="/dashboard"
                             onClick={() => setOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-[#2B2B2B] rounded-md hover:bg-[#F0F0F0] transition-colors"
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground rounded-md hover:bg-accent transition-colors"
                         >
                             <span className="text-base">📊</span>
                             Dashboard

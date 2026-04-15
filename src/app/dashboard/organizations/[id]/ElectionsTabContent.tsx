@@ -36,6 +36,7 @@ interface ElectionsTabContentProps {
     roles: OrgRole[];
     members: Member[];
     isAdmin: boolean;
+    isOfficer: boolean;
     canManageRoles: boolean;
 }
 
@@ -46,6 +47,7 @@ export default function ElectionsTabContent({
     roles,
     members,
     isAdmin,
+    isOfficer,
     canManageRoles,
 }: ElectionsTabContentProps) {
     const [isPending, startTransition] = useTransition();
@@ -111,7 +113,15 @@ export default function ElectionsTabContent({
     };
 
     // Sort elections: voting first, then published, then draft, then closed
-    const sortedElections = [...elections].sort((a, b) => {
+    // Filter draft elections: only visible to admins and officers of this org
+    const visibleElections = elections.filter((election) => {
+        if (election.status === "draft") {
+            return isAdmin || isOfficer;
+        }
+        return true;
+    });
+
+    const sortedElections = [...visibleElections].sort((a, b) => {
         const order = { voting: 0, published: 1, draft: 2, closed: 3 };
         return (order[a.status] ?? 4) - (order[b.status] ?? 4);
     });
@@ -214,7 +224,7 @@ export default function ElectionsTabContent({
 
                                     <Link
                                         href={`/dashboard/elections/${election.id}`}
-                                        className="px-3 py-1.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors"
+                                        className="px-3 py-1.5 text-sm font-medium border rounded-lg hover:bg-accent transition-colors"
                                     >
                                         View Details
                                     </Link>

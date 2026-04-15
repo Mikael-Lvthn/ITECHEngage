@@ -75,6 +75,30 @@ export async function publishElection(electionId: string) {
         throw new Error("Only draft elections can be published.");
     }
 
+    // Verify all unassigned roles have at least one nominee
+    const { data: orgRoles } = await supabase
+        .from("organization_roles")
+        .select("id, title, assigned_user_id")
+        .eq("organization_id", election.organization_id);
+
+    const { data: candidates } = await supabase
+        .from("candidates")
+        .select("organization_role_id")
+        .eq("election_id", electionId);
+
+    const candidateRoleIds = new Set((candidates || []).map((c) => c.organization_role_id));
+
+    const unfilledRoles = (orgRoles || []).filter(
+        (r) => !r.assigned_user_id && !candidateRoleIds.has(r.id)
+    );
+
+    if (unfilledRoles.length > 0) {
+        const names = unfilledRoles.map((r) => r.title).join(", ");
+        throw new Error(
+            `Cannot publish: the following roles have no nominees — ${names}. All unassigned roles must have at least one nominee before publishing.`
+        );
+    }
+
     // Transition from draft to published - visible on Homepage
     const { error } = await supabase
         .from("elections")
@@ -258,6 +282,67 @@ export async function castVote(electionId: string, candidateId: string, organiza
     const result = data as { error?: string; success?: boolean };
     if (result.error) {
         throw new Error(result.error);
+    }
+
+    // ── Auto-close check ──
+    // After a successful vote, determine if all members have voted for every
+    // votable role.  Directly-assigned roles are exempt from vote counting.
+    try {
+        // 1. Total approved members in the organization
+        const { count: memberCount } = await supabase
+            .from("memberships")
+            .select("*", { count: "exact", head: true })
+            .eq("organization_id", election.organization_id)
+            .eq("status", "approved");
+
+        if (memberCount && memberCount > 0) {
+            // 2. Get org roles that are NOT directly assigned (i.e. need voting)
+            const { data: orgRoles } = await supabase
+                .from("organization_roles")
+                .select("id, assigned_user_id")
+                .eq("organization_id", election.organization_id);
+
+            const votableRoleIds = (orgRoles || [])
+                .filter((r) => !r.assigned_user_id)
+                .map((r) => r.id);
+
+            if (votableRoleIds.length > 0) {
+                // 3. For each votable role, count total votes cast in this election
+                const { data: voteCounts } = await supabase
+                    .from("votes")
+                    .select("organization_role_id")
+                    .eq("election_id", electionId)
+                    .in("organization_role_id", votableRoleIds);
+
+                // Group vote counts by role
+                const countByRole = new Map<string, number>();
+                (voteCounts || []).forEach((v) => {
+                    countByRole.set(
+                        v.organization_role_id,
+                        (countByRole.get(v.organization_role_id) || 0) + 1
+                    );
+                });
+
+                // 4. Check if every votable role has exactly memberCount votes
+                const allComplete = votableRoleIds.every(
+                    (roleId) => (countByRole.get(roleId) || 0) >= memberCount
+                );
+
+                if (allComplete) {
+                    // Auto-close the election
+                    await supabase
+                        .from("elections")
+                        .update({ status: "closed", end_date: new Date().toISOString() })
+                        .eq("id", electionId);
+
+                    revalidatePath(`/dashboard/organizations/${election.organization_id}`);
+                    revalidatePath("/");
+                }
+            }
+        }
+    } catch (autoCloseErr) {
+        // Don't fail the vote if auto-close check errors — the vote was already recorded
+        console.error("Auto-close check failed:", autoCloseErr);
     }
 
     revalidatePath(`/dashboard/elections/${electionId}`);

@@ -37,9 +37,6 @@ export async function createOrganization(formData: FormData) {
     if (!name || name.trim().length === 0) {
         throw new Error("Organization name is required");
     }
-    if (!initial_student_id) {
-        throw new Error("An initial student must be selected.");
-    }
     if (!logo_url || !cover_photo_url || !mission || !vision || !core_values) {
         throw new Error("Logo, cover photo, mission, vision, and core values are required.");
     }
@@ -58,30 +55,32 @@ export async function createOrganization(formData: FormData) {
 
     if (orgError) throw new Error(orgError.message);
 
-    const { error: membershipError } = await supabase.from("memberships").insert({
-        user_id: initial_student_id,
-        organization_id: orgData.id,
-        role: "officer",
-        status: "approved"
-    });
+    // Only create membership + President role if an initial student was selected
+    if (initial_student_id) {
+        const { error: membershipError } = await supabase.from("memberships").insert({
+            user_id: initial_student_id,
+            organization_id: orgData.id,
+            role: "officer",
+            status: "approved"
+        });
 
-    if (membershipError) {
-        await supabase.from("organizations").delete().eq("id", orgData.id);
-        throw new Error("Failed to assign initial student. Organization creation rolled back.");
-    }
+        if (membershipError) {
+            await supabase.from("organizations").delete().eq("id", orgData.id);
+            throw new Error("Failed to assign initial student. Organization creation rolled back.");
+        }
 
-    // Phase 2: Create initial President role and assign to initial student
-    const { error: roleError } = await supabase.from("organization_roles").insert({
-        organization_id: orgData.id,
-        title: "President",
-        hierarchy_level: 1,
-        can_manage_roles: true,
-        assigned_user_id: initial_student_id,
-    });
+        // Create initial President role and assign to initial student
+        const { error: roleError } = await supabase.from("organization_roles").insert({
+            organization_id: orgData.id,
+            title: "President",
+            hierarchy_level: 1,
+            can_manage_roles: true,
+            assigned_user_id: initial_student_id,
+        });
 
-    if (roleError) {
-        // We won't rollback the whole org just for the role, but we'll log it
-        console.error("Failed to create initial President role:", roleError);
+        if (roleError) {
+            console.error("Failed to create initial President role:", roleError);
+        }
     }
 
     revalidatePath("/dashboard/admin");

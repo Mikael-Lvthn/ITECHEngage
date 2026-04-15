@@ -207,10 +207,10 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 </button>
 
                 {showMenu && (
-                    <div className="absolute bottom-full left-3 right-3 mb-2 rounded-lg bg-white shadow-xl border border-border overflow-hidden animate-scale-in">
+                    <div className="absolute bottom-full left-3 right-3 mb-2 rounded-lg bg-popover shadow-xl border border-border overflow-hidden animate-scale-in">
                         <div className="px-4 py-3 border-b border-border">
-                            <p className="text-sm font-semibold text-[#2B2B2B]">{userName}</p>
-                            <p className="text-xs text-[#6E6E6E]">{userEmail}</p>
+                            <p className="text-sm font-semibold text-popover-foreground">{userName}</p>
+                            <p className="text-xs text-muted-foreground">{userEmail}</p>
                             <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#800000]/10 text-[#800000] capitalize">
                                 {userRole}
                             </span>
@@ -219,7 +219,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                             <Link
                                 href="/"
                                 onClick={() => setShowMenu(false)}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#2B2B2B] rounded-md hover:bg-[#F0F0F0] transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground rounded-md hover:bg-accent transition-colors"
                             >
                                 <span className="text-base">🏠</span>
                                 Go to Homepage
@@ -227,7 +227,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                             <Link
                                 href="/dashboard/profile"
                                 onClick={() => setShowMenu(false)}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#2B2B2B] rounded-md hover:bg-[#F0F0F0] transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground rounded-md hover:bg-accent transition-colors"
                             >
                                 <span className="text-base">👤</span>
                                 My Profile

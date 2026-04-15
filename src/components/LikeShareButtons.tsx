@@ -82,8 +82,8 @@ export default function LikeShareButtons({
                 onClick={handleLike}
                 disabled={loading}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${liked
-                    ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-                    : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-red-500"
+                    ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                    : "bg-card border-border text-muted-foreground hover:bg-accent hover:text-red-500"
                     } disabled:opacity-50`}
             >
                 <svg
@@ -104,7 +104,7 @@ export default function LikeShareButtons({
 
             <button
                 onClick={handleShare}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-900 transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-muted-foreground bg-card hover:bg-accent hover:text-foreground transition-all"
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path

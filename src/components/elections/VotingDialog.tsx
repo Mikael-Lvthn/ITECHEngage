@@ -223,7 +223,7 @@ export default function VotingDialog({
                                     <button
                                         onClick={() => setShowConfirm(false)}
                                         disabled={isPending}
-                                        className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-gray-50 transition-colors"
+                                        className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-accent transition-colors"
                                     >
                                         Cancel
                                     </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 
 interface RoleNode {
     id: string;
@@ -16,6 +16,7 @@ interface RoleNode {
 interface OrgChartProps {
     roles: RoleNode[];
     orgName: string;
+    canDownload?: boolean;
 }
 
 interface TreeNode extends RoleNode {
@@ -153,10 +154,12 @@ function SubTree({ node, nodeRefs }: { node: TreeNode; nodeRefs: React.MutableRe
     );
 }
 
-export default function OrgChart({ roles, orgName }: OrgChartProps) {
+export default function OrgChart({ roles, orgName, canDownload = false }: OrgChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const chartContentRef = useRef<HTMLDivElement>(null);
     const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const [hLines, setHLines] = useState<{ top: number; left: number; width: number }[]>([]);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         // Calculate horizontal connector lines
@@ -211,6 +214,42 @@ export default function OrgChart({ roles, orgName }: OrgChartProps) {
         return () => clearTimeout(timeout);
     }, [roles]);
 
+    const handleDownload = useCallback(async () => {
+        if (!chartContentRef.current) return;
+        setDownloading(true);
+
+        try {
+            const html2canvas = (await import("html2canvas")).default;
+
+            // Temporarily expand the container to capture full chart
+            const el = chartContentRef.current;
+            const prevOverflow = el.style.overflow;
+            const prevMaxHeight = el.style.maxHeight;
+            el.style.overflow = "visible";
+            el.style.maxHeight = "none";
+
+            const canvas = await html2canvas(el, {
+                backgroundColor: "#FFFFFF",
+                scale: 2,
+                useCORS: true,
+                logging: false,
+            });
+
+            // Restore
+            el.style.overflow = prevOverflow;
+            el.style.maxHeight = prevMaxHeight;
+
+            const link = document.createElement("a");
+            link.download = `${orgName.replace(/[^a-zA-Z0-9]/g, "_")}_org_structure.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        } catch (err) {
+            console.error("Failed to download org chart:", err);
+        } finally {
+            setDownloading(false);
+        }
+    }, [orgName]);
+
     if (roles.length === 0) {
         return (
             <div className="text-center py-10 text-muted-foreground">
@@ -223,38 +262,75 @@ export default function OrgChart({ roles, orgName }: OrgChartProps) {
     const tree = buildTree(roles);
 
     return (
-        <div className="relative min-h-[200px] max-h-[50vh] md:max-h-[60vh] lg:max-h-[70vh] overflow-y-auto overflow-x-auto" ref={containerRef} style={{ scrollbarWidth: 'thin' }}>
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#800000] to-[#A52A2A] text-white shadow-lg">
-                    <span className="text-lg">🏢</span>
-                    <span className="font-bold text-sm">{orgName}</span>
+        <div>
+            {/* Download button — only visible to admins/officers of this org */}
+            {canDownload && (
+                <div className="flex justify-end mb-4">
+                    <button
+                        onClick={handleDownload}
+                        disabled={downloading}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card text-foreground text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                        {downloading ? (
+                            <>
+                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                Exporting…
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download Structure
+                            </>
+                        )}
+                    </button>
                 </div>
-            </div>
+            )}
 
-            {/* Vertical line from org name to first root */}
-            <div className="flex justify-center mb-2">
-                <div className="w-0.5 h-6 bg-[#800000]/40" />
-            </div>
+            <div
+                ref={(el) => {
+                    (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                    (chartContentRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                }}
+                className="relative min-h-[200px] max-h-[50vh] md:max-h-[60vh] lg:max-h-[70vh] overflow-y-auto overflow-x-auto"
+                style={{ scrollbarWidth: 'thin' }}
+            >
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#800000] to-[#A52A2A] text-white shadow-lg">
+                        <span className="text-lg">🏢</span>
+                        <span className="font-bold text-sm">{orgName}</span>
+                    </div>
+                </div>
 
-            {/* Render tree(s) */}
-            <div className="flex flex-wrap justify-center gap-8 overflow-x-auto pb-4">
-                {tree.map((root) => (
-                    <SubTree key={root.id} node={root} nodeRefs={nodeRefs} />
+                {/* Vertical line from org name to first root */}
+                <div className="flex justify-center mb-2">
+                    <div className="w-0.5 h-6 bg-[#800000]/40" />
+                </div>
+
+                {/* Render tree(s) */}
+                <div className="flex flex-wrap justify-center gap-8 overflow-x-auto pb-4">
+                    {tree.map((root) => (
+                        <SubTree key={root.id} node={root} nodeRefs={nodeRefs} />
+                    ))}
+                </div>
+
+                {/* SVG horizontal connector overlays */}
+                {hLines.map((line, i) => (
+                    <div
+                        key={i}
+                        className="absolute h-0.5 bg-[#800000]/40"
+                        style={{
+                            top: `${line.top}px`,
+                            left: `${line.left}px`,
+                            width: `${line.width}px`,
+                        }}
+                    />
                 ))}
             </div>
-
-            {/* SVG horizontal connector overlays */}
-            {hLines.map((line, i) => (
-                <div
-                    key={i}
-                    className="absolute h-0.5 bg-[#800000]/40"
-                    style={{
-                        top: `${line.top}px`,
-                        left: `${line.left}px`,
-                        width: `${line.width}px`,
-                    }}
-                />
-            ))}
         </div>
     );
 }
