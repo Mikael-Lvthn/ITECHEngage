@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { joinOrganization, leaveOrganization } from "@/lib/actions/organizations";
+import { joinOrganization, requestLeave } from "@/lib/actions/organizations";
 import { LoadingSpinner } from "@/components/loading/LoadingSpinner";
 
 interface JoinButtonProps {
     organizationId: string;
     membershipStatus: "none" | "pending" | "approved";
+    hasLeaveRequest?: boolean;
 }
 
-export default function JoinButton({ organizationId, membershipStatus }: JoinButtonProps) {
+export default function JoinButton({ organizationId, membershipStatus, hasLeaveRequest = false }: JoinButtonProps) {
     const [status, setStatus] = useState(membershipStatus);
     const [loading, setLoading] = useState(false);
+    const [leavePending, setLeavePending] = useState(hasLeaveRequest);
 
     const handleJoin = async () => {
         setLoading(true);
@@ -25,30 +27,37 @@ export default function JoinButton({ organizationId, membershipStatus }: JoinBut
         }
     };
 
-    const handleLeave = async () => {
+    const handleRequestLeave = async () => {
         setLoading(true);
         try {
-            await leaveOrganization(organizationId);
-            setStatus("none");
-            window.location.reload();
-        } catch (err) {
-            console.error(err);
+            await requestLeave(organizationId);
+            setLeavePending(true);
+        } catch (err: any) {
+            console.error(err.message);
         } finally {
             setLoading(false);
         }
     };
 
     if (status === "approved") {
+        if (leavePending) {
+            return (
+                <span className="inline-flex items-center px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-sm font-medium">
+                    ⏳ Leave Pending Approval
+                </span>
+            );
+        }
+
         return (
             <button
-                onClick={handleLeave}
+                onClick={handleRequestLeave}
                 disabled={loading}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
             >
                 {loading ? (
-                    <><LoadingSpinner size="sm" className="text-destructive" /> Leaving…</>
+                    <><LoadingSpinner size="sm" className="text-destructive" /> Requesting…</>
                 ) : (
-                    "Leave Organization"
+                    "Request to Leave"
                 )}
             </button>
         );

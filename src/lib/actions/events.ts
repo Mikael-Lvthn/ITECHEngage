@@ -27,16 +27,16 @@ export async function createEvent(formData: {
     const isAdmin = profile?.role === "admin";
 
     if (!isAdmin) {
-        const { data: membership } = await supabase
-            .from("memberships")
-            .select("id, role")
-            .eq("user_id", user.id)
+        // Check structural roles (organization_roles) instead of memberships.role
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
+            .select("id")
+            .eq("assigned_user_id", user.id)
             .eq("organization_id", formData.organizationId)
-            .eq("role", "officer")
-            .eq("status", "approved")
-            .single();
+            .limit(1)
+            .maybeSingle();
 
-        if (!membership) {
+        if (!structuralRole) {
             throw new Error("Only officers or admins can create events");
         }
     }
@@ -53,6 +53,25 @@ export async function createEvent(formData: {
     });
 
     if (error) throw new Error(error.message);
+
+    // Notify admins about new event submission
+    const { data: admins } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "admin");
+
+    if (admins && admins.length > 0) {
+        await supabase.from("notifications").insert(
+            admins.map((admin) => ({
+                user_id: admin.id,
+                type: "content_submission",
+                title: "New Event Submission",
+                message: `A new event "${formData.title}" has been submitted for review.`,
+                link: "/dashboard/news-and-events",
+                status: "unread",
+            }))
+        );
+    }
 
     revalidatePath("/dashboard/events");
     revalidatePath("/dashboard/news-and-events");
@@ -120,16 +139,16 @@ export async function deleteEvent(eventId: string) {
     if (profile?.role === "admin" || event.created_by === user.id) {
         isAuthorized = true;
     } else {
-        const { data: membership } = await supabase
-            .from("memberships")
+        // Check structural roles (organization_roles) instead of memberships.role
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
             .select("id")
-            .eq("user_id", user.id)
+            .eq("assigned_user_id", user.id)
             .eq("organization_id", event.organization_id)
-            .eq("role", "officer")
-            .eq("status", "approved")
-            .single();
+            .limit(1)
+            .maybeSingle();
 
-        if (membership) isAuthorized = true;
+        if (structuralRole) isAuthorized = true;
     }
 
     if (!isAuthorized) throw new Error("Not authorized to delete this event");
@@ -210,17 +229,16 @@ export async function updateParticipationStatus(
     const isAdmin = role === "admin";
 
     if (!isAdmin) {
-        // Check if officer of this org
-        const { data: membership } = await supabase
-            .from("memberships")
+        // Check structural roles (organization_roles) instead of memberships.role
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
             .select("id")
-            .eq("user_id", user.id)
+            .eq("assigned_user_id", user.id)
             .eq("organization_id", orgId)
-            .eq("role", "officer")
-            .eq("status", "approved")
+            .limit(1)
             .maybeSingle();
 
-        if (!membership) {
+        if (!structuralRole) {
             throw new Error("Only officers or admins can update participation status");
         }
     }

@@ -88,7 +88,7 @@ export default async function ElectionsPage() {
     const draftElections = visibleElections.filter((e) => e.status === "draft");
     const publishedElections = visibleElections.filter((e) => e.status === "published");
     const votingElections = visibleElections.filter((e) => e.status === "voting");
-    const closedElections = visibleElections.filter((e) => e.status === "closed");
+    const closedElections = visibleElections.filter((e) => e.status === "completed");
     
     // "Active" means voting or published (visible/ongoing)
     const activeElections = [...votingElections, ...publishedElections];
@@ -144,7 +144,7 @@ export default async function ElectionsPage() {
                             <span className="text-lg">📊</span>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Closed</p>
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Completed</p>
                             <p className="text-2xl font-bold mt-0.5">{closedElections.length}</p>
                         </div>
                     </div>

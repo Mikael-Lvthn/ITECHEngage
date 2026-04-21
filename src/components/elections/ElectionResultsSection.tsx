@@ -59,6 +59,9 @@ export default function ElectionResultsSection({
                                 const html2pdf = (await import("html2pdf.js")).default;
                                 // Force light mode for PDF export
                                 const el = resultsRef.current;
+                                const htmlEl = document.documentElement;
+                                const wasDark = htmlEl.classList.contains("dark");
+                                if (wasDark) htmlEl.classList.remove("dark");
                                 el.classList.add("pdf-export-light");
                                 await html2pdf()
                                     .set({
@@ -71,6 +74,7 @@ export default function ElectionResultsSection({
                                     .from(el)
                                     .save();
                                 el.classList.remove("pdf-export-light");
+                                if (wasDark) htmlEl.classList.add("dark");
                             }}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#800000]/30 bg-[#800000]/5 text-[#800000] dark:text-[#C9A227] dark:border-[#C9A227]/30 dark:bg-[#C9A227]/5 text-sm font-semibold hover:bg-[#800000]/10 dark:hover:bg-[#C9A227]/10 transition-colors"
                         >
@@ -85,19 +89,19 @@ export default function ElectionResultsSection({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="rounded-lg bg-muted p-4 text-center">
                             <p className="text-3xl font-bold text-[#800000]">{totalVotes}</p>
-                            <p className="text-xs text-gray-500 mt-1">Total Votes Cast</p>
+                            <p className="text-xs text-muted-foreground mt-1">Total Votes Cast</p>
                         </div>
                         <div className="rounded-lg bg-muted p-4 text-center">
                             <p className="text-3xl font-bold text-[#C9A227]">{filledPositions}</p>
-                            <p className="text-xs text-gray-500 mt-1">Positions Filled</p>
+                            <p className="text-xs text-muted-foreground mt-1">Positions Filled</p>
                         </div>
                         <div className="rounded-lg bg-muted p-4 text-center">
-                            <p className="text-3xl font-bold text-gray-700">{totalPositions}</p>
-                            <p className="text-xs text-gray-500 mt-1">Total Positions</p>
+                            <p className="text-3xl font-bold text-foreground">{totalPositions}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Total Positions</p>
                         </div>
                         <div className="rounded-lg bg-muted p-4 text-center">
                             <p className="text-3xl font-bold text-green-600">{allCandidates.length}</p>
-                            <p className="text-xs text-gray-500 mt-1">Candidates</p>
+                            <p className="text-xs text-muted-foreground mt-1">Candidates</p>
                         </div>
                     </div>
 
@@ -109,8 +113,8 @@ export default function ElectionResultsSection({
                             if (!result || result.candidates.length === 0) {
                                 return (
                                     <div key={role.id} className="p-4 rounded-lg border border-border bg-muted">
-                                        <h4 className="font-medium text-gray-700">{role.title}</h4>
-                                        <p className="text-xs text-gray-400 mt-1">No candidates</p>
+                                        <h4 className="font-medium text-foreground">{role.title}</h4>
+                                        <p className="text-xs text-muted-foreground mt-1">No candidates</p>
                                     </div>
                                 );
                             }
@@ -126,7 +130,7 @@ export default function ElectionResultsSection({
                                 <div key={role.id} className="p-4 rounded-lg border border-border">
                                     <div className="flex items-center justify-between mb-3">
                                         <h4 className="font-semibold text-foreground">{role.title}</h4>
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-muted-foreground">
                                             {positionTotalVotes} total vote{positionTotalVotes !== 1 ? "s" : ""}
                                         </span>
                                     </div>
@@ -142,20 +146,20 @@ export default function ElectionResultsSection({
                                                 <div
                                                     key={candidate.id}
                                                     className={`flex items-center gap-3 p-2 rounded-lg ${
-                                                        isWinner ? "bg-[#C9A227]/10 border border-[#C9A227]/30" : "bg-gray-50"
+                                                        isWinner ? "bg-[#C9A227]/10 border border-[#C9A227]/30" : "bg-muted"
                                                     }`}
                                                 >
                                                     {/* Rank */}
                                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                                                         isWinner
                                                             ? "bg-[#C9A227] text-white"
-                                                            : "bg-gray-200 text-gray-600"
+                                                            : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                                                     }`}>
                                                         {index + 1}
                                                     </div>
 
                                                     {/* Avatar */}
-                                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 shrink-0">
+                                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-border shrink-0">
                                                         {candidate.avatar_url ? (
                                                             <img
                                                                 src={candidate.avatar_url}
@@ -173,7 +177,7 @@ export default function ElectionResultsSection({
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2">
                                                             <span className={`font-medium text-sm truncate ${
-                                                                isWinner ? "text-[#800000]" : "text-gray-900"
+                                                                isWinner ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"
                                                             }`}>
                                                                 {candidate.name}
                                                             </span>
@@ -184,7 +188,7 @@ export default function ElectionResultsSection({
                                                             )}
                                                         </div>
                                                         {/* Progress bar */}
-                                                        <div className="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div className="mt-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                                             <div
                                                                 className={`h-full rounded-full transition-all ${
                                                                     isWinner ? "bg-[#C9A227]" : "bg-gray-400"
@@ -197,11 +201,11 @@ export default function ElectionResultsSection({
                                                     {/* Vote count */}
                                                     <div className="text-right shrink-0">
                                                         <p className={`text-sm font-bold ${
-                                                            isWinner ? "text-[#800000]" : "text-gray-700"
+                                                            isWinner ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"
                                                         }`}>
                                                             {candidate.vote_count || 0}
                                                         </p>
-                                                        <p className="text-[10px] text-gray-500">{percentage}%</p>
+                                                        <p className="text-[10px] text-muted-foreground">{percentage}%</p>
                                                     </div>
                                                 </div>
                                             );

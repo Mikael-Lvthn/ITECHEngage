@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { publishElection, startVoting, closeElection } from "@/lib/actions/elections";
+import { publishElection, startVoting, completeElection } from "@/lib/actions/elections";
 import DirectAssignDialog from "@/components/elections/DirectAssignDialog";
 import { Loader2 } from "lucide-react";
 
@@ -10,7 +10,7 @@ interface Election {
     id: string;
     title: string;
     description: string | null;
-    status: "draft" | "published" | "voting" | "closed";
+    status: "draft" | "published" | "voting" | "completed";
     start_date: string;
     end_date: string | null;
     created_at: string;
@@ -83,7 +83,7 @@ export default function ElectionsTabContent({
         setActionId(electionId);
         startTransition(async () => {
             try {
-                await closeElection(electionId);
+                await completeElection(electionId);
             } catch (err: any) {
                 console.error(err.message);
             } finally {
@@ -97,13 +97,13 @@ export default function ElectionsTabContent({
             draft: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
             published: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
             voting: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-            closed: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+            completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
         };
         const labels: Record<string, string> = {
             draft: "Draft",
             published: "Published",
             voting: "Voting Open",
-            closed: "Closed",
+            completed: "Completed",
         };
         return (
             <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${styles[status] || styles.draft}`}>
@@ -122,7 +122,7 @@ export default function ElectionsTabContent({
     });
 
     const sortedElections = [...visibleElections].sort((a, b) => {
-        const order = { voting: 0, published: 1, draft: 2, closed: 3 };
+        const order = { voting: 0, published: 1, draft: 2, completed: 3 };
         return (order[a.status] ?? 4) - (order[b.status] ?? 4);
     });
 

@@ -228,12 +228,20 @@ export default function OrgChart({ roles, orgName, canDownload = false }: OrgCha
             el.style.overflow = "visible";
             el.style.maxHeight = "none";
 
+            // Force light mode for export
+            const htmlEl = document.documentElement;
+            const wasDark = htmlEl.classList.contains("dark");
+            if (wasDark) htmlEl.classList.remove("dark");
+
             const canvas = await html2canvas(el, {
                 backgroundColor: "#FFFFFF",
                 scale: 2,
                 useCORS: true,
                 logging: false,
             });
+
+            // Restore dark mode if it was active
+            if (wasDark) htmlEl.classList.add("dark");
 
             // Restore
             el.style.overflow = prevOverflow;

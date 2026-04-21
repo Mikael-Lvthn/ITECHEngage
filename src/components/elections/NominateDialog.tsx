@@ -5,7 +5,7 @@ import { nominateCandidate } from "@/lib/actions/elections";
 
 interface NominateDialogProps {
     electionId: string;
-    roles: { id: string; title: string }[];
+    roles: { id: string; title: string; assigned_user_id: string | null }[];
     alreadyNominated: string[];
 }
 
@@ -17,7 +17,7 @@ export default function NominateDialog({ electionId, roles, alreadyNominated }: 
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    const availableRoles = roles.filter((r) => !alreadyNominated.includes(r.id));
+    const availableRoles = roles.filter((r) => !alreadyNominated.includes(r.id) && !r.assigned_user_id);
 
     const handleSubmit = () => {
         if (!selectedRoleId) return;

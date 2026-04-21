@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { publishElection, startVoting, closeElection, deleteElection } from "@/lib/actions/elections";
+import { publishElection, startVoting, completeElection, deleteElection } from "@/lib/actions/elections";
 import { Loader2 } from "lucide-react";
 
 interface ElectionAdminControlsProps {
     electionId: string;
-    status: "draft" | "published" | "voting" | "closed";
+    status: "draft" | "published" | "voting" | "completed";
 }
 
 export default function ElectionAdminControls({ electionId, status }: ElectionAdminControlsProps) {
@@ -42,11 +42,11 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
         });
     };
 
-    const handleClose = () => {
-        setAction("close");
+    const handleComplete = () => {
+        setAction("complete");
         startTransition(async () => {
             try {
-                await closeElection(electionId);
+                await completeElection(electionId);
             } catch (err: any) {
                 console.error(err.message);
             } finally {
@@ -70,12 +70,12 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
         });
     };
 
-    if (status === "closed") {
+    if (status === "completed") {
         return (
             <div className="space-y-3">
-                <div className="rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 p-4">
-                    <p className="text-sm text-purple-800 dark:text-purple-300">
-                        <strong>Election Closed</strong> — Results have been finalized and members have been notified.
+                <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 p-4">
+                    <p className="text-sm text-green-800 dark:text-green-300">
+                        <strong>Election Completed</strong> — Results have been finalized and members have been notified.
                     </p>
                 </div>
 
@@ -132,7 +132,7 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
                     <p className="text-xs text-muted-foreground mt-0.5">
                         {status === "draft" && "This election is in draft mode. Publish to make it visible on the Homepage."}
                         {status === "published" && "This election is published. Start voting to allow members to cast their votes."}
-                        {status === "voting" && "Voting is currently open. Close the election to finalize results."}
+                        {status === "voting" && "Voting is currently open. Complete the election to finalize results."}
                     </p>
                 </div>
 
@@ -161,12 +161,12 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
 
                     {status === "voting" && (
                         <button
-                            onClick={handleClose}
+                            onClick={handleComplete}
                             disabled={isPending}
-                            className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
-                            {isPending && action === "close" && <Loader2 className="w-4 h-4 animate-spin" />}
-                            Close Election
+                            {isPending && action === "complete" && <Loader2 className="w-4 h-4 animate-spin" />}
+                            Complete Election
                         </button>
                     )}
                 </div>
@@ -188,7 +188,7 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
                     </span>
                     <span className="text-gray-300 dark:text-gray-600">→</span>
                     <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                        Closed
+                        Completed
                     </span>
                 </div>
             </div>

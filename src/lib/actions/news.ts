@@ -15,15 +15,16 @@ async function requireOfficerOrAdmin(organizationId?: string) {
     if (role === "admin") return { supabase, user, role: "admin" };
 
     if (organizationId) {
-        const { data: membership } = await supabase
-            .from("memberships")
-            .select("role")
-            .eq("user_id", user.id)
+        // Check structural roles (organization_roles) instead of memberships.role
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
+            .select("id")
+            .eq("assigned_user_id", user.id)
             .eq("organization_id", organizationId)
-            .eq("status", "approved")
-            .single();
+            .limit(1)
+            .maybeSingle();
 
-        if (membership?.role === "officer") {
+        if (structuralRole) {
             return { supabase, user, role: "officer" };
         }
     }
@@ -56,6 +57,25 @@ export async function createNews(formData: FormData) {
     });
 
     if (error) throw new Error(error.message);
+
+    // Notify admins about new submission
+    const { data: admins } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "admin");
+
+    if (admins && admins.length > 0) {
+        await supabase.from("notifications").insert(
+            admins.map((admin) => ({
+                user_id: admin.id,
+                type: "content_submission",
+                title: "New News Submission",
+                message: `A new article "${title.trim()}" has been submitted for review.`,
+                link: "/dashboard/news-and-events",
+                status: "unread",
+            }))
+        );
+    }
 
     revalidatePath("/dashboard/news");
     revalidatePath("/dashboard/news-and-events");

@@ -39,6 +39,17 @@ export default async function OrganizationDetailPage({ params }: Props) {
     const membershipStatus = membership?.status || "none";
     const isOfficer = membership?.role === "officer";
 
+    // Check for pending leave request
+    const { data: leaveRequest } = await supabase
+        .from("leave_requests")
+        .select("id")
+        .eq("user_id", user!.id)
+        .eq("organization_id", id)
+        .eq("status", "pending")
+        .maybeSingle();
+
+    const hasLeaveRequest = !!leaveRequest;
+
     const { data: profile } = await supabase
         .from("profiles")
         .select("role")
@@ -205,6 +216,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                     <JoinButton
                                         organizationId={org.id}
                                         membershipStatus={membershipStatus as "none" | "pending" | "approved"}
+                                        hasLeaveRequest={hasLeaveRequest}
                                     />
                                 </div>
                             )}

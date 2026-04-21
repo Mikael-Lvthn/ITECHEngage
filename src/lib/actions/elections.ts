@@ -75,11 +75,19 @@ export async function publishElection(electionId: string) {
         throw new Error("Only draft elections can be published.");
     }
 
-    // Verify all unassigned roles have at least one nominee
+    // Verify all contestable roles have at least one nominee
+    // Exclude: directly-assigned roles AND vacant roles
     const { data: orgRoles } = await supabase
         .from("organization_roles")
         .select("id, title, assigned_user_id")
         .eq("organization_id", election.organization_id);
+
+    const { data: vacantRoles } = await supabase
+        .from("election_vacant_roles")
+        .select("role_id")
+        .eq("election_id", electionId);
+
+    const vacantRoleIds = new Set((vacantRoles || []).map((v) => v.role_id));
 
     const { data: candidates } = await supabase
         .from("candidates")
@@ -89,13 +97,13 @@ export async function publishElection(electionId: string) {
     const candidateRoleIds = new Set((candidates || []).map((c) => c.organization_role_id));
 
     const unfilledRoles = (orgRoles || []).filter(
-        (r) => !r.assigned_user_id && !candidateRoleIds.has(r.id)
+        (r) => !r.assigned_user_id && !vacantRoleIds.has(r.id) && !candidateRoleIds.has(r.id)
     );
 
     if (unfilledRoles.length > 0) {
         const names = unfilledRoles.map((r) => r.title).join(", ");
         throw new Error(
-            `Cannot publish: the following roles have no nominees — ${names}. All unassigned roles must have at least one nominee before publishing.`
+            `Cannot publish: the following roles have no nominees — ${names}. All contestable roles must have at least one nominee before publishing.`
         );
     }
 
@@ -161,12 +169,12 @@ export async function nominateCandidate(formData: FormData) {
         .eq("id", electionId)
         .single();
 
-    // Allow nominations in draft, published, and voting phases
-    if (!election || !["draft", "published", "voting"].includes(election.status)) {
-        throw new Error("Nominations are not open for this election.");
+    // Server-side guard: nominations only during draft phase
+    if (!election || election.status !== "draft") {
+        throw new Error("Nominations are only allowed during the draft phase.");
     }
 
-    // Must be an approved officer member (not admin)
+    // Must be an approved member (not admin)
     const { data: membership } = await supabase
         .from("memberships")
         .select("id, role")
@@ -177,10 +185,6 @@ export async function nominateCandidate(formData: FormData) {
 
     if (!membership) {
         throw new Error("You must be an approved member of this organization to nominate yourself.");
-    }
-
-    if (membership.role !== "officer") {
-        throw new Error("Only student officers can nominate themselves.");
     }
 
     // Check admin — admins cannot nominate
@@ -203,9 +207,26 @@ export async function nominateCandidate(formData: FormData) {
 
     const { data: orgRole } = await supabase
         .from("organization_roles")
-        .select("title")
+        .select("title, assigned_user_id")
         .eq("id", organizationRoleId)
         .single();
+
+    // Check if role is directly assigned (locked)
+    if (orgRole?.assigned_user_id) {
+        throw new Error("This role is directly assigned and cannot accept nominations.");
+    }
+
+    // Check if role is marked vacant for this election
+    const { data: vacantEntry } = await supabase
+        .from("election_vacant_roles")
+        .select("role_id")
+        .eq("election_id", electionId)
+        .eq("role_id", organizationRoleId)
+        .maybeSingle();
+
+    if (vacantEntry) {
+        throw new Error("This role has been marked as vacant for this election.");
+    }
 
     const { error } = await supabase.from("candidates").insert({
         election_id: electionId,
@@ -221,10 +242,54 @@ export async function nominateCandidate(formData: FormData) {
     revalidatePath(`/dashboard/elections/${electionId}`);
 }
 
+export async function markRoleVacant(electionId: string, roleId: string, vacant: boolean) {
+    const { supabase } = await getAuthUser();
+    await requireAdmin(supabase);
+
+    const { data: election } = await supabase
+        .from("elections")
+        .select("organization_id, status")
+        .eq("id", electionId)
+        .single();
+
+    if (!election) throw new Error("Election not found.");
+    if (election.status !== "draft") {
+        throw new Error("Roles can only be marked vacant during the draft phase.");
+    }
+
+    if (vacant) {
+        // Mark as vacant
+        const { error } = await supabase
+            .from("election_vacant_roles")
+            .insert({ election_id: electionId, role_id: roleId });
+
+        if (error && !error.message.includes("duplicate")) throw new Error(error.message);
+
+        // Remove any existing nominees for this role in this election
+        await supabase
+            .from("candidates")
+            .delete()
+            .eq("election_id", electionId)
+            .eq("organization_role_id", roleId);
+    } else {
+        // Remove vacant marking
+        const { error } = await supabase
+            .from("election_vacant_roles")
+            .delete()
+            .eq("election_id", electionId)
+            .eq("role_id", roleId);
+
+        if (error) throw new Error(error.message);
+    }
+
+    revalidatePath(`/dashboard/elections/${electionId}`);
+    revalidatePath("/dashboard/elections");
+}
+
 export async function castVote(electionId: string, candidateId: string, organizationRoleId: string) {
     const { supabase, user } = await getAuthUser();
 
-    // Verify the user is an officer, not an admin
+    // Verify the user is not an admin (admins cannot vote)
     const { data: role } = await supabase.rpc("get_my_role");
     if (role === "admin") {
         throw new Error("Administrators cannot vote in elections.");
@@ -242,17 +307,17 @@ export async function castVote(electionId: string, candidateId: string, organiza
         throw new Error("Voting is not currently open for this election.");
     }
 
-    // Verify user is an approved officer member
+    // Verify user is an approved member of the organization
     const { data: membership } = await supabase
         .from("memberships")
-        .select("id, role")
+        .select("id, role, status")
         .eq("user_id", user.id)
         .eq("organization_id", election.organization_id)
         .eq("status", "approved")
         .maybeSingle();
 
-    if (!membership || membership.role !== "officer") {
-        throw new Error("Only officers can vote in elections.");
+    if (!membership || membership.status !== "approved") {
+        throw new Error("Only approved members can vote in elections.");
     }
 
     // Prevent voting for yourself: check if the candidate being voted for is the current user
@@ -302,12 +367,21 @@ export async function castVote(electionId: string, candidateId: string, organiza
                 .select("id, assigned_user_id")
                 .eq("organization_id", election.organization_id);
 
+            // 2b. Get vacant roles for this election
+            const { data: vacantRoles } = await supabase
+                .from("election_vacant_roles")
+                .select("role_id")
+                .eq("election_id", electionId);
+
+            const vacantRoleIds = new Set((vacantRoles || []).map((v) => v.role_id));
+
+            // Contested roles = not directly assigned AND not vacant
             const votableRoleIds = (orgRoles || [])
-                .filter((r) => !r.assigned_user_id)
+                .filter((r) => !r.assigned_user_id && !vacantRoleIds.has(r.id))
                 .map((r) => r.id);
 
             if (votableRoleIds.length > 0) {
-                // 3. For each votable role, count total votes cast in this election
+                // 3. For each contested role, count total votes cast in this election
                 const { data: voteCounts } = await supabase
                     .from("votes")
                     .select("organization_role_id")
@@ -323,16 +397,17 @@ export async function castVote(electionId: string, candidateId: string, organiza
                     );
                 });
 
-                // 4. Check if every votable role has exactly memberCount votes
+                // 4. Check if ALL contested roles have reached memberCount votes
+                // Auto-complete only when the last role hits the threshold
                 const allComplete = votableRoleIds.every(
                     (roleId) => (countByRole.get(roleId) || 0) >= memberCount
                 );
 
                 if (allComplete) {
-                    // Auto-close the election
+                    // Auto-complete the election
                     await supabase
                         .from("elections")
-                        .update({ status: "closed", end_date: new Date().toISOString() })
+                        .update({ status: "completed", end_date: new Date().toISOString() })
                         .eq("id", electionId);
 
                     revalidatePath(`/dashboard/organizations/${election.organization_id}`);
@@ -349,7 +424,7 @@ export async function castVote(electionId: string, candidateId: string, organiza
     revalidatePath("/dashboard/elections");
 }
 
-export async function closeElection(electionId: string) {
+export async function completeElection(electionId: string) {
     const { supabase } = await getAuthUser();
 
     // Admin only
@@ -363,14 +438,14 @@ export async function closeElection(electionId: string) {
 
     if (!election) throw new Error("Election not found");
     if (election.status !== "voting") {
-        throw new Error("Only elections in voting phase can be closed.");
+        throw new Error("Only elections in voting phase can be completed.");
     }
 
-    // Transition from voting to closed - triggers notification to members
+    // Transition from voting to completed
     const { error } = await supabase
         .from("elections")
         .update({
-            status: "closed",
+            status: "completed",
             end_date: new Date().toISOString(),
         })
         .eq("id", electionId);
@@ -396,8 +471,8 @@ export async function deleteElection(electionId: string) {
         .single();
 
     if (!election) throw new Error("Election not found");
-    if (election.status !== "closed") {
-        throw new Error("Only closed elections can be deleted.");
+    if (election.status !== "completed") {
+        throw new Error("Only completed elections can be deleted.");
     }
 
     // Delete candidates first (foreign key constraint)

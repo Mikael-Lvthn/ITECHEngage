@@ -34,10 +34,10 @@ export default function ElectionCard({
     const isDraft = status === "draft";
     const isPublished = status === "published";
     const isVoting = status === "voting";
-    const isClosed = status === "closed";
+    const isClosed = status === "completed";
 
     const statusLabel = isClosed
-        ? "Closed"
+        ? "Completed"
         : isVoting
             ? "Voting Open"
             : isPublished

@@ -21,32 +21,24 @@ export default async function NewsAndEventsPage() {
         if (rpcRole) userRole = rpcRole;
     }
 
-    if (userRole !== "admin") {
-        const { data: officerships } = await supabase
-            .from("memberships")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("role", "officer")
-            .eq("status", "approved")
-            .limit(1);
+    const isAdmin = userRole === "admin";
 
-        if (officerships && officerships.length > 0) {
-            userRole = "officer";
-        } else {
-            userRole = "student";
-        }
+    // Use organization_roles (structural roles) to determine officer status
+    const { data: structuralRoles } = await supabase
+        .from("organization_roles")
+        .select("organization_id, organizations(name)")
+        .eq("assigned_user_id", user.id);
+
+    const hasStructuralRole = structuralRoles && structuralRoles.length > 0;
+
+    if (!isAdmin && hasStructuralRole) {
+        userRole = "officer";
+    } else if (!isAdmin) {
+        userRole = "student";
     }
 
-    const { data: officerMemberships } = await supabase
-        .from("memberships")
-        .select("organization_id, organizations(name)")
-        .eq("user_id", user.id)
-        .eq("role", "officer")
-        .eq("status", "approved");
-
     const isOfficer = userRole === "officer";
-    const isAdmin = userRole === "admin";
-    const canCreate = isOfficer || isAdmin;
+    const canCreate = isAdmin || hasStructuralRole;
 
     let news: any[] = [];
     let events: any[] = [];
@@ -60,11 +52,11 @@ export default async function NewsAndEventsPage() {
 
         const { data: allEvents } = await supabase
             .from("events")
-            .select("id, title, description, start_datetime, end_datetime, location, status, created_at, organization_id, organizations(name)")
+            .select("id, title, description, start_datetime, end_datetime, location, status, created_at, created_by, organization_id, organizations(name)")
             .order("created_at", { ascending: false });
         events = allEvents || [];
-    } else if (isOfficer && officerMemberships && officerMemberships.length > 0) {
-        const orgIds = officerMemberships.map(m => m.organization_id);
+    } else if (isOfficer && structuralRoles && structuralRoles.length > 0) {
+        const orgIds = structuralRoles.map(r => r.organization_id);
 
         const { data: orgNews } = await supabase
             .from("news")
@@ -75,7 +67,7 @@ export default async function NewsAndEventsPage() {
 
         const { data: orgEvents } = await supabase
             .from("events")
-            .select("id, title, description, start_datetime, end_datetime, location, status, created_at, organization_id, organizations(name)")
+            .select("id, title, description, start_datetime, end_datetime, location, status, created_at, created_by, organization_id, organizations(name)")
             .in("organization_id", orgIds)
             .order("created_at", { ascending: false });
         events = orgEvents || [];
@@ -89,12 +81,13 @@ export default async function NewsAndEventsPage() {
 
         const { data: pubEvents } = await supabase
             .from("events")
-            .select("id, title, description, start_datetime, end_datetime, location, status, created_at, organization_id, organizations(name)")
+            .select("id, title, description, start_datetime, end_datetime, location, status, created_at, created_by, organization_id, organizations(name)")
             .eq("status", "published")
             .order("created_at", { ascending: false });
         events = pubEvents || [];
     }
 
+    // Build org list for creation dropdown — sourced from structural roles
     let userOrganizations: { id: string; name: string }[] = [];
 
     if (isAdmin) {
@@ -103,25 +96,26 @@ export default async function NewsAndEventsPage() {
             .select("id, name")
             .order("name");
         userOrganizations = (allOrgs || []).map(o => ({ id: o.id, name: o.name }));
-    } else if (isOfficer && officerMemberships) {
-        userOrganizations = officerMemberships.map(m => ({
-            id: m.organization_id,
-            name: (m.organizations as any)?.name
+    } else if (structuralRoles) {
+        userOrganizations = structuralRoles.map(r => ({
+            id: r.organization_id,
+            name: (r.organizations as any)?.name || "Unknown"
         }));
     }
+
+    // Subtitle based on role
+    const subtitle = isAdmin
+        ? "Manage and approve all news and events across the platform."
+        : isOfficer
+            ? "Create and manage your organization's announcements and activities."
+            : "Browse the latest news and upcoming events.";
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">News & Events</h1>
-                    <p className="text-gray-500 mt-1">
-                        {isAdmin
-                            ? "Manage and approve all news and events across the platform."
-                            : isOfficer
-                                ? "Create and manage your organization's announcements and activities."
-                                : "Browse the latest news and upcoming events."}
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">News & Events</h1>
+                    <p className="text-muted-foreground mt-1">{subtitle}</p>
                 </div>
             </div>
 
@@ -130,7 +124,8 @@ export default async function NewsAndEventsPage() {
                 initialEvents={events as any}
                 userOrganizations={userOrganizations}
                 userRole={userRole}
-                canCreate={canCreate}
+                canCreate={canCreate ?? false}
+                userId={user.id}
             />
         </div>
     );

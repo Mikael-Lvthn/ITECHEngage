@@ -41,12 +41,6 @@ const navItems: NavItem[] = [
         roles: ["student", "officer"],
     },
     {
-        label: "Membership Requests",
-        href: "/dashboard/requests",
-        icon: "📋",
-        roles: ["officer", "admin"],
-    },
-    {
         label: "News & Events",
         href: "/dashboard/news-and-events",
         icon: "📰",

@@ -106,16 +106,16 @@ export default function DirectAssignDialog({
                                 {/* Current assignments */}
                                 {assignedRoles.length > 0 && (
                                     <div>
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-3">Current Assignments</h3>
+                                        <h3 className="text-sm font-semibold text-foreground mb-3">Current Assignments</h3>
                                         <div className="space-y-2">
                                             {assignedRoles.map((role) => (
                                                 <div
                                                     key={role.id}
-                                                    className="flex items-center justify-between p-3 rounded-lg border bg-gray-50"
+                                                    className="flex items-center justify-between p-3 rounded-lg border bg-muted"
                                                 >
                                                     <div>
                                                         <p className="font-medium text-sm">{role.title}</p>
-                                                        <p className="text-xs text-gray-500">{role.assigned_user_name}</p>
+                                                        <p className="text-xs text-muted-foreground">{role.assigned_user_name}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => handleClearAssignment(role.id)}
@@ -132,7 +132,7 @@ export default function DirectAssignDialog({
 
                                 {/* New assignment form */}
                                 <form onSubmit={handleSubmit} className="space-y-4">
-                                    <h3 className="text-sm font-semibold text-gray-700">New Assignment</h3>
+                                    <h3 className="text-sm font-semibold text-foreground">New Assignment</h3>
 
                                     <div>
                                         <label className="block text-sm font-medium mb-1.5">Position *</label>
@@ -149,7 +149,7 @@ export default function DirectAssignDialog({
                                             ))}
                                         </select>
                                         {availableRoles.length === 0 && (
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-muted-foreground mt-1">
                                                 All positions are currently assigned.
                                             </p>
                                         )}
@@ -172,13 +172,13 @@ export default function DirectAssignDialog({
                                     </div>
 
                                     {error && (
-                                        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                                        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
                                             {error}
                                         </div>
                                     )}
 
                                     {success && (
-                                        <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+                                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm">
                                             {success}
                                         </div>
                                     )}
@@ -194,8 +194,8 @@ export default function DirectAssignDialog({
                                 </form>
 
                                 {/* Info */}
-                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                                    <p className="text-xs text-amber-800">
+                                <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                                    <p className="text-xs text-amber-800 dark:text-amber-300">
                                         <strong>Note:</strong> Direct assignments bypass the election process. Use this when you already know who should fill a position.
                                     </p>
                                 </div>

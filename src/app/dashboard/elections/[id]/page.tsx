@@ -72,7 +72,7 @@ export default async function ElectionDetailPage({ params }: Props) {
     const votedRoles: string[] = Array.isArray(votedRolesData) ? votedRolesData : [];
 
     let electionResults: any[] = [];
-    const isClosed = election.status === "closed";
+    const isClosed = election.status === "completed";
     if (isClosed || canManage) {
         const { data: results } = await supabase.rpc("get_election_results", {
             p_election_id: id,
@@ -108,7 +108,7 @@ export default async function ElectionDetailPage({ params }: Props) {
     const isUpcoming = isPublished && now < start;
 
     const statusLabel = isClosed
-        ? "Closed"
+        ? "Completed"
         : isDraft
             ? "Draft"
             : isPublished
@@ -189,8 +189,8 @@ export default async function ElectionDetailPage({ params }: Props) {
         .map((c) => c.organization_role_id)
         .filter(Boolean) as string[];
 
-    // Nominations can happen in draft, published, and voting phases
-    const canNominate = ["draft", "published", "voting"].includes(election.status);
+    // Nominations can happen only during the draft phase
+    const canNominate = election.status === "draft";
 
     return (
         <div className="space-y-6 pb-12">
@@ -250,10 +250,10 @@ export default async function ElectionDetailPage({ params }: Props) {
             {/* Actions bar */}
             <div className="flex flex-wrap items-center gap-3">
                 {/* Officers can nominate (not admin) */}
-                {isOfficer && !isAdmin && canNominate && (
+                {isMember && !isAdmin && canNominate && (
                     <NominateDialog
                         electionId={id}
-                        roles={rolesWithAssignments.map(r => ({ id: r.id, title: r.title }))}
+                        roles={rolesWithAssignments.map(r => ({ id: r.id, title: r.title, assigned_user_id: r.assigned_user_id }))}
                         alreadyNominated={myCandidateRoleIds}
                     />
                 )}
