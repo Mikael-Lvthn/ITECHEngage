@@ -471,17 +471,26 @@ export async function deleteElection(electionId: string) {
         .single();
 
     if (!election) throw new Error("Election not found");
-    if (election.status !== "completed") {
-        throw new Error("Only completed elections can be deleted.");
-    }
 
-    // Delete candidates first (foreign key constraint)
+    // Delete votes first (references candidates)
+    await supabase
+        .from("votes")
+        .delete()
+        .eq("election_id", electionId);
+
+    // Delete candidates (references election)
     await supabase
         .from("candidates")
         .delete()
         .eq("election_id", electionId);
 
-    // Delete votes via the election's candidates (already deleted above, but clean up)
+    // Delete vacant role entries
+    await supabase
+        .from("election_vacant_roles")
+        .delete()
+        .eq("election_id", electionId);
+
+    // Delete the election itself
     const { error } = await supabase
         .from("elections")
         .delete()
