@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminPanelClient from "./AdminPanelClient";
 
-export default async function AdminPage() {
+interface Props {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function AdminPage({ searchParams }: Props) {
     const supabase = await createClient();
 
     const {
@@ -21,6 +25,30 @@ export default async function AdminPage() {
         redirect("/dashboard");
     }
 
+    // Read org filter from search params
+    const params = await searchParams;
+    const orgFilter = (params?.org as string) || "all";
+
+    // Build leave request queries with optional org filter
+    let pendingLeaveQuery = supabase
+        .from("leave_requests")
+        .select("id, user_id, organization_id, status, created_at, designated_approver_id, profiles!leave_requests_user_id_fkey(full_name, email), organizations(id, name)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+    let leaveHistoryQuery = supabase
+        .from("leave_requests")
+        .select("id, user_id, organization_id, status, created_at, reviewed_at, actioned_by_id, profiles!leave_requests_user_id_fkey(full_name, email), organizations(id, name)")
+        .neq("status", "pending")
+        .order("reviewed_at", { ascending: false })
+        .limit(30);
+
+    if (orgFilter !== "all") {
+        pendingLeaveQuery = pendingLeaveQuery.eq("organization_id", orgFilter);
+        leaveHistoryQuery = leaveHistoryQuery.eq("organization_id", orgFilter);
+    }
+
     // Parallel data fetching for all tabs
     const [
         usersResult,
@@ -31,6 +59,9 @@ export default async function AdminPage() {
         pendingAccreditationsResult,
         auditLogsResult,
         categoriesResult,
+        organizationsListResult,
+        pendingLeaveResult,
+        leaveHistoryResult,
     ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("organizations").select("*", { count: "exact", head: true }),
@@ -62,9 +93,18 @@ export default async function AdminPage() {
             .from("organization_categories")
             .select("*")
             .order("name"),
+        // Organizations list for filter dropdown
+        supabase
+            .from("organizations")
+            .select("id, name")
+            .order("name"),
+        // Leave requests
+        pendingLeaveQuery,
+        leaveHistoryQuery,
     ]);
 
     const pendingEventsCount = pendingEventsResult.data?.length ?? 0;
+    const pendingLeaveCount = pendingLeaveResult.data?.length ?? 0;
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
@@ -83,11 +123,15 @@ export default async function AdminPage() {
                 pendingAccreditations={(pendingAccreditationsResult.data as any) || []}
                 auditLogs={(auditLogsResult.data as any) || []}
                 categories={(categoriesResult.data as any) || []}
+                organizations={(organizationsListResult.data as any) || []}
+                pendingLeaveRequests={(pendingLeaveResult.data as any) || []}
+                leaveHistory={(leaveHistoryResult.data as any) || []}
                 stats={{
                     totalUsers: usersResult.count ?? 0,
                     totalOrgs: orgsResult.count ?? 0,
                     pendingMemberships: pendingMembershipsResult.count ?? 0,
                     pendingEventsCount,
+                    pendingLeaveCount,
                 }}
             />
         </div>

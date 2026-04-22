@@ -131,6 +131,21 @@ export async function assignUserToRole(roleId: string, userId: string | null, or
         throw new Error("You are not authorized to manage roles for this organization.");
     }
 
+    // Validate: if assigning (not unassigning), the target user must be an approved member
+    if (userId) {
+        const { data: membership } = await supabase
+            .from("memberships")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("organization_id", organizationId)
+            .eq("status", "approved")
+            .maybeSingle();
+
+        if (!membership) {
+            throw new Error("Cannot assign a role to someone who is not an approved member of this organization.");
+        }
+    }
+
     const { error } = await supabase
         .from("organization_roles")
         .update({ assigned_user_id: userId })

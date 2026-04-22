@@ -282,6 +282,7 @@ export default async function ElectionDetailPage({ params }: Props) {
                     isVotingOpen={isVotingOpen}
                     isClosed={isClosed}
                     isOfficer={isOfficer}
+                    isMember={isMember}
                     isAdmin={isAdmin}
                     organizationId={election.organization_id}
                     members={orgMembers}

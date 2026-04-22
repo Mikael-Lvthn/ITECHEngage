@@ -23,6 +23,10 @@ export default async function MembersPage({ params }: Props) {
 
     if (!org) notFound();
 
+    // Check if user is admin
+    const { data: userRole } = await supabase.rpc("get_my_role");
+    const isAdmin = userRole === "admin";
+
     const { data: myMembership } = await supabase
         .from("memberships")
         .select("role")
@@ -31,7 +35,8 @@ export default async function MembersPage({ params }: Props) {
         .eq("status", "approved")
         .maybeSingle();
 
-    if (!myMembership || myMembership.role !== "officer") {
+    // Allow admins OR officers of this org
+    if (!isAdmin && (!myMembership || myMembership.role !== "officer")) {
         redirect(`/dashboard/organizations/${id}`);
     }
 

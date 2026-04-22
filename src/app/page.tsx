@@ -306,8 +306,7 @@ export default async function HomePage() {
                                 { label: "PUP Official Website", url: "https://www.pup.edu.ph" },
                                 { label: "PUP SIS (Student Portal)", url: "https://sis2.pup.edu.ph/" },
                                 { label: "PUPLMS", url: "https://lms.pup.edu.ph/maincampus/" },
-                                { label: "ITECH Facebook Page", url: "#" },
-                                { label: "Academic Calendar", url: "#" },
+                                { label: "Academic Calendar", url: "https://www.pup.edu.ph/about/calendar" },
                             ].map((link, i) => (
                                 <a
                                     key={i}

@@ -147,7 +147,6 @@ export async function approveLeaveRequest(requestId: string) {
     if (!request) throw new Error("Leave request not found.");
     if (request.status !== "pending") throw new Error("This request has already been processed.");
 
-    // Check authorization: must be the designated approver or admin
     const { data: role } = await supabase.rpc("get_my_role");
     const isAdmin = role === "admin";
     if (request.designated_approver_id !== user.id && !isAdmin) {
@@ -164,7 +163,8 @@ export async function approveLeaveRequest(requestId: string) {
         })
         .eq("id", requestId);
 
-    // Delete the membership — triggers cleanup
+    // Delete the membership — DB trigger (handle_membership_delete) handles cleanup,
+    // but we also do explicit app-level cleanup as a safety net.
     const { error } = await supabase
         .from("memberships")
         .delete()
@@ -172,6 +172,29 @@ export async function approveLeaveRequest(requestId: string) {
         .eq("organization_id", request.organization_id);
 
     if (error) throw new Error(error.message);
+
+    // App-level cleanup: clear org role assignments for this user in this org
+    await supabase
+        .from("organization_roles")
+        .update({ assigned_user_id: null })
+        .eq("organization_id", request.organization_id)
+        .eq("assigned_user_id", request.user_id);
+
+    // App-level cleanup: revert profile role to 'student' if no remaining memberships
+    const { data: remainingMemberships } = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("user_id", request.user_id)
+        .eq("status", "approved")
+        .limit(1);
+
+    if (!remainingMemberships || remainingMemberships.length === 0) {
+        await supabase
+            .from("profiles")
+            .update({ role: "student" })
+            .eq("id", request.user_id)
+            .neq("role", "admin"); // never demote admins
+    }
 
     // Notify the requester
     const { data: org } = await supabase
@@ -194,6 +217,7 @@ export async function approveLeaveRequest(requestId: string) {
     revalidatePath(`/dashboard/organizations/${request.organization_id}`);
     revalidatePath("/dashboard/memberships");
     revalidatePath("/dashboard/news-and-events");
+    revalidatePath("/dashboard/admin");
 }
 
 export async function rejectLeaveRequest(requestId: string) {
@@ -246,4 +270,5 @@ export async function rejectLeaveRequest(requestId: string) {
     });
 
     revalidatePath(`/dashboard/organizations/${request.organization_id}`);
+    revalidatePath("/dashboard/admin");
 }

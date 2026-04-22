@@ -48,6 +48,7 @@ interface ElectionBoardProps {
     isVotingOpen: boolean;
     isClosed: boolean;
     isOfficer: boolean;
+    isMember: boolean;
     isAdmin: boolean;
     // New props for interactive board
     organizationId?: string;
@@ -66,6 +67,7 @@ export default function ElectionBoard({
     isVotingOpen,
     isClosed,
     isOfficer,
+    isMember,
     isAdmin,
     organizationId,
     members = [],
@@ -139,28 +141,28 @@ export default function ElectionBoard({
             // Admin → open assign dialog for this role
             setAssignDialogRole(role);
             setNominateDialogRole(null);
-        } else if (isOfficer && canNominate && !alreadyNominated.includes(role.id)) {
-            // Member/Officer → open nominate dialog for this role
+        } else if (isMember && !isAdmin && canNominate && !alreadyNominated.includes(role.id)) {
+            // Member → open nominate dialog for this role
             setNominateDialogRole(role);
             setAssignDialogRole(null);
         }
     };
 
-    // Determine if user can vote
-    const canVote = isVotingOpen && isOfficer && !isAdmin;
+    // Determine if user can vote — any approved member (not admin) can vote
+    const canVote = isVotingOpen && isMember && !isAdmin;
 
     // Determine if position card should be clickable
     const isPositionClickable = (role: Role) => {
         if (isClosed) return false;
         if (isAdmin && organizationId && members.length > 0) return true;
-        if (isOfficer && canNominate && !alreadyNominated.includes(role.id)) return true;
+        if (isMember && !isAdmin && canNominate && !alreadyNominated.includes(role.id)) return true;
         return false;
     };
 
     const getClickLabel = (role: Role) => {
         if (isClosed) return undefined;
         if (isAdmin && organizationId) return "Click to assign";
-        if (isOfficer && canNominate && !alreadyNominated.includes(role.id)) return "Click to nominate";
+        if (isMember && !isAdmin && canNominate && !alreadyNominated.includes(role.id)) return "Click to nominate";
         return undefined;
     };
 
@@ -333,7 +335,7 @@ export default function ElectionBoard({
             )}
 
             {/* Interactive hint */}
-            {!isClosed && (isAdmin || (isOfficer && canNominate)) && (
+            {!isClosed && (isAdmin || (isMember && !isAdmin && canNominate)) && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                     <p className="text-xs text-muted-foreground">
                         <strong className="text-foreground">💡 Tip:</strong>{" "}
