@@ -27,14 +27,14 @@ export default async function ElectionsPage() {
 
     const isAdmin = userRole === "admin";
 
-    const { data: myOfficerships } = await supabase
+    // Get all orgs the user is an approved member of (members + officers)
+    const { data: myMemberships } = await supabase
         .from("memberships")
         .select("organization_id")
         .eq("user_id", user.id)
-        .eq("role", "officer")
         .eq("status", "approved");
 
-    const officerOrgIds = myOfficerships?.map((m) => m.organization_id) || [];
+    const memberOrgIds = myMemberships?.map((m) => m.organization_id) || [];
 
     const { data: elections } = await supabase
         .from("elections")
@@ -44,7 +44,7 @@ export default async function ElectionsPage() {
     const visibleElections = isAdmin
         ? elections || []
         : (elections || []).filter(
-            (e) => officerOrgIds.includes(e.organization_id)
+            (e) => memberOrgIds.includes(e.organization_id)
         );
 
     const electionIds = visibleElections.map((e) => e.id);
@@ -114,7 +114,7 @@ export default async function ElectionsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                {isAdmin && (
+                {draftElections.length > 0 && (
                     <div className="rounded-xl border bg-card p-5 card-hover">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
@@ -162,12 +162,12 @@ export default async function ElectionsPage() {
                 </div>
             </div>
 
-            {/* Draft Elections - Admin only */}
-            {isAdmin && draftElections.length > 0 && (
+            {/* Draft Elections - visible to members for nominations */}
+            {draftElections.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-gray-400" />
-                        Draft Elections
+                        Draft Elections — Open for Nominations
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {draftElections.map((election, i) => (

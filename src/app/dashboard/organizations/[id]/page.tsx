@@ -369,6 +369,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         members={orgMembers}
                         isAdmin={isAdmin}
                         isOfficer={isOfficer}
+                        isMember={membershipStatus === "approved"}
                         canManageRoles={canManageRoles}
                     />
                 }

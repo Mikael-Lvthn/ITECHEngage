@@ -37,6 +37,7 @@ interface ElectionsTabContentProps {
     members: Member[];
     isAdmin: boolean;
     isOfficer: boolean;
+    isMember: boolean;
     canManageRoles: boolean;
 }
 
@@ -48,6 +49,7 @@ export default function ElectionsTabContent({
     members,
     isAdmin,
     isOfficer,
+    isMember,
     canManageRoles,
 }: ElectionsTabContentProps) {
     const [isPending, startTransition] = useTransition();
@@ -113,10 +115,10 @@ export default function ElectionsTabContent({
     };
 
     // Sort elections: voting first, then published, then draft, then closed
-    // Filter draft elections: only visible to admins and officers of this org
+    // Draft elections visible to all approved members (they need to nominate) + admins
     const visibleElections = elections.filter((election) => {
         if (election.status === "draft") {
-            return isAdmin || isOfficer;
+            return isAdmin || isMember;
         }
         return true;
     });
