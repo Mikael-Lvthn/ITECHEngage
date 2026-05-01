@@ -10,6 +10,34 @@ interface Props {
     params: Promise<{ id: string }>;
 }
 
+interface CandidateEntry {
+    id: string;
+    user_id: string;
+    name: string;
+    avatar_url: string | null;
+    platform: string | null;
+    vote_count?: number;
+}
+
+interface ElectionResult {
+    role_id: string;
+    candidate_id: string;
+    candidate_user_id: string;
+    candidate_name: string;
+    candidate_avatar: string | null;
+    candidate_platform: string | null;
+    vote_count: number;
+}
+
+interface RoleResult {
+    role_id: string;
+    winner_id: string | null;
+    winner_name: string | null;
+    winner_avatar: string | null;
+    winner_vote_count?: number;
+    candidates: CandidateEntry[];
+}
+
 export default async function ElectionDetailPage({ params }: Props) {
     const { id } = await params;
     const supabase = await createClient();
@@ -71,7 +99,7 @@ export default async function ElectionDetailPage({ params }: Props) {
 
     const votedRoles: string[] = Array.isArray(votedRolesData) ? votedRolesData : [];
 
-    let electionResults: any[] = [];
+    let electionResults: ElectionResult[] = [];
     const isClosed = election.status === "completed";
     if (isClosed || canManage) {
         const { data: results } = await supabase.rpc("get_election_results", {
@@ -88,7 +116,7 @@ export default async function ElectionDetailPage({ params }: Props) {
             .select("user_id, profiles(full_name)")
             .eq("organization_id", election.organization_id)
             .eq("status", "approved");
-        orgMembers = (membersData || []).map((m: any) => {
+        orgMembers = (membersData || []).map((m) => {
             const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
             return {
                 user_id: m.user_id,
@@ -105,7 +133,7 @@ export default async function ElectionDetailPage({ params }: Props) {
     const isVotingOpen = election.status === "voting";
     const isDraft = election.status === "draft";
     const isPublished = election.status === "published";
-    const isUpcoming = isPublished && now < start;
+    const _isUpcoming = isPublished && now < start;
 
     const statusLabel = isClosed
         ? "Completed"
@@ -141,7 +169,7 @@ export default async function ElectionDetailPage({ params }: Props) {
     });
 
     // Prepare candidates by role
-    const candidatesByRole: Record<string, any[]> = {};
+    const candidatesByRole: Record<string, CandidateEntry[]> = {};
     (candidates || []).forEach((c) => {
         const key = c.organization_role_id || "other";
         if (!candidatesByRole[key]) candidatesByRole[key] = [];
@@ -155,7 +183,7 @@ export default async function ElectionDetailPage({ params }: Props) {
     });
 
     // Prepare results by role
-    const resultsByRole: Record<string, any> = {};
+    const resultsByRole: Record<string, RoleResult> = {};
     electionResults.forEach((r) => {
         if (!resultsByRole[r.role_id]) {
             resultsByRole[r.role_id] = {

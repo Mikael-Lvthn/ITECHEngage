@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { completeElection } from "@/lib/actions/elections";
+import { getErrorMessage } from "@/lib/utils/error";
 
 export default function CloseElectionButton({ electionId }: { electionId: string }) {
     const [isPending, startTransition] = useTransition();
@@ -16,8 +17,8 @@ export default function CloseElectionButton({ electionId }: { electionId: string
         startTransition(async () => {
             try {
                 await completeElection(electionId);
-            } catch (err: any) {
-                setError(err.message || "Failed to complete election");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to complete election");
             }
         });
     };

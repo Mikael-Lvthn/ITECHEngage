@@ -4,12 +4,12 @@
  * These tests validate the core business rules without touching a real database.
  * We mock the Supabase client to test each action's guard logic in isolation.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // ─── Mock Supabase ──────────────────────────────────────────────────────────
 // Build a chainable mock that records the queries being constructed.
-function createMockSupabase(overrides: Record<string, any> = {}) {
-    const chain: Record<string, any> = {
+function _createMockSupabase(overrides: Record<string, unknown> = {}) {
+    const chain: Record<string, unknown> = {
         from: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         insert: vi.fn().mockReturnThis(),
@@ -44,6 +44,7 @@ describe("Election Status Transitions", () => {
 
     it("should enforce the status order: draft → published → voting → completed", () => {
         const statusOrder = ["draft", "published", "voting", "completed"];
+        const _statusOrder = statusOrder; // used for ordering context only
         const transitions: Record<string, string> = {
             draft: "published",
             published: "voting",
@@ -75,7 +76,7 @@ describe("Voting Eligibility", () => {
 
     it("should block a non-member from voting", () => {
         const membership = null;
-        const canVote = membership && (membership as any).status === "approved";
+        const canVote = membership !== null && (membership as { status: string }).status === "approved";
         expect(canVote).toBeFalsy();
     });
 
@@ -197,7 +198,7 @@ describe("Tie Handling", () => {
 
     it("should transition to completed regardless of ties", () => {
         // Election always completes — ties don't block completion
-        const hasTie = true;
+        const _hasTie = true;
         const shouldComplete = true; // always true when threshold met
         expect(shouldComplete).toBe(true);
     });

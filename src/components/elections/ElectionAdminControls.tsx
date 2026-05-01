@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { publishElection, startVoting, completeElection, deleteElection } from "@/lib/actions/elections";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface ElectionAdminControlsProps {
     electionId: string;
@@ -23,8 +24,8 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
         startTransition(async () => {
             try {
                 await publishElection(electionId);
-            } catch (err: any) {
-                setErrorMessage(err.message || "Failed to publish election.");
+            } catch (err) {
+                setErrorMessage(getErrorMessage(err) || "Failed to publish election.");
             } finally {
                 setAction(null);
             }
@@ -37,8 +38,8 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
         startTransition(async () => {
             try {
                 await startVoting(electionId);
-            } catch (err: any) {
-                setErrorMessage(err.message || "Failed to start voting.");
+            } catch (err) {
+                setErrorMessage(getErrorMessage(err) || "Failed to start voting.");
             } finally {
                 setAction(null);
             }
@@ -51,8 +52,8 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
         startTransition(async () => {
             try {
                 await completeElection(electionId);
-            } catch (err: any) {
-                setErrorMessage(err.message || "Failed to complete election.");
+            } catch (err) {
+                setErrorMessage(getErrorMessage(err) || "Failed to complete election.");
             } finally {
                 setAction(null);
             }
@@ -66,8 +67,8 @@ export default function ElectionAdminControls({ electionId, status }: ElectionAd
             try {
                 await deleteElection(electionId);
                 router.push("/dashboard/elections");
-            } catch (err: any) {
-                setErrorMessage(err.message || "Failed to delete election.");
+            } catch (err) {
+                setErrorMessage(getErrorMessage(err) || "Failed to delete election.");
             } finally {
                 setAction(null);
                 setShowDeleteConfirm(false);

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import JoinButton from "./JoinButton";
 import CreateOrgDialog from "../admin/CreateOrgDialog";
@@ -116,7 +117,7 @@ export default async function OrganizationsPage() {
                                     <div className="flex items-start gap-4 mb-4">
                                         <div className="w-14 h-14 rounded-xl border border-border/50 bg-[#800000]/5 flex flex-col items-center justify-center overflow-hidden shrink-0 relative">
                                             {org.logo_url ? (
-                                                <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+                                                <Image src={org.logo_url} alt={org.name} fill className="object-cover" />
                                             ) : (
                                                 <span className="text-2xl">🏢</span>
                                             )}

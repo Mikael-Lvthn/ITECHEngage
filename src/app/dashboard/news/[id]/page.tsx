@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import LikeShareButtons from "@/components/LikeShareButtons";
 
@@ -57,21 +58,27 @@ export default async function NewsDetailPage({ params }: Props) {
 
             <article className="rounded-xl border bg-white shadow-sm overflow-hidden">
                 {newsItem.image_url && (
-                    <img
-                        src={newsItem.image_url}
-                        alt={newsItem.title}
-                        className="w-full h-64 object-cover"
-                    />
+                    <div className="relative w-full h-64">
+                        <Image
+                            src={newsItem.image_url}
+                            alt={newsItem.title}
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
                 )}
 
                 <div className="p-6 sm:p-8">
                     <div className="flex items-center gap-3 mb-4">
                         {newsItem.organizations && !Array.isArray(newsItem.organizations) && typeof newsItem.organizations === 'object' && 'logo_url' in newsItem.organizations && newsItem.organizations.logo_url ? (
-                            <img
-                                src={String(newsItem.organizations.logo_url)}
-                                alt=""
-                                className="w-10 h-10 rounded-lg object-cover border"
-                            />
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border">
+                                <Image
+                                    src={String(newsItem.organizations.logo_url)}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
                         ) : (
                             <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center">
                                 <span className="text-lg">🏢</span>

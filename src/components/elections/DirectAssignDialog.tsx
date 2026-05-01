@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { assignUserToRole } from "@/lib/actions/org-roles";
 import { Loader2, UserPlus } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface OrgRole {
     id: string;
@@ -55,8 +56,8 @@ export default function DirectAssignDialog({
                 setSuccess(`Successfully assigned ${member?.full_name} to ${role?.title}`);
                 setSelectedRole("");
                 setSelectedMember("");
-            } catch (err: any) {
-                setError(err.message || "Failed to assign role.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to assign role.");
             }
         });
     };
@@ -66,8 +67,8 @@ export default function DirectAssignDialog({
             try {
                 await assignUserToRole(roleId, null, organizationId);
                 setSuccess("Assignment cleared successfully.");
-            } catch (err: any) {
-                setError(err.message || "Failed to clear assignment.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to clear assignment.");
             }
         });
     };

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { nominateCandidate } from "@/lib/actions/elections";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface NominateDialogProps {
     electionId: string;
@@ -35,8 +36,8 @@ export default function NominateDialog({ electionId, roles, alreadyNominated }: 
                 setOpen(false);
                 setSelectedRoleId("");
                 setPlatform("");
-            } catch (err: any) {
-                setError(err.message || "Failed to submit nomination.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to submit nomination.");
             }
         });
     };

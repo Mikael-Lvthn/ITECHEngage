@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { castVote } from "@/lib/actions/elections";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface CandidateOption {
     id: string;
@@ -53,8 +55,8 @@ export default function VotingDialog({
                 setSuccessMsg("Your vote has been recorded successfully!");
                 setShowConfirm(false);
                 setSelectedCandidate(null);
-            } catch (err: any) {
-                setErrorMsg(err.message || "Failed to cast vote.");
+            } catch (err) {
+                setErrorMsg(getErrorMessage(err) || "Failed to cast vote.");
                 setShowConfirm(false);
             }
         });
@@ -149,9 +151,9 @@ export default function VotingDialog({
                                         </div>
                                     )}
 
-                                    <div className="w-10 h-10 rounded-full bg-[#C9A227] text-[#2B2B2B] text-sm font-bold flex items-center justify-center shrink-0 z-10">
+                                    <div className="relative w-10 h-10 rounded-full bg-[#C9A227] text-[#2B2B2B] text-sm font-bold flex items-center justify-center shrink-0 z-10 overflow-hidden">
                                         {candidate.avatar_url ? (
-                                            <img src={candidate.avatar_url} alt={candidate.name} className="w-full h-full rounded-full object-cover" />
+                                            <Image src={candidate.avatar_url} alt={candidate.name} fill className="rounded-full object-cover" />
                                         ) : (
                                             initials
                                         )}

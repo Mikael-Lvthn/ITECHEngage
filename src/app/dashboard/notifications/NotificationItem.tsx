@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markAsRead, archiveNotification } from "@/lib/actions/notifications";
 import { Loader2, Archive } from "lucide-react";

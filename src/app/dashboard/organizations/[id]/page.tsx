@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import JoinButton from "../JoinButton";
 import RecruitmentSection from "./RecruitmentSection";
@@ -139,7 +140,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
         orgMembers = (membersData || []).map((m) => ({
             user_id: m.user_id,
-            full_name: (m.profiles as any)?.full_name || "Unknown",
+            full_name: (m.profiles as { full_name: string } | null)?.full_name || "Unknown",
         }));
     }
 
@@ -172,7 +173,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="h-44 md:h-56 bg-muted relative">
                     {org.cover_photo_url ? (
-                        <img src={org.cover_photo_url} alt="Cover" className="w-full h-full object-cover" />
+                        <Image src={org.cover_photo_url} alt="Cover" fill className="object-cover" />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-r from-[#800000] to-[#C9A227] opacity-80" />
                     )}
@@ -180,9 +181,9 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
                 <div className="px-6 pb-6 relative">
                     <div className="flex items-end -mt-14 mb-4">
-                        <div className="w-28 h-28 rounded-2xl border-4 border-card bg-card shrink-0 overflow-hidden shadow-lg z-10">
+                        <div className="relative w-28 h-28 rounded-2xl border-4 border-card bg-card shrink-0 overflow-hidden shadow-lg z-10">
                             {org.logo_url ? (
-                                <img src={org.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                                <Image src={org.logo_url} alt="Logo" fill className="object-cover" />
                             ) : (
                                 <div className="w-full h-full bg-[#800000]/10 flex items-center justify-center text-4xl">🏢</div>
                             )}
@@ -330,7 +331,9 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                                 <p className="text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{item.content}</p>
 
                                                 {item.image_url && (
-                                                    <img src={item.image_url} alt={item.title} className="mt-3 w-full h-48 object-cover rounded-lg border" />
+                                                    <div className="relative mt-3 w-full h-48 overflow-hidden rounded-lg border">
+                                                        <Image src={item.image_url} alt={item.title} fill className="object-cover" />
+                                                    </div>
                                                 )}
                                             </div>
                                         ))}

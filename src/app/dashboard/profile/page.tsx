@@ -1,14 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { updateProfile } from "@/lib/actions/profile";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
 import { LoadingButton } from "@/components/loading/LoadingButton";
+import { getErrorMessage } from "@/lib/utils/error";
+
+interface Profile {
+    full_name: string;
+    email: string;
+    role: string;
+    avatar_url: string | null;
+    bio: string | null;
+    phone_number: string | null;
+    website_url: string | null;
+    social_links: { facebook?: string; twitter?: string; linkedin?: string } | null;
+}
+
+interface Student {
+    school_email: string | null;
+    personal_email: string | null;
+    contact_number: string | null;
+    lrn: string | null;
+    student_number: string | null;
+    program: string | null;
+}
 
 export default function ProfilePage() {
-    const [profile, setProfile] = useState<any>(null);
-    const [student, setStudent] = useState<any>(null);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [student, setStudent] = useState<Student | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -92,9 +114,9 @@ export default function ProfilePage() {
             formData.set("is_student", student ? "true" : "false");
             await updateProfile(formData);
             showToast("Profile updated successfully!", "success");
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            showToast(error.message || "Failed to update profile", "error");
+            showToast(getErrorMessage(error) || "Failed to update profile", "error");
         } finally {
             setSaving(false);
         }
@@ -127,7 +149,9 @@ export default function ProfilePage() {
                 <div className="mb-6 flex items-center gap-6">
                     <div className="relative">
                         {avatarUrl ? (
-                            <img src={avatarUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border" />
+                            <div className="relative w-24 h-24 rounded-full overflow-hidden border">
+                                <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
+                            </div>
                         ) : (
                             <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border">
                                 No Avatar

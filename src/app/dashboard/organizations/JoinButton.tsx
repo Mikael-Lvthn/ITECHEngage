@@ -32,8 +32,8 @@ export default function JoinButton({ organizationId, membershipStatus, hasLeaveR
         try {
             await requestLeave(organizationId);
             setLeavePending(true);
-        } catch (err: any) {
-            console.error(err.message);
+        } catch (err) {
+            console.error(err instanceof Error ? err.message : err);
         } finally {
             setLoading(false);
         }

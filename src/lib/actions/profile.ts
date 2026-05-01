@@ -22,7 +22,7 @@ export async function updateProfile(formData: FormData) {
     if (socialLinksStr) {
         try {
             social_links = JSON.parse(socialLinksStr);
-        } catch (e) {
+        } catch {
             console.error("Failed to parse social links");
         }
     }

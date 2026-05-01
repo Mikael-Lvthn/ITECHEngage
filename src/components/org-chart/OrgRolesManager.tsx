@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createOrgRole, deleteOrgRole, assignUserToRole } from "@/lib/actions/org-roles";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface Member {
     user_id: string;
@@ -44,8 +45,8 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                 setSuccess("Role created successfully!");
                 setShowCreate(false);
                 setSelectedLevel(1);
-            } catch (err: any) {
-                setError(err.message || "Failed to create role.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to create role.");
             }
         });
     };
@@ -59,8 +60,8 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
             try {
                 await deleteOrgRole(roleId, organizationId);
                 setSuccess(`Role "${title}" deleted.`);
-            } catch (err: any) {
-                setError(err.message || "Failed to delete role.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to delete role.");
             }
         });
     };
@@ -73,8 +74,8 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
             try {
                 await assignUserToRole(roleId, userId, organizationId);
                 setSuccess("Role assignment updated.");
-            } catch (err: any) {
-                setError(err.message || "Failed to assign user.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to assign user.");
             }
         });
     };

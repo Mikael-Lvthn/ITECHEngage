@@ -6,6 +6,7 @@ import { assignUserToRole } from "@/lib/actions/org-roles";
 import PositionCard from "./PositionCard";
 import CandidateCard from "./CandidateCard";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface Candidate {
     id: string;
@@ -66,7 +67,7 @@ export default function ElectionBoard({
     currentUserId,
     isVotingOpen,
     isClosed,
-    isOfficer,
+    isOfficer: _isOfficer,
     isMember,
     isAdmin,
     organizationId,
@@ -90,8 +91,8 @@ export default function ElectionBoard({
         startTransition(async () => {
             try {
                 await castVote(electionId, candidateId, roleId);
-            } catch (error: any) {
-                console.error("Vote failed:", error.message);
+            } catch (error) {
+                console.error("Vote failed:", getErrorMessage(error));
             } finally {
                 setVotingFor(null);
             }
@@ -107,8 +108,8 @@ export default function ElectionBoard({
                 setDialogSuccess(`Member assigned to ${assignDialogRole.title}!`);
                 setAssignDialogRole(null);
                 setSelectedMember("");
-            } catch (error: any) {
-                setDialogError(error.message || "Failed to assign member.");
+            } catch (error) {
+                setDialogError(getErrorMessage(error) || "Failed to assign member.");
             }
         });
     };
@@ -126,8 +127,8 @@ export default function ElectionBoard({
                 setDialogSuccess(`Nominated for ${nominateDialogRole.title}!`);
                 setNominateDialogRole(null);
                 setPlatform("");
-            } catch (error: any) {
-                setDialogError(error.message || "Failed to submit nomination.");
+            } catch (error) {
+                setDialogError(getErrorMessage(error) || "Failed to submit nomination.");
             }
         });
     };
@@ -320,7 +321,7 @@ export default function ElectionBoard({
             {canVote && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-4">
                     <p className="text-sm text-blue-800 dark:text-blue-300">
-                        <strong>How to vote:</strong> Click the "Vote" button on a candidate card. You can only vote once per position.
+                        <strong>How to vote:</strong> Click the &quot;Vote&quot; button on a candidate card. You can only vote once per position.
                         {isAdmin && " As an admin, you cannot vote in elections."}
                     </p>
                 </div>

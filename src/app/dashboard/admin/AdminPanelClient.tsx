@@ -4,8 +4,9 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { approveLeaveRequest, rejectLeaveRequest } from "@/lib/actions/organizations";
+import { getErrorMessage } from "@/lib/utils/error";
 
-interface MembershipRequest {
+export interface MembershipRequest {
     id: string;
     user_id: string;
     organization_id: string;
@@ -15,7 +16,7 @@ interface MembershipRequest {
     organizations: { name: string } | null;
 }
 
-interface PendingEvent {
+export interface PendingEvent {
     id: string;
     title: string;
     description: string;
@@ -25,7 +26,7 @@ interface PendingEvent {
     organizations: { name: string } | null;
 }
 
-interface PendingAccreditation {
+export interface PendingAccreditation {
     id: string;
     organization_id: string;
     status: string;
@@ -33,30 +34,30 @@ interface PendingAccreditation {
     organizations: { name: string } | null;
 }
 
-interface AuditLogEntry {
+export interface AuditLogEntry {
     id: string;
     actor_id: string | null;
     action: string;
     entity_type: string;
     entity_id: string | null;
-    metadata: any;
+    metadata: unknown;
     created_at: string;
     profiles: { full_name: string } | null;
 }
 
-interface Category {
+export interface Category {
     id: string;
     name: string;
     description: string | null;
     created_at: string;
 }
 
-interface Organization {
+export interface Organization {
     id: string;
     name: string;
 }
 
-interface LeaveRequest {
+export interface LeaveRequest {
     id: string;
     user_id: string;
     organization_id: string;
@@ -111,7 +112,7 @@ export default function AdminPanelClient({
     const router = useRouter();
     const initialTab = (searchParams.get("tab") as Tab) || "roster";
     const [activeTab, setActiveTab] = useState<Tab>(initialTab);
-    const [isPending, startTransition] = useTransition();
+    const [_isPending, _startTransition] = useTransition();
 
     const switchTab = (tab: Tab) => {
         setActiveTab(tab);
@@ -324,8 +325,8 @@ function LeaveRequestsSection({
             try {
                 await approveLeaveRequest(requestId);
                 router.refresh();
-            } catch (err: any) {
-                console.error("Approve failed:", err.message);
+            } catch (err) {
+                console.error("Approve failed:", getErrorMessage(err));
             } finally {
                 setActioningId(null);
             }
@@ -338,8 +339,8 @@ function LeaveRequestsSection({
             try {
                 await rejectLeaveRequest(requestId);
                 router.refresh();
-            } catch (err: any) {
-                console.error("Reject failed:", err.message);
+            } catch (err) {
+                console.error("Reject failed:", getErrorMessage(err));
             } finally {
                 setActioningId(null);
             }

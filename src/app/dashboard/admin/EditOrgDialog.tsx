@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { updateOrganization } from "@/lib/actions/admin";
 import { createClient } from "@/lib/supabase/client";
@@ -150,9 +151,9 @@ export default function EditOrgDialog({ org }: EditOrgDialogProps) {
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Logo</label>
                                             <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                                                <div className="relative w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
                                                     {logoUrl ? (
-                                                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                                        <Image src={logoUrl} alt="Logo" fill className="object-cover" />
                                                     ) : (
                                                         <span className="text-[#C9A227] text-2xl">🏢</span>
                                                     )}
@@ -173,7 +174,7 @@ export default function EditOrgDialog({ org }: EditOrgDialogProps) {
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Banner</label>
                                             <div className="w-full h-24 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden mb-3 relative group">
                                                 {coverPhotoUrl ? (
-                                                    <img src={coverPhotoUrl} alt="Cover" className="w-full h-full object-cover group-hover:brightness-90 transition-all" />
+                                                    <Image src={coverPhotoUrl} alt="Cover" fill className="object-cover group-hover:brightness-90 transition-all" />
                                                 ) : (
                                                     <span className="text-gray-400 text-sm">Upload a cover image</span>
                                                 )}

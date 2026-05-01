@@ -71,7 +71,7 @@ export default async function NewsManagementPage() {
                 userRole="officer"
                 userOrganizations={memberships.map(m => ({
                     id: m.organization_id,
-                    name: (m.organizations as any)?.name
+                    name: (m.organizations as { name: string } | null)?.name ?? ""
                 }))}
             />
         </div>

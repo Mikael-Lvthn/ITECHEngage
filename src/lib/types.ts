@@ -17,7 +17,7 @@ export interface Profile {
     bio?: string | null;
     phone_number?: string | null;
     website_url?: string | null;
-    social_links?: any;
+    social_links?: Record<string, string> | null;
     role: UserRole;
     created_at: string;
 }

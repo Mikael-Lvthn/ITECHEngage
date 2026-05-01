@@ -92,7 +92,7 @@ export async function updateNewsStatus(news_id: string, status: NewsStatus) {
         throw new Error("Unauthorized: Admin role required to update status");
     }
 
-    const updateData: any = { status };
+    const updateData: { status: NewsStatus; published_at?: string } = { status };
     if (status === "published") {
         updateData.published_at = new Date().toISOString();
     }

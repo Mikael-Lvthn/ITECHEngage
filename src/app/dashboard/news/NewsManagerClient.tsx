@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createNews, updateNewsStatus, deleteNews } from "@/lib/actions/news";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface NewsItem {
     id: string;
@@ -42,8 +44,8 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
             showToast("News submitted for accreditation!", "success");
             setIsCreating(false);
             window.location.reload();
-        } catch (error: any) {
-            showToast(error.message || "Failed to submit news", "error");
+        } catch (error) {
+            showToast(getErrorMessage(error) || "Failed to submit news", "error");
         } finally {
             setLoading(false);
         }
@@ -73,13 +75,13 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
         }
     };
 
-    const handleStatusUpdate = async (id: string, newStatus: any) => {
+    const handleStatusUpdate = async (id: string, newStatus: string) => {
         try {
             setLoading(true);
             await updateNewsStatus(id, newStatus);
             setNews(news.map(n => n.id === id ? { ...n, status: newStatus } : n));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
@@ -91,15 +93,15 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
             setLoading(true);
             await deleteNews(id);
             setNews(news.filter(n => n.id !== id));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
     };
 
     const getStatusBadge = (status: string) => {
-        const colors: any = {
+        const colors: Record<string, string> = {
             draft: "bg-gray-100 text-gray-700 border-gray-200",
             pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
             published: "bg-green-100 text-green-800 border-green-200",
@@ -140,7 +142,11 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
                             <label className="block text-sm font-medium mb-1">Cover Image</label>
                             <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm mb-2" />
                             {uploading && <p className="text-xs text-[#C9A227]">Uploading image...</p>}
-                            {imageUrl && <img src={imageUrl} alt="Preview" className="h-32 object-cover rounded-lg border bg-gray-50" />}
+                            {imageUrl && (
+                                <div className="relative h-32 rounded-lg overflow-hidden border bg-gray-50">
+                                    <Image src={imageUrl} alt="Preview" fill className="object-cover" />
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Content</label>
@@ -175,7 +181,9 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
                     news.map(item => (
                         <div key={item.id} className="bg-white border rounded-xl p-5 flex flex-col md:flex-row gap-5">
                             {item.image_url ? (
-                                <img src={item.image_url} alt="Cover" className="w-full md:w-48 h-32 object-cover rounded-lg border bg-gray-50 shrink-0" />
+                                <div className="relative w-full md:w-48 h-32 rounded-lg overflow-hidden border bg-gray-50 shrink-0">
+                                    <Image src={item.image_url} alt="Cover" fill className="object-cover" />
+                                </div>
                             ) : (
                                 <div className="w-full md:w-48 h-32 bg-gray-100 border rounded-lg flex items-center justify-center text-gray-400 shrink-0">
                                     No Image

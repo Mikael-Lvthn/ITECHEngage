@@ -1,6 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import AdminPanelClient from "./AdminPanelClient";
+import AdminPanelClient, { 
+    MembershipRequest, 
+    PendingEvent, 
+    PendingAccreditation, 
+    AuditLogEntry, 
+    Category, 
+    Organization, 
+    LeaveRequest 
+} from "./AdminPanelClient";
 
 interface Props {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -39,7 +47,7 @@ export default async function AdminPage({ searchParams }: Props) {
 
     let leaveHistoryQuery = supabase
         .from("leave_requests")
-        .select("id, user_id, organization_id, status, created_at, reviewed_at, actioned_by_id, profiles!leave_requests_user_id_fkey(full_name, email), organizations(id, name)")
+        .select("id, user_id, organization_id, status, created_at, reviewed_at, actioned_by_id, designated_approver_id, profiles!leave_requests_user_id_fkey(full_name, email), organizations(id, name)")
         .neq("status", "pending")
         .order("reviewed_at", { ascending: false })
         .limit(30);
@@ -118,14 +126,35 @@ export default async function AdminPage({ searchParams }: Props) {
             </div>
 
             <AdminPanelClient
-                membershipRequests={(membershipRequestsResult.data as any) || []}
-                pendingEvents={(pendingEventsResult.data as any) || []}
-                pendingAccreditations={(pendingAccreditationsResult.data as any) || []}
-                auditLogs={(auditLogsResult.data as any) || []}
-                categories={(categoriesResult.data as any) || []}
-                organizations={(organizationsListResult.data as any) || []}
-                pendingLeaveRequests={(pendingLeaveResult.data as any) || []}
-                leaveHistory={(leaveHistoryResult.data as any) || []}
+                membershipRequests={(membershipRequestsResult.data || []).map(item => ({
+                    ...item,
+                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as MembershipRequest[]}
+                pendingEvents={(pendingEventsResult.data || []).map(item => ({
+                    ...item,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as PendingEvent[]}
+                pendingAccreditations={(pendingAccreditationsResult.data || []).map(item => ({
+                    ...item,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as PendingAccreditation[]}
+                auditLogs={(auditLogsResult.data || []).map(item => ({
+                    ...item,
+                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
+                })) as AuditLogEntry[]}
+                categories={(categoriesResult.data as Category[]) || []}
+                organizations={(organizationsListResult.data as Organization[]) || []}
+                pendingLeaveRequests={(pendingLeaveResult.data || []).map(item => ({
+                    ...item,
+                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as LeaveRequest[]}
+                leaveHistory={(leaveHistoryResult.data || []).map(item => ({
+                    ...item,
+                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as LeaveRequest[]}
                 stats={{
                     totalUsers: usersResult.count ?? 0,
                     totalOrgs: orgsResult.count ?? 0,

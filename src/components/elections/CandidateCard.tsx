@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 interface CandidateCardProps {
     id: string;
@@ -15,7 +16,7 @@ interface CandidateCardProps {
 }
 
 export default function CandidateCard({
-    id,
+    id: _id,
     name,
     avatarUrl,
     platform,
@@ -55,14 +56,15 @@ export default function CandidateCard({
 
             {/* Avatar */}
             <div className="flex justify-center mb-3">
-                <div className={`w-16 h-16 rounded-full overflow-hidden border-2 ${
+                <div className={`relative w-16 h-16 rounded-full overflow-hidden border-2 ${
                     isWinner ? "border-[#C9A227]" : "border-gray-200"
                 }`}>
                     {avatarUrl ? (
-                        <img
+                        <Image
                             src={avatarUrl}
                             alt={name}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
                         />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#800000] to-[#C9A227] flex items-center justify-center text-white text-xl font-bold">
@@ -111,7 +113,7 @@ export default function CandidateCard({
             {isCurrentUser && canVote && (
                 <div className="mt-3 text-center">
                     <span className="text-[10px] text-gray-400 font-medium">
-                        You can't vote for yourself
+                        You can&apos;t vote for yourself
                     </span>
                 </div>
             )}

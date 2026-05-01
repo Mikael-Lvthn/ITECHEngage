@@ -55,7 +55,14 @@ function applyThemeToDOM(config: ThemeConfig) {
     }
 }
 
-export function ThemeProvider({ children, initialPrefs }: { children: ReactNode; initialPrefs?: any }) {
+interface UserPrefs {
+    font_family?: string;
+    font_size?: string;
+    brightness?: number;
+    dark_mode?: boolean;
+}
+
+export function ThemeProvider({ children, initialPrefs }: { children: ReactNode; initialPrefs?: UserPrefs }) {
     const [theme, setTheme] = useState<ThemeConfig>(() => {
         if (initialPrefs) {
             return {

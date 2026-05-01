@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { type SupabaseClient } from "@supabase/supabase-js";
 
 async function getAuthUser() {
     const supabase = await createClient();
@@ -12,7 +13,7 @@ async function getAuthUser() {
     return { supabase, user };
 }
 
-async function canManageMembership(supabase: any, userId: string, orgId: string) {
+async function canManageMembership(supabase: SupabaseClient, userId: string, orgId: string) {
     // Admin can manage any organization
     const { data: userRole } = await supabase.rpc("get_my_role");
     if (userRole === "admin") return true;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createNews, deleteNews, updateNewsStatus } from "@/lib/actions/news";
 import { createClient } from "@/lib/supabase/client";
 import { createEvent, deleteEvent, approveEvent, rejectEvent } from "@/lib/actions/events";
@@ -8,8 +9,9 @@ import LikeShareButtons from "@/components/LikeShareButtons";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { LoadingButton } from "@/components/loading/LoadingButton";
+import { getErrorMessage } from "@/lib/utils/error";
 
-interface NewsItem {
+export interface NewsItem {
     id: string;
     title: string;
     content: string;
@@ -20,7 +22,7 @@ interface NewsItem {
     organizations?: { name: string };
 }
 
-interface EventItem {
+export interface EventItem {
     id: string;
     title: string;
     description: string;
@@ -67,8 +69,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             showToast("News submitted for review!", "success");
             setActiveTab("news");
             window.location.reload();
-        } catch (error: any) {
-            showToast(error.message || "Failed to submit news", "error");
+        } catch (error) {
+            showToast(getErrorMessage(error) || "Failed to submit news", "error");
         } finally {
             setLoading(false);
         }
@@ -90,8 +92,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             showToast("Event created successfully!", "success");
             setActiveTab("events");
             window.location.reload();
-        } catch (error: any) {
-            showToast(error.message || "Failed to create event", "error");
+        } catch (error) {
+            showToast(getErrorMessage(error) || "Failed to create event", "error");
         } finally {
             setLoading(false);
         }
@@ -127,8 +129,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             setLoading(true);
             await deleteNews(id);
             setNews(news.filter(n => n.id !== id));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
@@ -140,8 +142,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             setLoading(true);
             await deleteEvent(id);
             setEvents(events.filter(e => e.id !== id));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
@@ -152,8 +154,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             setLoading(true);
             await updateNewsStatus(id, "published");
             setNews(news.map(n => n.id === id ? { ...n, status: "published" } : n));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
@@ -164,8 +166,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             setLoading(true);
             await updateNewsStatus(id, "rejected");
             setNews(news.map(n => n.id === id ? { ...n, status: "rejected" } : n));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
@@ -176,8 +178,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             setLoading(true);
             await approveEvent(id);
             setEvents(events.map(e => e.id === id ? { ...e, status: "published" } : e));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
@@ -188,15 +190,15 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
             setLoading(true);
             await rejectEvent(id);
             setEvents(events.map(e => e.id === id ? { ...e, status: "cancelled" } : e));
-        } catch (error: any) {
-            showToast("Failed: " + error.message, "error");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
         } finally {
             setLoading(false);
         }
     };
 
     const getStatusBadge = (status: string) => {
-        const colors: any = {
+        const colors: Record<string, string> = {
             draft: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
             pending: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
             published: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
@@ -286,7 +288,11 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                         <label className="block text-sm font-semibold text-foreground mb-1.5">Cover Image</label>
                                         <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm mb-2" />
                                         {uploading && <p className="text-xs text-[#C9A227]">Uploading image...</p>}
-                                        {imageUrl && <img src={imageUrl} alt="Preview" className="h-32 object-cover rounded-xl border bg-gray-100" />}
+                                        {imageUrl && (
+                                            <div className="relative h-32 rounded-xl overflow-hidden border bg-gray-100">
+                                                <Image src={imageUrl} alt="Preview" fill className="object-cover" />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="col-span-2">
                                         <label className="block text-sm font-semibold text-foreground mb-1.5">News Content <span className="text-[#800000]">*</span></label>
@@ -357,7 +363,9 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                             news.map(item => (
                                 <div key={item.id} className="bg-card border rounded-xl p-5 flex flex-col md:flex-row gap-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
                                     {item.image_url ? (
-                                        <img src={item.image_url} alt="Cover" className="w-full md:w-48 h-32 object-cover rounded-lg border bg-muted shrink-0" />
+                                        <div className="relative w-full md:w-48 h-32 rounded-lg overflow-hidden border bg-muted shrink-0">
+                                            <Image src={item.image_url} alt="Cover" fill className="object-cover" />
+                                        </div>
                                     ) : (
                                         <div className="w-full md:w-48 h-32 bg-muted border rounded-lg flex items-center justify-center text-muted-foreground shrink-0">
                                             No Image
@@ -491,8 +499,8 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
 
                 {/* ---------- MY SUBMISSIONS VIEW --------------------------------------- */}
                 {activeTab === "submissions" && canCreate && userId && (() => {
-                    const myNews = news.filter((n: any) => n.created_by === userId);
-                    const myEvents = events.filter((e: any) => e.created_by === userId);
+                    const myNews = news.filter((n) => n.created_by === userId);
+                    const myEvents = events.filter((e) => e.created_by === userId);
                     const totalSubmissions = myNews.length + myEvents.length;
 
                     return (
@@ -511,7 +519,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                         <div>
                                             <h3 className="text-sm font-semibold text-foreground mb-3">📰 News Submissions ({myNews.length})</h3>
                                             <div className="space-y-2">
-                                                {myNews.map((item: any) => (
+                                                {myNews.map((item) => (
                                                     <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-medium truncate">{item.title}</p>
@@ -537,7 +545,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                         <div>
                                             <h3 className="text-sm font-semibold text-foreground mb-3">📅 Event Submissions ({myEvents.length})</h3>
                                             <div className="space-y-2">
-                                                {myEvents.map((ev: any) => (
+                                                {myEvents.map((ev) => (
                                                     <div key={ev.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-medium truncate">{ev.title}</p>

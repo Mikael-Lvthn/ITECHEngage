@@ -88,7 +88,7 @@ export default function HomepageSearch({ organizations, events, news, isLoggedIn
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
                     {results.length > 0 ? (
                         <div className="max-h-80 overflow-y-auto">
-                            {results.map((item, i) => (
+                            {results.map((item) => (
                                 <Link
                                     key={`${item.type}-${item.id}`}
                                     href={item.href}

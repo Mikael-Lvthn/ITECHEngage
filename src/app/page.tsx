@@ -229,14 +229,13 @@ export default async function HomePage() {
                                 href={user ? `/dashboard/organizations/${org.id}` : "/login"}
                                 className="w-full aspect-square max-w-[220px] rounded-2xl border border-[#D9D9D9] bg-white hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center p-5 group"
                             >
-                                <div className="w-20 h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 mb-4">
+                                <div className="relative w-20 h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 mb-4">
                                     {org.logo_url ? (
-                                        <img
+                                        <Image
                                             src={org.logo_url}
                                             alt={org.name}
-                                            className="w-full h-full object-cover"
-                                            loading="lazy"
-                                            decoding="async"
+                                            fill
+                                            className="object-cover"
                                         />
                                     ) : (
                                         <span className="text-3xl">🏢</span>

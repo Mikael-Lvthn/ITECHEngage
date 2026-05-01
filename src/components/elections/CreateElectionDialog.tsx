@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createElection } from "@/lib/actions/elections";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface CreateElectionDialogProps {
     organizations: { id: string; name: string }[];
@@ -23,7 +24,7 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
 
         startTransition(async () => {
             try {
-                const election = await createElection(formData);
+                await createElection(formData);
                 setSuccess(true);
                 // Navigate to the organization's page to see the election in the Elections tab
                 const orgId = formData.get("organization_id");
@@ -31,8 +32,8 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
                     setOpen(false);
                     router.push(`/dashboard/organizations/${orgId}`);
                 }, 1500);
-            } catch (err: any) {
-                setError(err.message || "Failed to create election.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to create election.");
             }
         });
     };
@@ -123,8 +124,8 @@ export default function CreateElectionDialog({ organizations }: CreateElectionDi
                                     {/* Info about election workflow */}
                                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                                         <p className="text-xs text-blue-800">
-                                            <strong>How it works:</strong> The election will be created in <strong>draft</strong> mode. 
-                                            Visit the organization's Elections tab to manage nominations, publish the election, 
+                                            <strong>How it works:</strong> The election will be created in <strong>draft</strong> mode.
+                                            Visit the organization&apos;s Elections tab to manage nominations, publish the election,
                                             start voting, or directly assign roles.
                                         </p>
                                     </div>

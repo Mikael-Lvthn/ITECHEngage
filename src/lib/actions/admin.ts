@@ -107,7 +107,16 @@ export async function updateOrganization(formData: FormData) {
         throw new Error("Organization name is required");
     }
 
-    const updateData: any = {
+    const updateData: {
+        name: string;
+        description: string | null;
+        visibility: string;
+        logo_url?: string;
+        cover_photo_url?: string;
+        mission?: string;
+        vision?: string;
+        core_values?: string;
+    } = {
         name: name.trim(),
         description: description?.trim() || null,
         visibility,

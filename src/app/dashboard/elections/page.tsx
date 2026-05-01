@@ -49,8 +49,8 @@ export default async function ElectionsPage() {
 
     const electionIds = visibleElections.map((e) => e.id);
 
-    let candidateCounts: Record<string, number> = {};
-    let roleCounts: Record<string, number> = {};
+    const candidateCounts: Record<string, number> = {};
+    const roleCounts: Record<string, number> = {};
 
     if (electionIds.length > 0) {
         const { data: candidates } = await supabase
@@ -91,7 +91,7 @@ export default async function ElectionsPage() {
     const closedElections = visibleElections.filter((e) => e.status === "completed");
     
     // "Active" means voting or published (visible/ongoing)
-    const activeElections = [...votingElections, ...publishedElections];
+    const _activeElections = [...votingElections, ...publishedElections];
 
     return (
         <div className="space-y-6">

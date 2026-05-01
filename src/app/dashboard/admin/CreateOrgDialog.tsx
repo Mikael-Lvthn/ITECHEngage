@@ -1,16 +1,23 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { createOrganization } from "@/lib/actions/admin";
 import { createClient } from "@/lib/supabase/client";
+
+interface Student {
+    id: string;
+    full_name: string;
+    email: string;
+}
 
 export default function CreateOrgDialog() {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const [students, setStudents] = useState<any[]>([]);
+    const [students, setStudents] = useState<Student[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<string>("");
     const [studentSearch, setStudentSearch] = useState("");
     const [showStudentDropdown, setShowStudentDropdown] = useState(false);
@@ -30,6 +37,7 @@ export default function CreateOrgDialog() {
         if (open) {
             fetchStudents();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     // Close dropdown on outside click
@@ -45,7 +53,7 @@ export default function CreateOrgDialog() {
 
     async function fetchStudents() {
         // Fetch ALL students system-wide (not just those in an org)
-        const { data, error } = await supabase
+        const { data, error: _error } = await supabase
             .from("profiles")
             .select("id, full_name, email")
             .eq("role", "student")
@@ -245,9 +253,9 @@ export default function CreateOrgDialog() {
                                         <div>
                                             <label className="block text-sm font-semibold text-foreground mb-2">Logo <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
                                             <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
+                                                <div className="relative w-16 h-16 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
                                                     {logoUrl ? (
-                                                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                                        <Image src={logoUrl} alt="Logo" fill className="object-cover" />
                                                     ) : (
                                                         <span className="text-[#C9A227] text-2xl">🏢</span>
                                                     )}
@@ -269,7 +277,7 @@ export default function CreateOrgDialog() {
                                             <label className="block text-sm font-semibold text-foreground mb-2">Cover Banner <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
                                             <div className="w-full h-24 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden mb-3 relative group">
                                                 {coverPhotoUrl ? (
-                                                    <img src={coverPhotoUrl} alt="Cover" className="w-full h-full object-cover group-hover:brightness-90 transition-all" />
+                                                    <Image src={coverPhotoUrl} alt="Cover" fill className="object-cover group-hover:brightness-90 transition-all" />
                                                 ) : (
                                                     <span className="text-muted-foreground text-sm">Upload a cover image</span>
                                                 )}

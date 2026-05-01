@@ -1,7 +1,26 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import LikeShareButtons from "@/components/LikeShareButtons";
+
+interface EventWithDetails {
+    id: string;
+    title: string;
+    description: string | null;
+    start_datetime: string;
+    end_datetime: string | null;
+    location: string;
+    status: string;
+    created_at: string;
+    organizations: {
+        name: string;
+        logo_url: string | null;
+    } | null;
+    profiles: {
+        full_name: string;
+    } | null;
+}
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -15,13 +34,15 @@ export default async function EventDetailPage({ params }: Props) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    const { data: event } = await supabase
+    const { data: rawEvent } = await supabase
         .from("events")
         .select("*, organizations(name, logo_url), profiles:created_by(full_name)")
         .eq("id", id)
         .single();
 
-    if (!event) notFound();
+    if (!rawEvent) notFound();
+
+    const event = rawEvent as unknown as EventWithDetails;
 
     const startDate = new Date(event.start_datetime);
     const endDate = event.end_datetime ? new Date(event.end_datetime) : null;
@@ -69,12 +90,15 @@ export default async function EventDetailPage({ params }: Props) {
 
                 <div className="p-6 sm:p-8">
                     <div className="flex items-center gap-3 mb-4">
-                        {(event.organizations as any)?.logo_url ? (
-                            <img
-                                src={(event.organizations as any).logo_url}
-                                alt=""
-                                className="w-10 h-10 rounded-lg object-cover border"
-                            />
+                        {event.organizations?.logo_url ? (
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border">
+                                <Image
+                                    src={event.organizations.logo_url}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                />
+                            </div>
                         ) : (
                             <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center">
                                 <span className="text-lg">🏢</span>
@@ -82,7 +106,7 @@ export default async function EventDetailPage({ params }: Props) {
                         )}
                         <div>
                             <p className="text-sm font-semibold text-gray-900">
-                                {(event.organizations as any)?.name || "Unknown Organization"}
+                                {event.organizations?.name || "Unknown Organization"}
                             </p>
                             <p className="text-xs text-gray-500">Event Organizer</p>
                         </div>
@@ -149,13 +173,13 @@ export default async function EventDetailPage({ params }: Props) {
                                 <p className="text-sm font-medium text-gray-900">{event.location}</p>
                             </div>
                         </div>
-                        {(event.profiles as any)?.full_name && (
+                        {event.profiles?.full_name && (
                             <div className="flex items-start gap-3">
                                 <span className="text-lg">👤</span>
                                 <div>
                                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Created by</p>
                                     <p className="text-sm font-medium text-gray-900">
-                                        {(event.profiles as any).full_name}
+                                        {event.profiles.full_name}
                                     </p>
                                 </div>
                             </div>

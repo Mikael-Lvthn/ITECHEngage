@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 async function getAuthUser() {
     const supabase = await createClient();
@@ -12,7 +13,7 @@ async function getAuthUser() {
     return { supabase, user };
 }
 
-async function requireAdmin(supabase: any) {
+async function requireAdmin(supabase: SupabaseClient) {
     const { data: role } = await supabase.rpc("get_my_role");
     if (role !== "admin") {
         throw new Error("Only administrators can perform this action.");
@@ -548,7 +549,7 @@ export async function withdrawNomination(candidateId: string) {
 }
 
 export async function getElectionWithDetails(electionId: string) {
-    const { supabase, user } = await getAuthUser();
+    const { supabase } = await getAuthUser();
 
     const { data: election } = await supabase
         .from("elections")

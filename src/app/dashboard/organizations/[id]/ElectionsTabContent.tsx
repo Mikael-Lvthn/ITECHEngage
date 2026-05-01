@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { publishElection, startVoting, completeElection } from "@/lib/actions/elections";
 import DirectAssignDialog from "@/components/elections/DirectAssignDialog";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface Election {
     id: string;
@@ -43,12 +44,12 @@ interface ElectionsTabContentProps {
 
 export default function ElectionsTabContent({
     organizationId,
-    organizationName,
+    organizationName: _organizationName,
     elections,
     roles,
     members,
     isAdmin,
-    isOfficer,
+    isOfficer: _isOfficer,
     isMember,
     canManageRoles,
 }: ElectionsTabContentProps) {
@@ -60,8 +61,8 @@ export default function ElectionsTabContent({
         startTransition(async () => {
             try {
                 await publishElection(electionId);
-            } catch (err: any) {
-                console.error(err.message);
+            } catch (err) {
+                console.error(getErrorMessage(err));
             } finally {
                 setActionId(null);
             }
@@ -73,8 +74,8 @@ export default function ElectionsTabContent({
         startTransition(async () => {
             try {
                 await startVoting(electionId);
-            } catch (err: any) {
-                console.error(err.message);
+            } catch (err) {
+                console.error(getErrorMessage(err));
             } finally {
                 setActionId(null);
             }
@@ -86,8 +87,8 @@ export default function ElectionsTabContent({
         startTransition(async () => {
             try {
                 await completeElection(electionId);
-            } catch (err: any) {
-                console.error(err.message);
+            } catch (err) {
+                console.error(getErrorMessage(err));
             } finally {
                 setActionId(null);
             }

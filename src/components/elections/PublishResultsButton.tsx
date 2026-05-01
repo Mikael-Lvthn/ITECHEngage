@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { publishElectionResults } from "@/lib/actions/elections";
+import { getErrorMessage } from "@/lib/utils/error";
 
 interface PublishResultsButtonProps {
     electionId: string;
@@ -17,8 +18,8 @@ export default function PublishResultsButton({ electionId }: PublishResultsButto
         startTransition(async () => {
             try {
                 await publishElectionResults(electionId);
-            } catch (err: any) {
-                setError(err.message || "Failed to publish results.");
+            } catch (err) {
+                setError(getErrorMessage(err) || "Failed to publish results.");
             }
         });
     };

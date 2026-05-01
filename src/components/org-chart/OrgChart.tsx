@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 
 interface RoleNode {
     id: string;
@@ -82,16 +83,17 @@ function RoleCard({ role, nodeRef }: { role: TreeNode; nodeRef: (el: HTMLDivElem
             )}
 
             <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${hasAssignee
+                className={`relative w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${hasAssignee
                     ? "bg-[#C9A227] text-[#2B2B2B]"
                     : "bg-muted text-muted-foreground"
                     }`}
             >
                 {role.assigned_user_avatar ? (
-                    <img
+                    <Image
                         src={role.assigned_user_avatar}
                         alt={role.assigned_user_name || ""}
-                        className="w-full h-full rounded-full object-cover"
+                        fill
+                        className="rounded-full object-cover"
                     />
                 ) : (
                     initials
@@ -141,7 +143,7 @@ function SubTree({ node, nodeRefs }: { node: TreeNode; nodeRefs: React.MutableRe
                 <div className="relative flex gap-6">
                     {/* Horizontal connector */}
                     <div className="connector-h absolute top-0 h-0.5 bg-[#800000]/40" style={{ left: '50%', right: '50%' }} />
-                    {node.children.map((child, i) => (
+                    {node.children.map((child) => (
                         <div key={child.id} className="flex flex-col items-center relative">
                             {/* Vertical connector from horizontal bar to child */}
                             <div className="w-0.5 h-4 bg-[#800000]/40" />

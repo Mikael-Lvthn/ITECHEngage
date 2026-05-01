@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 interface PositionCardProps {
     title: string;
@@ -36,12 +37,13 @@ export default function PositionCard({
                 </div>
                 
                 <div className="flex flex-col items-center pt-2">
-                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#C9A227] mb-2">
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#C9A227] mb-2">
                         {winnerAvatar ? (
-                            <img
+                            <Image
                                 src={winnerAvatar}
                                 alt={winnerName}
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-[#800000] to-[#C9A227] flex items-center justify-center text-white text-lg font-bold">
@@ -70,12 +72,13 @@ export default function PositionCard({
                         <span className="text-2xl">👤</span>
                     </div>
                 ) : (
-                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-border mb-2">
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-border mb-2">
                         {assignedUserAvatar ? (
-                            <img
+                            <Image
                                 src={assignedUserAvatar}
                                 alt={assignedUserName || ""}
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-[#800000] to-[#C9A227] flex items-center justify-center text-white text-lg font-bold">

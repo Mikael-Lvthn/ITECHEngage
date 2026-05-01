@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 
 interface Candidate {
     id: string;
@@ -33,7 +34,7 @@ interface ElectionResultsSectionProps {
 }
 
 export default function ElectionResultsSection({
-    electionId,
+    electionId: _electionId,
     electionTitle,
     resultsByRole,
     roles,
@@ -159,12 +160,13 @@ export default function ElectionResultsSection({
                                                     </div>
 
                                                     {/* Avatar */}
-                                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-border shrink-0">
+                                                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-border shrink-0">
                                                         {candidate.avatar_url ? (
-                                                            <img
+                                                            <Image
                                                                 src={candidate.avatar_url}
                                                                 alt={candidate.name}
-                                                                className="w-full h-full object-cover"
+                                                                fill
+                                                                className="object-cover"
                                                             />
                                                         ) : (
                                                             <div className="w-full h-full bg-gradient-to-br from-[#800000] to-[#C9A227] flex items-center justify-center text-white text-xs font-bold">
