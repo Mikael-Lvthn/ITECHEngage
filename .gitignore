@@ -45,3 +45,9 @@ eslint_report.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# UI/UX Pro Max Skill
+.github/prompts/
+
+# Supabase
+supabase/
