@@ -36,7 +36,10 @@ export default async function EventsPage() {
             .eq("status", "approved");
 
         userOrgs = (memberships || [])
-            .map((m) => m.organizations as unknown as { id: string; name: string })
+            .map((m) => {
+                const org = Array.isArray(m.organizations) ? m.organizations[0] : m.organizations;
+                return org as unknown as { id: string; name: string };
+            })
             .filter(Boolean);
     } else if (isAdmin) {
         const { data: orgs } = await supabase
@@ -113,8 +116,8 @@ export default async function EventsPage() {
                     </h2>
                     <div className="space-y-3">
                         {pending.map((ev, i) => {
-                            const org = ev.organizations as unknown as { id: string; name: string } | null;
-                            const creator = ev.profiles as unknown as { full_name: string } | null;
+                            const org = (Array.isArray(ev.organizations) ? ev.organizations[0] : ev.organizations) as unknown as { id: string; name: string } | null;
+                            const creator = (Array.isArray(ev.profiles) ? ev.profiles[0] : ev.profiles) as unknown as { full_name: string } | null;
                             return (
                                 <div
                                     key={ev.id}
@@ -161,7 +164,7 @@ export default async function EventsPage() {
                     </h2>
                     <div className="space-y-3">
                         {myDrafts.map((ev) => {
-                            const org = ev.organizations as unknown as { id: string; name: string } | null;
+                            const org = (Array.isArray(ev.organizations) ? ev.organizations[0] : ev.organizations) as unknown as { id: string; name: string } | null;
                             return (
                                 <div key={ev.id} className="rounded-xl border bg-card overflow-hidden opacity-80">
                                     <div className="h-1 bg-gradient-to-r from-yellow-400 to-yellow-500" />
@@ -208,7 +211,7 @@ export default async function EventsPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {published.map((ev, i) => {
-                            const org = ev.organizations as unknown as { id: string; name: string } | null;
+                            const org = (Array.isArray(ev.organizations) ? ev.organizations[0] : ev.organizations) as unknown as { id: string; name: string } | null;
                             return (
                                 <div
                                     key={ev.id}

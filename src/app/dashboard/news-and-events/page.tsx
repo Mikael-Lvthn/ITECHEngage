@@ -48,13 +48,19 @@ export default async function NewsAndEventsPage() {
             .from("news")
             .select("*, organizations(name)")
             .order("created_at", { ascending: false });
-        news = (allNews as unknown as NewsItem[]) || [];
+        news = (allNews || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+        })) as NewsItem[];
 
         const { data: allEvents } = await supabase
             .from("events")
             .select("id, title, description, start_datetime, end_datetime, location, status, created_at, created_by, organization_id, organizations(name)")
             .order("created_at", { ascending: false });
-        events = (allEvents as unknown as EventItem[]) || [];
+        events = (allEvents || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+        })) as EventItem[];
     } else if (isOfficer && structuralRoles && structuralRoles.length > 0) {
         const orgIds = structuralRoles.map(r => r.organization_id);
 
@@ -63,28 +69,40 @@ export default async function NewsAndEventsPage() {
             .select("*, organizations(name)")
             .in("organization_id", orgIds)
             .order("created_at", { ascending: false });
-        news = (orgNews as unknown as NewsItem[]) || [];
+        news = (orgNews || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+        })) as NewsItem[];
 
         const { data: orgEvents } = await supabase
             .from("events")
             .select("id, title, description, start_datetime, end_datetime, location, status, created_at, created_by, organization_id, organizations(name)")
             .in("organization_id", orgIds)
             .order("created_at", { ascending: false });
-        events = (orgEvents as unknown as EventItem[]) || [];
+        events = (orgEvents || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+        })) as EventItem[];
     } else {
         const { data: pubNews } = await supabase
             .from("news")
             .select("*, organizations(name)")
             .eq("status", "published")
             .order("created_at", { ascending: false });
-        news = (pubNews as unknown as NewsItem[]) || [];
+        news = (pubNews || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+        })) as NewsItem[];
 
         const { data: pubEvents } = await supabase
             .from("events")
             .select("id, title, description, start_datetime, end_datetime, location, status, created_at, created_by, organization_id, organizations(name)")
             .eq("status", "published")
             .order("created_at", { ascending: false });
-        events = (pubEvents as unknown as EventItem[]) || [];
+        events = (pubEvents || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+        })) as EventItem[];
     }
 
     // Build org list for creation dropdown — sourced from structural roles
@@ -99,7 +117,9 @@ export default async function NewsAndEventsPage() {
     } else if (structuralRoles) {
         userOrganizations = structuralRoles.map(r => ({
             id: r.organization_id,
-            name: (r.organizations as { name: string } | null)?.name || "Unknown"
+            name: (Array.isArray(r.organizations) 
+                ? r.organizations[0]?.name 
+                : (r.organizations as { name: string } | null)?.name) || "Unknown"
         }));
     }
 

@@ -18,6 +18,12 @@ export default async function NewsManagementPage() {
             .eq("status", "pending")
             .order("created_at", { ascending: false });
 
+        const flattenedNews = (pendingNews || []).map(item => ({
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations,
+            creator: Array.isArray(item.creator) ? item.creator[0] : item.creator
+        }));
+
         return (
             <div className="space-y-6 max-w-5xl mx-auto">
                 <div className="flex items-center justify-between">
@@ -26,7 +32,7 @@ export default async function NewsManagementPage() {
                         <p className="text-gray-500 mt-1">Review and approve news submissions from student organizations.</p>
                     </div>
                 </div>
-                <NewsManagerClient initialNews={pendingNews || []} userRole="admin" />
+                <NewsManagerClient initialNews={flattenedNews as any} userRole="admin" />
             </div>
         );
     }
@@ -67,11 +73,14 @@ export default async function NewsManagementPage() {
             </div>
 
             <NewsManagerClient
-                initialNews={orgNews || []}
+                initialNews={(orgNews || []).map(item => ({
+                    ...item,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as any}
                 userRole="officer"
                 userOrganizations={memberships.map(m => ({
                     id: m.organization_id,
-                    name: (m.organizations as { name: string } | null)?.name ?? ""
+                    name: (Array.isArray(m.organizations) ? m.organizations[0]?.name : (m.organizations as { name: string } | null)?.name) || ""
                 }))}
             />
         </div>

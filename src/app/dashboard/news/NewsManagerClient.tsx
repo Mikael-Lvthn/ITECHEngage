@@ -6,13 +6,14 @@ import { createNews, updateNewsStatus, deleteNews } from "@/lib/actions/news";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
 import { getErrorMessage } from "@/lib/utils/error";
+import { NewsStatus } from "@/lib/types";
 
 interface NewsItem {
     id: string;
     title: string;
     content: string;
     image_url: string;
-    status: string;
+    status: NewsStatus;
     created_at: string;
     organizations?: { name: string, logo_url?: string };
     creator?: { full_name: string };
@@ -75,7 +76,7 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
         }
     };
 
-    const handleStatusUpdate = async (id: string, newStatus: string) => {
+    const handleStatusUpdate = async (id: string, newStatus: NewsStatus) => {
         try {
             setLoading(true);
             await updateNewsStatus(id, newStatus);

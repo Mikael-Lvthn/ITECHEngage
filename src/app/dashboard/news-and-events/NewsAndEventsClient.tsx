@@ -10,13 +10,14 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { LoadingButton } from "@/components/loading/LoadingButton";
 import { getErrorMessage } from "@/lib/utils/error";
+import { NewsStatus, EventStatus } from "@/lib/types";
 
 export interface NewsItem {
     id: string;
     title: string;
     content: string;
     image_url: string;
-    status: string;
+    status: NewsStatus;
     created_at: string;
     created_by?: string;
     organizations?: { name: string };
@@ -29,7 +30,7 @@ export interface EventItem {
     start_datetime: string;
     end_datetime: string;
     location: string;
-    status: string;
+    status: EventStatus;
     created_at: string;
     created_by?: string;
     organizations?: { name: string };

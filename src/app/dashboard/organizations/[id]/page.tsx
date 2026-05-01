@@ -140,7 +140,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
         orgMembers = (membersData || []).map((m) => ({
             user_id: m.user_id,
-            full_name: (m.profiles as { full_name: string } | null)?.full_name || "Unknown",
+            full_name: (Array.isArray(m.profiles) ? m.profiles[0]?.full_name : (m.profiles as { full_name: string } | null)?.full_name) || "Unknown",
         }));
     }
 
@@ -150,7 +150,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
         hierarchy_level: r.hierarchy_level,
         can_manage_roles: r.can_manage_roles,
         assigned_user_id: r.assigned_user_id,
-        assigned_user_name: r.profiles?.full_name || null,
+        assigned_user_name: (Array.isArray(r.profiles) ? r.profiles[0]?.full_name : (r.profiles as { full_name: string } | null)?.full_name) || null,
         parent_role_id: r.parent_role_id || null,
     }));
 
