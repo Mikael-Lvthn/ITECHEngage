@@ -12,9 +12,12 @@ export async function GET(request: Request) {
         if (!error) {
             return NextResponse.redirect(`${origin}${next}`);
         }
+        return NextResponse.redirect(
+            `${origin}/login?message=${encodeURIComponent(error.message)}`
+        );
     }
 
     return NextResponse.redirect(
-        `${origin}/login?message=Could not authenticate. Please try again.`
+        `${origin}/login?message=No code provided.`
     );
 }

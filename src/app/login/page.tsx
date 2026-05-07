@@ -39,10 +39,22 @@ function LoginForm() {
 
     return (
         <>
-            {/* Success message */}
+            {/* Success/Error message */}
             {message && (
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700 animate-scale-in">
-                    ✅ {message}
+                <div className={`rounded-xl border p-4 text-sm animate-scale-in ${
+                    message.toLowerCase().includes("error") || 
+                    message.toLowerCase().includes("invalid") || 
+                    message.toLowerCase().includes("could not") ||
+                    message.toLowerCase().includes("no code") ||
+                    message.toLowerCase().includes("not found") ||
+                    message.toLowerCase().includes("pkce")
+                        ? "border-destructive/30 bg-destructive/5 text-destructive"
+                        : "border-green-200 bg-green-50 text-green-700"
+                }`}>
+                    {message.toLowerCase().includes("error") || 
+                     message.toLowerCase().includes("invalid") || 
+                     message.toLowerCase().includes("not found") || 
+                     message.toLowerCase().includes("pkce") ? "❌" : "✅"} {message}
                 </div>
             )}
 

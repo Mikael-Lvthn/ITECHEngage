@@ -6,7 +6,12 @@ import UserMenu from "@/components/UserMenu";
 import HomepageSearch from "@/components/HomepageSearch";
 import HomepageElectionsSection from "@/components/HomepageElectionsSection";
 
-export default async function HomePage() {
+export default async function HomePage({
+    searchParams,
+}: {
+    searchParams: Promise<{ error?: string; error_description?: string; message?: string }>;
+}) {
+    const { error, error_description, message } = await searchParams;
     const supabase = await createClient();
 
     const userResultPromise = supabase.auth.getUser();
@@ -108,6 +113,26 @@ export default async function HomePage() {
 
             {/* ═══ Hero / Search ═══ */}
             <section className="relative bg-gradient-to-b from-[#800000] to-[#600000] pb-16 pt-8">
+                <div className="max-w-7xl mx-auto px-6 mb-8">
+                    {(error || message) && (
+                        <div className="max-w-2xl mx-auto mb-8 rounded-xl border border-white/20 bg-white/10 backdrop-blur-md p-4 text-white animate-scale-in">
+                            <div className="flex gap-3">
+                                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                                    <span className="text-sm">⚠️</span>
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-sm">
+                                        {message || (error === "access_denied" ? "Link Expired or Invalid" : "Authentication Error")}
+                                    </p>
+                                    <p className="text-xs text-white/70 mt-0.5">
+                                        {error_description || "Please try requesting a new password reset link."}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <div className="max-w-3xl mx-auto px-6 text-center text-white">
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
                         Discover unique opportunities at{" "}
