@@ -15,6 +15,7 @@ export default function SignupPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [studentNumber, setStudentNumber] = useState("");
     const [schoolEmail, setSchoolEmail] = useState("");
     const [personalEmail, setPersonalEmail] = useState("");
     const [contactNumber, setContactNumber] = useState("");
@@ -38,6 +39,10 @@ export default function SignupPage() {
         }
 
         if (registrationType === "student") {
+            if (!studentNumber.trim()) {
+                setError("Student number is required");
+                return;
+            }
             if (!schoolEmail.trim()) {
                 setError("School email is required");
                 return;
@@ -71,6 +76,7 @@ export default function SignupPage() {
                         personal_email: personalEmail,
                         contact_number: contactNumber,
                         lrn: lrn,
+                        student_number: studentNumber,
                     }),
                 },
             },
@@ -248,6 +254,20 @@ export default function SignupPage() {
                                                 </p>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="studentNumber" className="text-sm font-medium text-foreground">
+                                                            Student Number <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <input
+                                                            id="studentNumber"
+                                                            type="text"
+                                                            value={studentNumber}
+                                                            onChange={(e) => setStudentNumber(e.target.value)}
+                                                            placeholder="202X-XXXXX-MN-0"
+                                                            required
+                                                            className={inputClasses}
+                                                        />
+                                                    </div>
                                                     <div className="space-y-2">
                                                         <label htmlFor="schoolEmail" className="text-sm font-medium text-foreground">
                                                             School Email <span className="text-destructive">*</span>
