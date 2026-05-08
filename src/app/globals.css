@@ -282,3 +282,11 @@
         color: #2B2B2B !important;
     }
 }
+/* Force clean styles for image capture */
+.capture-mode {
+    background-color: #FFFFFF !important;
+    color: #1A1A1A !important;
+}
+.capture-mode * {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
