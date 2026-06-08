@@ -12,10 +12,10 @@ interface NewsItem {
     id: string;
     title: string;
     content: string;
-    image_url: string;
+    image_url: string | null;
     status: NewsStatus;
     created_at: string;
-    organizations?: { name: string, logo_url?: string };
+    organizations?: { name: string, logo_url?: string | null };
     creator?: { full_name: string };
     organization_id?: string;
 }

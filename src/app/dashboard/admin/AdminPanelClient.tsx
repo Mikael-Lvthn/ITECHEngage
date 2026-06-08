@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { approveLeaveRequest, rejectLeaveRequest } from "@/lib/actions/organizations";
+import { approveEvent, rejectEvent } from "@/lib/actions/events";
+import { sendAnnouncement, createCategory, deleteCategory } from "@/lib/actions/admin";
 import { getErrorMessage } from "@/lib/utils/error";
 
 export interface MembershipRequest {
@@ -166,7 +168,7 @@ export default function AdminPanelClient({
                 {activeTab === "events" && (
                     <EventsTab pendingEvents={pendingEvents} />
                 )}
-                {activeTab === "comms" && <CommsTab />}
+                {activeTab === "comms" && <CommsTab organizations={organizations} />}
                 {activeTab === "config" && (
                     <ConfigTab auditLogs={auditLogs} categories={categories} />
                 )}
@@ -502,6 +504,38 @@ function LeaveRequestsSection({
 
 /* ---------- Tab 2: Event Oversight ---------- */
 function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [actioningId, setActioningId] = useState<string | null>(null);
+
+    function handleApprove(eventId: string) {
+        setActioningId(eventId);
+        startTransition(async () => {
+            try {
+                await approveEvent(eventId);
+                router.refresh();
+            } catch (err) {
+                console.error("Approve event failed:", getErrorMessage(err));
+            } finally {
+                setActioningId(null);
+            }
+        });
+    }
+
+    function handleReject(eventId: string) {
+        setActioningId(eventId);
+        startTransition(async () => {
+            try {
+                await rejectEvent(eventId);
+                router.refresh();
+            } catch (err) {
+                console.error("Reject event failed:", getErrorMessage(err));
+            } finally {
+                setActioningId(null);
+            }
+        });
+    }
+
     return (
         <div className="space-y-6">
             <section className="rounded-xl border bg-card overflow-hidden">
@@ -523,12 +557,22 @@ function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
                                             {" · "}{new Date(ev.start_datetime).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    <Link
-                                        href="/dashboard/news-and-events"
-                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-600/30 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors shrink-0 ml-3"
-                                    >
-                                        Review →
-                                    </Link>
+                                    <div className="flex gap-2 shrink-0 ml-3">
+                                        <button
+                                            onClick={() => handleApprove(ev.id)}
+                                            disabled={isPending && actioningId === ev.id}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {isPending && actioningId === ev.id ? "..." : "Approve"}
+                                        </button>
+                                        <button
+                                            onClick={() => handleReject(ev.id)}
+                                            disabled={isPending && actioningId === ev.id}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                        >
+                                            Reject
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -539,24 +583,91 @@ function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
     );
 }
 
-/* ---------- Tab 3: Communication (Shell) ---------- */
-function CommsTab() {
+/* ---------- Tab 3: Communication ---------- */
+function CommsTab({ organizations }: { organizations: Organization[] }) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    function handleSend(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+        const formData = new FormData(e.currentTarget);
+        startTransition(async () => {
+            try {
+                const result = await sendAnnouncement(formData);
+                setSuccess(`Announcement sent to ${result.count} user(s).`);
+                (e.target as HTMLFormElement).reset();
+                router.refresh();
+            } catch (err) {
+                setError(getErrorMessage(err));
+            }
+        });
+    }
+
     return (
         <div className="space-y-6">
             <section className="rounded-xl border bg-card overflow-hidden">
                 <div className="px-6 py-4 border-b bg-gradient-to-r from-[#C9A227]/5 to-transparent">
-                    <h3 className="font-semibold text-foreground">📢 Mass Outreach</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Send announcements to users platform-wide</p>
+                    <h3 className="font-semibold text-foreground">📢 Mass Announcement</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Send notifications to users platform-wide or to a specific organization</p>
                 </div>
-                <div className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto rounded-2xl bg-[#C9A227]/10 flex items-center justify-center mb-4">
-                        <span className="text-3xl">📨</span>
-                    </div>
-                    <p className="font-semibold text-foreground mb-1">Coming Soon</p>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                        Mass notification broadcasting to all users, specific organizations, or officer groups will be available in a future update.
-                    </p>
-                    {/* TODO: wire up when infrastructure is available */}
+                <div className="p-6">
+                    {error && (
+                        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+                    )}
+                    {success && (
+                        <div className="mb-4 p-3 rounded-lg bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm">{success}</div>
+                    )}
+                    <form onSubmit={handleSend} className="space-y-4 max-w-lg">
+                        <div>
+                            <label className="block text-sm font-medium mb-1.5">Target Audience</label>
+                            <select
+                                name="target"
+                                required
+                                className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                <option value="all">All Users</option>
+                                {organizations.map((org) => (
+                                    <option key={org.id} value={org.id}>
+                                        {org.name} (Members & Followers)
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1.5">
+                                Title <span className="text-destructive">*</span>
+                            </label>
+                            <input
+                                name="title"
+                                required
+                                placeholder="Announcement title"
+                                className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1.5">
+                                Message <span className="text-destructive">*</span>
+                            </label>
+                            <textarea
+                                name="message"
+                                required
+                                rows={4}
+                                placeholder="Write your announcement message..."
+                                className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={isPending}
+                            className="px-6 py-2.5 rounded-lg bg-[#C9A227] text-[#2B2B2B] text-sm font-semibold hover:bg-[#C9A227]/90 transition-colors disabled:opacity-50"
+                        >
+                            {isPending ? "Sending..." : "📢 Send Announcement"}
+                        </button>
+                    </form>
                 </div>
             </section>
 
@@ -573,7 +684,6 @@ function CommsTab() {
                     <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                         Centralized resource sharing and document coordination across organizations will be available in a future update.
                     </p>
-                    {/* TODO: wire up when infrastructure is available */}
                 </div>
             </section>
         </div>
@@ -582,15 +692,91 @@ function CommsTab() {
 
 /* ---------- Tab 4: Configuration ---------- */
 function ConfigTab({ auditLogs, categories }: { auditLogs: AuditLogEntry[]; categories: Category[] }) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [showCatForm, setShowCatForm] = useState(false);
+    const [catError, setCatError] = useState("");
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    function handleCreateCategory(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setCatError("");
+        const formData = new FormData(e.currentTarget);
+        startTransition(async () => {
+            try {
+                await createCategory(formData);
+                setShowCatForm(false);
+                router.refresh();
+            } catch (err) {
+                setCatError(getErrorMessage(err));
+            }
+        });
+    }
+
+    function handleDeleteCategory(categoryId: string) {
+        setDeletingId(categoryId);
+        startTransition(async () => {
+            try {
+                await deleteCategory(categoryId);
+                router.refresh();
+            } catch (err) {
+                setCatError(getErrorMessage(err));
+            } finally {
+                setDeletingId(null);
+            }
+        });
+    }
+
     return (
         <div className="space-y-6">
             {/* Category Management */}
             <section className="rounded-xl border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent">
-                    <h3 className="font-semibold text-foreground">🏷️ Organization Categories</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Manage categories for classifying organizations</p>
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent flex items-center justify-between">
+                    <div>
+                        <h3 className="font-semibold text-foreground">🏷️ Organization Categories</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Manage categories for classifying organizations</p>
+                    </div>
+                    <button
+                        onClick={() => setShowCatForm(!showCatForm)}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                        {showCatForm ? "Cancel" : "+ Create"}
+                    </button>
                 </div>
                 <div className="p-4">
+                    {catError && (
+                        <div className="mb-3 p-2 rounded-lg bg-destructive/10 text-destructive text-xs">{catError}</div>
+                    )}
+
+                    {showCatForm && (
+                        <form onSubmit={handleCreateCategory} className="mb-4 p-4 rounded-lg border bg-background space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Name <span className="text-destructive">*</span></label>
+                                <input
+                                    name="name"
+                                    required
+                                    placeholder="e.g. Academic, Sports, Cultural"
+                                    className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Description</label>
+                                <input
+                                    name="description"
+                                    placeholder="Brief description (optional)"
+                                    className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={isPending}
+                                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            >
+                                {isPending ? "Creating..." : "Create Category"}
+                            </button>
+                        </form>
+                    )}
+
                     {categories.length === 0 ? (
                         <EmptyState icon="🏷️" message="No categories defined yet. Create one to start organizing." />
                     ) : (
@@ -603,9 +789,18 @@ function ConfigTab({ auditLogs, categories }: { auditLogs: AuditLogEntry[]; cate
                                             <p className="text-xs text-muted-foreground mt-0.5">{cat.description}</p>
                                         )}
                                     </div>
-                                    <span className="text-xs text-muted-foreground">
-                                        {new Date(cat.created_at).toLocaleDateString()}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">
+                                            {new Date(cat.created_at).toLocaleDateString()}
+                                        </span>
+                                        <button
+                                            onClick={() => handleDeleteCategory(cat.id)}
+                                            disabled={isPending && deletingId === cat.id}
+                                            className="px-2 py-1 text-[10px] font-semibold rounded border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                        >
+                                            {isPending && deletingId === cat.id ? "..." : "Delete"}
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

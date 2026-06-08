@@ -136,9 +136,11 @@ export interface Accreditation {
     documents_url: string | null;
     notes: string | null;
     submitted_at: string;
+    submitted_by: string | null;
     reviewed_at: string | null;
     reviewed_by: string | null;
     organizations?: Organization;
+    submitter?: Profile;
     reviewer?: Profile;
 }
 

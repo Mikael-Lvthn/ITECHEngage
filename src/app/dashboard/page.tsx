@@ -18,7 +18,15 @@ const quickActions: QuickAction[] = [
         href: "/dashboard/organizations",
         icon: "🏢",
         gradient: "from-[#800000] to-[#A52A2A]",
-        roles: ["student", "officer"],
+        roles: ["student"],
+    },
+    {
+        label: "Browse Organizations",
+        description: "Manage organizations under your jurisdiction.",
+        href: "/dashboard/organizations",
+        icon: "🏢",
+        gradient: "from-[#800000] to-[#A52A2A]",
+        roles: ["officer"],
     },
     {
         label: "Browse Organizations",
@@ -29,12 +37,28 @@ const quickActions: QuickAction[] = [
         roles: ["admin"],
     },
     {
+        label: "News & Events",
+        description: "Latest campus news and upcoming events",
+        href: "/dashboard/news-and-events",
+        icon: "📰",
+        gradient: "from-[#C9A227] to-[#E6C84D]",
+        roles: ["student"],
+    },
+    {
+        label: "Active Elections",
+        description: "View active elections happening across organizations",
+        href: "/dashboard/elections",
+        icon: "🗳️",
+        gradient: "from-[#2D3748] to-[#4A5568]",
+        roles: ["student"],
+    },
+    {
         label: "My Memberships",
         description: "View groups you've joined",
         href: "/dashboard/memberships",
         icon: "👥",
         gradient: "from-[#C9A227] to-[#E6C84D]",
-        roles: ["student", "officer"],
+        roles: ["officer"],
     },
     {
         label: "Upcoming Events",
@@ -85,7 +109,7 @@ export default async function DashboardPage() {
         data: { user },
     } = await supabase.auth.getUser();
 
-    const [profileResult, orgCountResult, membershipCountResult] = await Promise.all([
+    const [profileResult, orgCountResult, membershipCountResult, followCountResult] = await Promise.all([
         supabase
             .from("profiles")
             .select("full_name, role")
@@ -100,11 +124,16 @@ export default async function DashboardPage() {
             .select("*", { count: "exact", head: true })
             .eq("user_id", user!.id)
             .eq("status", "approved"),
+        supabase
+            .from("organization_follows")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user!.id),
     ]);
 
     const profile = profileResult.data;
     const orgCount = orgCountResult.count;
     const membershipCount = membershipCountResult.count;
+    const followCount = followCountResult.count;
 
     let userRole: UserRole = (profile?.role as UserRole) || "student";
     if (!profile) {
@@ -114,9 +143,28 @@ export default async function DashboardPage() {
         }
     }
 
+    // Determine effective role based on officer memberships (same logic as layout)
+    if (userRole !== "admin") {
+        const { data: officerships } = await supabase
+            .from("memberships")
+            .select("id")
+            .eq("user_id", user!.id)
+            .eq("role", "officer")
+            .eq("status", "approved")
+            .limit(1);
+
+        if (officerships && officerships.length > 0) {
+            userRole = "officer";
+        } else {
+            userRole = "student";
+        }
+    }
+
     const filteredActions = quickActions.filter((action) =>
         action.roles.includes(userRole)
     );
+
+    const isStudent = userRole === "student";
 
     return (
         <div className="space-y-8">
@@ -149,11 +197,15 @@ export default async function DashboardPage() {
                 <div className="rounded-xl border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-[#C9A227]/10 flex items-center justify-center">
-                            <span className="text-lg">👥</span>
+                            <span className="text-lg">{isStudent ? "⭐" : "👥"}</span>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">My Memberships</p>
-                            <p className="text-2xl font-bold mt-0.5">{membershipCount ?? 0}</p>
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                                {isStudent ? "Followed Orgs" : "My Memberships"}
+                            </p>
+                            <p className="text-2xl font-bold mt-0.5">
+                                {isStudent ? (followCount ?? 0) : (membershipCount ?? 0)}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -175,7 +227,7 @@ export default async function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredActions.map((action, i) => (
                         <Link
-                            key={action.label}
+                            key={`${action.label}-${action.href}`}
                             href={action.href}
                             className="group rounded-xl border bg-card overflow-hidden card-hover"
                             style={{ animationDelay: `${(i + 3) * 100}ms` }}

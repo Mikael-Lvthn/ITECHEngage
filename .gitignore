@@ -54,3 +54,7 @@ supabase/
 
 # Markdown files
 *.md*   
+
+# Antigravity Skills
+skills-lock.json
+.agents/

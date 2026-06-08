@@ -1,6 +1,5 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -52,7 +51,14 @@ export interface HomepagePublicData {
 }
 
 async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
-    const supabase = createPublicClient();
+    // Try authenticated client first (works when user is logged in),
+    // fall back to public client for anonymous visitors.
+    let supabase;
+    try {
+        supabase = await createClient();
+    } catch {
+        supabase = createPublicClient();
+    }
 
     const [eventsResult, organizationsResult, newsResult, electionsResult] =
         await Promise.all([
@@ -82,6 +88,14 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .limit(6),
         ]);
 
+    // Debug logging - check terminal for errors
+    if (eventsResult.error) console.error("[Homepage] Events error:", eventsResult.error.message);
+    if (organizationsResult.error) console.error("[Homepage] Orgs error:", organizationsResult.error.message);
+    if (newsResult.error) console.error("[Homepage] News error:", newsResult.error.message);
+    if (electionsResult.error) console.error("[Homepage] Elections error:", electionsResult.error.message);
+
+    console.log(`[Homepage] Fetched: ${eventsResult.data?.length ?? 0} events, ${organizationsResult.data?.length ?? 0} orgs, ${newsResult.data?.length ?? 0} news, ${electionsResult.data?.length ?? 0} elections`);
+
     return {
         events: (eventsResult.data ?? []) as HomepageEvent[],
         organizations: (organizationsResult.data ?? []) as HomepageOrganization[],
@@ -90,14 +104,9 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
     };
 }
 
-export const getHomepagePublicData = unstable_cache(
-    fetchHomepagePublicData,
-    ["homepage-public-data-v2"],
-    {
-        revalidate: 180,
-        tags: ["homepage-public-data"],
-    }
-);
+export async function getHomepagePublicData(): Promise<HomepagePublicData> {
+    return fetchHomepagePublicData();
+}
 
 // Get elections with follow status for authenticated users
 export async function getHomepageElectionsWithFollowStatus(userId: string): Promise<HomepageElection[]> {

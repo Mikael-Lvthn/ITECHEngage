@@ -350,79 +350,13 @@ export async function castVote(electionId: string, candidateId: string, organiza
         throw new Error(result.error);
     }
 
-    // ── Auto-close check ──
-    // After a successful vote, determine if all members have voted for every
-    // votable role.  Directly-assigned roles are exempt from vote counting.
-    try {
-        // 1. Total approved members in the organization
-        const { count: memberCount } = await supabase
-            .from("memberships")
-            .select("*", { count: "exact", head: true })
-            .eq("organization_id", election.organization_id)
-            .eq("status", "approved");
-
-        if (memberCount && memberCount > 0) {
-            // 2. Get org roles that are NOT directly assigned (i.e. need voting)
-            const { data: orgRoles } = await supabase
-                .from("organization_roles")
-                .select("id, assigned_user_id")
-                .eq("organization_id", election.organization_id);
-
-            // 2b. Get vacant roles for this election
-            const { data: vacantRoles } = await supabase
-                .from("election_vacant_roles")
-                .select("role_id")
-                .eq("election_id", electionId);
-
-            const vacantRoleIds = new Set((vacantRoles || []).map((v) => v.role_id));
-
-            // Contested roles = not directly assigned AND not vacant
-            const votableRoleIds = (orgRoles || [])
-                .filter((r) => !r.assigned_user_id && !vacantRoleIds.has(r.id))
-                .map((r) => r.id);
-
-            if (votableRoleIds.length > 0) {
-                // 3. For each contested role, count total votes cast in this election
-                const { data: voteCounts } = await supabase
-                    .from("votes")
-                    .select("organization_role_id")
-                    .eq("election_id", electionId)
-                    .in("organization_role_id", votableRoleIds);
-
-                // Group vote counts by role
-                const countByRole = new Map<string, number>();
-                (voteCounts || []).forEach((v) => {
-                    countByRole.set(
-                        v.organization_role_id,
-                        (countByRole.get(v.organization_role_id) || 0) + 1
-                    );
-                });
-
-                // 4. Check if ALL contested roles have reached memberCount votes
-                // Auto-complete only when the last role hits the threshold
-                const allComplete = votableRoleIds.every(
-                    (roleId) => (countByRole.get(roleId) || 0) >= memberCount
-                );
-
-                if (allComplete) {
-                    // Auto-complete the election
-                    await supabase
-                        .from("elections")
-                        .update({ status: "completed", end_date: new Date().toISOString() })
-                        .eq("id", electionId);
-
-                    revalidatePath(`/dashboard/organizations/${election.organization_id}`);
-                    revalidatePath("/");
-                }
-            }
-        }
-    } catch (autoCloseErr) {
-        // Don't fail the vote if auto-close check errors — the vote was already recorded
-        console.error("Auto-close check failed:", autoCloseErr);
-    }
+    // Auto-close logic has been moved into the cast_vote DB function
+    // (SECURITY DEFINER) since the votes table has USING(false) for
+    // ballot secrecy — server-side code can no longer query votes directly.
 
     revalidatePath(`/dashboard/elections/${electionId}`);
     revalidatePath("/dashboard/elections");
+    revalidatePath("/");
 }
 
 export async function completeElection(electionId: string) {

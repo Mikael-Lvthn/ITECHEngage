@@ -35,10 +35,16 @@ const navItems: NavItem[] = [
         roles: ["student", "officer", "admin"],
     },
     {
+        label: "Followed",
+        href: "/dashboard/followed",
+        icon: "⭐",
+        roles: ["student"],
+    },
+    {
         label: "My Memberships",
         href: "/dashboard/memberships",
         icon: "👥",
-        roles: ["student", "officer"],
+        roles: ["officer", "admin"],
     },
     {
         label: "News & Events",
@@ -65,6 +71,12 @@ const navItems: NavItem[] = [
         roles: ["officer", "admin"],
     },
     {
+        label: "Officer Panel",
+        href: "/dashboard/officer-panel",
+        icon: "🏛️",
+        roles: ["officer"],
+    },
+    {
         label: "Admin Panel",
         href: "/dashboard/admin",
         icon: "⚙️",
@@ -82,9 +94,11 @@ interface SidebarProps {
     userRole: UserRole;
     userName: string;
     userEmail: string;
+    adminBadgeCount?: number;
+    officerBadgeCount?: number;
 }
 
-export default function Sidebar({ userRole, userName, userEmail }: SidebarProps) {
+export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount = 0, officerBadgeCount = 0 }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [showMenu, setShowMenu] = useState(false);
@@ -167,6 +181,16 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                             {item.label === "Notifications" && unreadCount > 0 && (
                                 <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                                     {unreadCount > 99 ? "99+" : unreadCount}
+                                </span>
+                            )}
+                            {item.label === "Admin Panel" && adminBadgeCount > 0 && (
+                                <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                    {adminBadgeCount > 99 ? "99+" : adminBadgeCount}
+                                </span>
+                            )}
+                            {item.label === "Officer Panel" && officerBadgeCount > 0 && (
+                                <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                    {officerBadgeCount > 99 ? "99+" : officerBadgeCount}
                                 </span>
                             )}
                         </Link>

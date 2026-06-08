@@ -2,8 +2,8 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { markAsRead, archiveNotification } from "@/lib/actions/notifications";
-import { Loader2, Archive } from "lucide-react";
+import { markAsRead, archiveNotification, deleteNotification } from "@/lib/actions/notifications";
+import { Loader2, Archive, Trash2 } from "lucide-react";
 
 interface Notification {
     id: string;
@@ -17,6 +17,7 @@ interface Notification {
 
 export default function NotificationItem({ notification }: { notification: Notification }) {
     const [isPending, startTransition] = useTransition();
+    const [isDeleting, startDeleteTransition] = useTransition();
     const router = useRouter();
 
     const isUnread = notification.status === "unread";
@@ -44,6 +45,16 @@ export default function NotificationItem({ notification }: { notification: Notif
         });
     };
 
+    const handleDelete = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isDeleting) return;
+        
+        startDeleteTransition(() => {
+            deleteNotification(notification.id).catch(console.error);
+        });
+    };
+
     const iconMap: Record<string, string> = {
         election_started: "🗳️",
         election_results: "📊",
@@ -60,6 +71,8 @@ export default function NotificationItem({ notification }: { notification: Notif
         <div
             onClick={handleClick}
             className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
+                isDeleting ? "opacity-50 scale-95" : ""
+            } ${
                 isUnread
                     ? "bg-[#C9A227]/5 border-[#C9A227]/30 hover:bg-[#C9A227]/10"
                     : "bg-white border-gray-100 hover:bg-gray-50"
@@ -94,7 +107,7 @@ export default function NotificationItem({ notification }: { notification: Notif
                 )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
                 {isUnread && (
                     <span className="w-2 h-2 rounded-full bg-[#C9A227]" title="Unread" />
                 )}
@@ -102,7 +115,7 @@ export default function NotificationItem({ notification }: { notification: Notif
                 {notification.status !== "archived" && (
                     <button 
                         onClick={handleArchive}
-                        disabled={isPending}
+                        disabled={isPending || isDeleting}
                         className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                         title="Archive"
                     >
@@ -113,7 +126,21 @@ export default function NotificationItem({ notification }: { notification: Notif
                         )}
                     </button>
                 )}
+
+                <button 
+                    onClick={handleDelete}
+                    disabled={isDeleting || isPending}
+                    className="p-1.5 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    title="Delete"
+                >
+                    {isDeleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                    )}
+                </button>
             </div>
         </div>
     );
 }
+

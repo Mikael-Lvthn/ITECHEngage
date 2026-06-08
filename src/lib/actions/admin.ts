@@ -157,3 +157,130 @@ export async function deleteOrganization(organizationId: string) {
     revalidatePath("/dashboard/organizations");
     revalidatePath("/");
 }
+
+/* ========== Communication: Mass Announcements ========== */
+
+const BATCH_SIZE = 100;
+
+export async function sendAnnouncement(formData: FormData) {
+    const { supabase, user } = await requireAdmin();
+
+    const target = formData.get("target") as string; // "all" | org_id
+    const title = formData.get("title") as string;
+    const message = formData.get("message") as string;
+
+    if (!title?.trim() || !message?.trim()) {
+        throw new Error("Title and message are required.");
+    }
+
+    let userIds: string[] = [];
+
+    if (target === "all") {
+        const { data: allUsers } = await supabase
+            .from("profiles")
+            .select("id");
+        userIds = (allUsers || []).map((u) => u.id);
+    } else {
+        // Fetch members + followers of specific org
+        const { data: members } = await supabase
+            .from("memberships")
+            .select("user_id")
+            .eq("organization_id", target)
+            .eq("status", "approved");
+
+        const { data: followers } = await supabase
+            .from("organization_follows")
+            .select("user_id")
+            .eq("organization_id", target);
+
+        const idSet = new Set<string>();
+        (members || []).forEach((m) => idSet.add(m.user_id));
+        (followers || []).forEach((f) => idSet.add(f.user_id));
+        userIds = Array.from(idSet);
+    }
+
+    // Exclude admin's own ID
+    userIds = userIds.filter((id) => id !== user.id);
+
+    if (userIds.length === 0) {
+        throw new Error("No users found for the selected target.");
+    }
+
+    // Batch insert to avoid payload limits
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+        const batch = userIds.slice(i, i + BATCH_SIZE);
+        const notifications = batch.map((userId) => ({
+            user_id: userId,
+            type: "announcement",
+            title: title.trim(),
+            message: message.trim(),
+            link: "/dashboard/notifications",
+            status: "unread",
+        }));
+
+        const { error } = await supabase.from("notifications").insert(notifications);
+        if (error) throw new Error(error.message);
+    }
+
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard/notifications");
+
+    return { count: userIds.length };
+}
+
+/* ========== Configuration: Category CRUD ========== */
+
+export async function createCategory(formData: FormData) {
+    const { supabase } = await requireAdmin();
+
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+
+    if (!name?.trim()) {
+        throw new Error("Category name is required.");
+    }
+
+    const { data: existing } = await supabase
+        .from("organization_categories")
+        .select("id")
+        .ilike("name", name.trim())
+        .maybeSingle();
+
+    if (existing) {
+        throw new Error("A category with this name already exists.");
+    }
+
+    const { error } = await supabase.from("organization_categories").insert({
+        name: name.trim(),
+        description: description?.trim() || null,
+    });
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/admin");
+}
+
+export async function deleteCategory(categoryId: string) {
+    const { supabase } = await requireAdmin();
+
+    const { count } = await supabase
+        .from("organizations")
+        .select("*", { count: "exact", head: true })
+        .eq("category_id", categoryId);
+
+    if (count && count > 0) {
+        throw new Error(
+            `Cannot delete: ${count} organization(s) use this category. Reassign them first.`
+        );
+    }
+
+    const { error } = await supabase
+        .from("organization_categories")
+        .delete()
+        .eq("id", categoryId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/admin");
+}
+

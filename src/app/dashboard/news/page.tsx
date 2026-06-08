@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import NewsManagerClient from "./NewsManagerClient";
+import { News } from "@/lib/types";
 
 export default async function NewsManagementPage() {
     const supabase = await createClient();
@@ -22,7 +23,7 @@ export default async function NewsManagementPage() {
             ...item,
             organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations,
             creator: Array.isArray(item.creator) ? item.creator[0] : item.creator
-        }));
+        })) as unknown as News[];
 
         return (
             <div className="space-y-6 max-w-5xl mx-auto">
@@ -32,7 +33,7 @@ export default async function NewsManagementPage() {
                         <p className="text-gray-500 mt-1">Review and approve news submissions from student organizations.</p>
                     </div>
                 </div>
-                <NewsManagerClient initialNews={flattenedNews as any} userRole="admin" />
+                <NewsManagerClient initialNews={flattenedNews} userRole="admin" />
             </div>
         );
     }
@@ -76,7 +77,7 @@ export default async function NewsManagementPage() {
                 initialNews={(orgNews || []).map(item => ({
                     ...item,
                     organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
-                })) as any}
+                })) as unknown as News[]}
                 userRole="officer"
                 userOrganizations={memberships.map(m => ({
                     id: m.organization_id,

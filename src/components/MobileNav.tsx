@@ -19,12 +19,13 @@ const navItems: NavItem[] = [
     { label: "Home", href: "/", icon: "🏠", roles: ["student", "officer", "admin"] },
     { label: "Dashboard", href: "/dashboard", icon: "📊", roles: ["student", "officer", "admin"] },
     { label: "Organizations", href: "/dashboard/organizations", icon: "🏢", roles: ["student", "officer", "admin"] },
-    { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["student", "officer"] },
-    { label: "Membership Requests", href: "/dashboard/requests", icon: "📋", roles: ["officer", "admin"] },
+    { label: "Followed", href: "/dashboard/followed", icon: "⭐", roles: ["student"] },
+    { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["officer", "admin"] },
     { label: "News & Events", href: "/dashboard/news-and-events", icon: "📰", roles: ["student", "officer", "admin"] },
     { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["student", "officer", "admin"] },
     { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", roles: ["student", "officer", "admin"] },
     { label: "Accreditation", href: "/dashboard/accreditation", icon: "📑", roles: ["officer", "admin"] },
+    { label: "Officer Panel", href: "/dashboard/officer-panel", icon: "🏛️", roles: ["officer"] },
     { label: "Admin Panel", href: "/dashboard/admin", icon: "⚙️", roles: ["admin"] },
     { label: "Settings", href: "/dashboard/settings", icon: "🎨", roles: ["student", "officer", "admin"] },
 ];
@@ -33,9 +34,11 @@ interface MobileNavProps {
     userRole: UserRole;
     userName: string;
     userEmail: string;
+    adminBadgeCount?: number;
+    officerBadgeCount?: number;
 }
 
-export default function MobileNav({ userRole, userName, userEmail }: MobileNavProps) {
+export default function MobileNav({ userRole, userName, userEmail, adminBadgeCount = 0, officerBadgeCount = 0 }: MobileNavProps) {
     const [open, setOpen] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -139,6 +142,16 @@ export default function MobileNav({ userRole, userName, userEmail }: MobileNavPr
                                         {item.label === "Notifications" && unreadCount > 0 && (
                                             <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                                                 {unreadCount > 99 ? "99+" : unreadCount}
+                                            </span>
+                                        )}
+                                        {item.label === "Admin Panel" && adminBadgeCount > 0 && (
+                                            <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                                {adminBadgeCount > 99 ? "99+" : adminBadgeCount}
+                                            </span>
+                                        )}
+                                        {item.label === "Officer Panel" && officerBadgeCount > 0 && (
+                                            <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                                {officerBadgeCount > 99 ? "99+" : officerBadgeCount}
                                             </span>
                                         )}
                                     </Link>

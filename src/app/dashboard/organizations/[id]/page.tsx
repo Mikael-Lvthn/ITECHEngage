@@ -9,6 +9,7 @@ import OrgRolesManager from "@/components/org-chart/OrgRolesManager";
 import OrgDetailTabs from "./OrgDetailTabs";
 import FollowButton from "@/components/organizations/FollowButton";
 import ElectionsTabContent from "./ElectionsTabContent";
+import MemberFollowerPreview from "@/components/organizations/MemberFollowerPreview";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -64,11 +65,9 @@ export default async function OrganizationDetailPage({ params }: Props) {
     }
     const isAdmin = userRole === "admin";
 
-    const { count: memberCount } = await supabase
-        .from("memberships")
-        .select("*", { count: "exact", head: true })
-        .eq("organization_id", id)
-        .eq("status", "approved");
+    const { data: memberCount } = await supabase.rpc("count_org_members", { org_id: id });
+
+    const { data: followerCountRpc } = await supabase.rpc("count_org_followers", { org_id: id });
 
     const { data: followData } = await supabase
         .from("organization_follows")
@@ -79,10 +78,27 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
     const isFollowing = !!followData;
 
-    const { count: followerCount } = await supabase
-        .from("organization_follows")
-        .select("*", { count: "exact", head: true })
-        .eq("organization_id", id);
+    const followerCount = followerCountRpc ?? 0;
+
+    // Fetch member previews (first 5 with avatar)
+    const { data: memberPreviewsData } = await supabase
+        .rpc("get_org_member_previews", { org_id: id, limit_val: 5 });
+
+    const memberPreviews = (memberPreviewsData || []).map((m: any) => ({
+        id: m.id,
+        full_name: m.full_name,
+        avatar_url: m.avatar_url,
+    }));
+
+    // Fetch follower previews (first 5 with avatar)
+    const { data: followerPreviewsData } = await supabase
+        .rpc("get_org_follower_previews", { org_id: id, limit_val: 5 });
+
+    const followerPreviews = (followerPreviewsData || []).map((f: any) => ({
+        id: f.id,
+        full_name: f.full_name,
+        avatar_url: f.avatar_url,
+    }));
 
     const { data: recruitments } = await supabase
         .from("recruitment_requests")
@@ -225,12 +241,15 @@ export default async function OrganizationDetailPage({ params }: Props) {
                     </div>
 
                     <div className="flex items-center gap-4 text-sm mt-5 border-t pt-4">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <span className="font-semibold text-foreground">{memberCount ?? 0}</span> member{memberCount !== 1 ? "s" : ""}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <span className="font-semibold text-foreground">{followerCount ?? 0}</span> follower{followerCount !== 1 ? "s" : ""}
-                        </div>
+                        <MemberFollowerPreview
+                            organizationId={id}
+                            memberCount={memberCount ?? 0}
+                            followerCount={followerCount}
+                            memberPreviews={memberPreviews}
+                            followerPreviews={followerPreviews}
+                            totalMembers={memberCount ?? 0}
+                            totalFollowers={followerCount}
+                        />
                         <div className="flex items-center gap-1.5">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider ${org.accreditation_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                                 }`}>
