@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { generateEngagementRecord } from "@/lib/actions/engagement-internal";
 
 async function getAuthUser() {
     const supabase = await createClient();
@@ -317,7 +318,7 @@ export async function castVote(electionId: string, candidateId: string, organiza
         .eq("status", "approved")
         .maybeSingle();
 
-    if (!membership || membership.status !== "approved") {
+    if (!membership) {
         throw new Error("Only approved members can vote in elections.");
     }
 
@@ -453,6 +454,47 @@ export async function publishElectionResults(electionId: string) {
     const result = data as { error?: string; success?: boolean };
     if (result.error) {
         throw new Error(result.error);
+    }
+
+    try {
+        const { data: election } = await supabase
+            .from("elections")
+            .select("organization_id, title, organizations(name)")
+            .eq("id", electionId)
+            .single();
+
+        if (election) {
+            const { data: results } = await supabase.rpc("get_election_results", {
+                p_election_id: electionId,
+            });
+
+            if (results && Array.isArray(results)) {
+                const winnersByRole: Record<string, { user_id: string; name: string; vote_count: number }> = {};
+                for (const r of results as { role_id: string; candidate_user_id: string; candidate_name: string; vote_count: number }[]) {
+                    if (!winnersByRole[r.role_id] || r.vote_count > winnersByRole[r.role_id].vote_count) {
+                        winnersByRole[r.role_id] = {
+                            user_id: r.candidate_user_id,
+                            name: r.candidate_name,
+                            vote_count: r.vote_count,
+                        };
+                    }
+                }
+
+                const org = election.organizations as unknown as { name: string } | null;
+                for (const winner of Object.values(winnersByRole)) {
+                    await generateEngagementRecord({
+                        userId: winner.user_id,
+                        organizationId: election.organization_id,
+                        recordType: "election_winner",
+                        title: `Election Winner: ${election.title}`,
+                        description: `Won with ${winner.vote_count} vote(s)`,
+                        organizationName: org?.name || null,
+                    });
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Failed to generate election winner engagement records:", err);
     }
 
     revalidatePath("/dashboard/elections");

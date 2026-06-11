@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
     { label: "News & Events", href: "/dashboard/news-and-events", icon: "📰", roles: ["student", "officer", "admin"] },
     { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["student", "officer", "admin"] },
     { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", roles: ["student", "officer", "admin"] },
+    { label: "My Record", href: "/dashboard/co-curricular", icon: "🎓", roles: ["student", "officer", "admin"] },
     { label: "Accreditation", href: "/dashboard/accreditation", icon: "📑", roles: ["officer", "admin"] },
     { label: "Officer Panel", href: "/dashboard/officer-panel", icon: "🏛️", roles: ["officer"] },
     { label: "Admin Panel", href: "/dashboard/admin", icon: "⚙️", roles: ["admin"] },

@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { generateEngagementRecord } from "@/lib/actions/engagement-internal";
+import { checkNotificationPreference } from "@/lib/utils/notifications";
 
 async function requireOfficerOfOrg(organizationId: string) {
     const supabase = await createClient();
@@ -160,14 +162,29 @@ export async function approveAccreditation(accreditationId: string) {
             .eq("id", accreditation.organization_id)
             .single();
 
-        await supabase.from("notifications").insert({
-            user_id: accreditation.submitted_by,
-            type: "accreditation_approved",
-            title: "Accreditation Approved",
-            message: `Your accreditation application for ${org?.name || "your organization"} has been approved.`,
-            link: "/dashboard/accreditation",
-            status: "unread",
-        });
+        const shouldNotify = await checkNotificationPreference(accreditation.submitted_by, "admin_announcements");
+        if (shouldNotify) {
+            await supabase.from("notifications").insert({
+                user_id: accreditation.submitted_by,
+                type: "accreditation_approved",
+                title: "Accreditation Approved",
+                message: `Your accreditation application for ${org?.name || "your organization"} has been approved.`,
+                link: "/dashboard/accreditation",
+                status: "unread",
+            });
+        }
+
+        try {
+            await generateEngagementRecord({
+                userId: accreditation.submitted_by,
+                organizationId: accreditation.organization_id,
+                recordType: "accreditation",
+                title: `Accreditation Approved: ${org?.name || "Organization"}`,
+                organizationName: org?.name || null,
+            });
+        } catch (err) {
+            console.error("Failed to generate accreditation engagement record:", err);
+        }
     }
 
     revalidatePath("/dashboard/accreditation");
@@ -216,17 +233,94 @@ export async function rejectAccreditation(accreditationId: string, rejectionNote
             .eq("id", accreditation.organization_id)
             .single();
 
-        await supabase.from("notifications").insert({
-            user_id: accreditation.submitted_by,
-            type: "accreditation_rejected",
-            title: "Accreditation Rejected",
-            message: `Your accreditation application for ${org?.name || "your organization"} was not approved.${rejectionNotes ? ` Reason: ${rejectionNotes}` : ""}`,
-            link: "/dashboard/accreditation",
-            status: "unread",
-        });
+        const shouldNotify = await checkNotificationPreference(accreditation.submitted_by, "admin_announcements");
+        if (shouldNotify) {
+            await supabase.from("notifications").insert({
+                user_id: accreditation.submitted_by,
+                type: "accreditation_rejected",
+                title: "Accreditation Rejected",
+                message: `Your accreditation application for ${org?.name || "your organization"} was not approved.${rejectionNotes ? ` Reason: ${rejectionNotes}` : ""}`,
+                link: "/dashboard/accreditation",
+                status: "unread",
+            });
+        }
     }
 
     revalidatePath("/dashboard/accreditation");
     revalidatePath("/dashboard/admin");
     revalidatePath(`/dashboard/organizations/${accreditation.organization_id}`);
+}
+
+export async function saveAccreditationFileMetadata(
+    storagePath: string,
+    metadata: { name: string; size: number; type: string },
+    accreditationId: string
+) {
+    const { supabase } = await requireAdmin();
+
+    const { data: accreditation } = await supabase
+        .from("accreditations")
+        .select("uploaded_files")
+        .eq("id", accreditationId)
+        .single();
+
+    if (!accreditation) throw new Error("Accreditation not found");
+
+    const currentFiles = (accreditation.uploaded_files as unknown[]) || [];
+    const newFile = {
+        name: metadata.name,
+        path: storagePath,
+        size: metadata.size,
+        type: metadata.type,
+        uploadedAt: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+        .from("accreditations")
+        .update({ uploaded_files: [...currentFiles, newFile] })
+        .eq("id", accreditationId);
+
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/accreditation");
+}
+
+export async function getAccreditationFileUrl(path: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase.storage
+        .from("accreditation-documents")
+        .createSignedUrl(path, 3600);
+
+    if (error) throw new Error(error.message);
+    return data.signedUrl;
+}
+
+export async function deleteAccreditationFile(path: string, accreditationId: string) {
+    const { supabase } = await requireAdmin();
+
+    const { error: storageError } = await supabase.storage
+        .from("accreditation-documents")
+        .remove([path]);
+
+    if (storageError) throw new Error(storageError.message);
+
+    const { data: accreditation } = await supabase
+        .from("accreditations")
+        .select("uploaded_files")
+        .eq("id", accreditationId)
+        .single();
+
+    if (accreditation) {
+        const files = ((accreditation.uploaded_files as { path: string }[]) || [])
+            .filter((f) => f.path !== path);
+
+        await supabase
+            .from("accreditations")
+            .update({ uploaded_files: files })
+            .eq("id", accreditationId);
+    }
+
+    revalidatePath("/dashboard/accreditation");
 }

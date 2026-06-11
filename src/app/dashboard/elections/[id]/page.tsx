@@ -5,6 +5,7 @@ import NominateDialog from "@/components/elections/NominateDialog";
 import ElectionBoard from "@/components/elections/ElectionBoard";
 import ElectionResultsSection from "@/components/elections/ElectionResultsSection";
 import ElectionAdminControls from "@/components/elections/ElectionAdminControls";
+import VoteStats from "@/components/elections/VoteStats";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -273,6 +274,11 @@ export default async function ElectionDetailPage({ params }: Props) {
                     electionId={id}
                     status={election.status}
                 />
+            )}
+
+            {/* Vote stats */}
+            {(isClosed || (canManage && isVotingOpen)) && (
+                <VoteStats electionId={id} />
             )}
 
             {/* Actions bar */}

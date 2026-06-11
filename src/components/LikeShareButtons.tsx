@@ -40,18 +40,22 @@ export default function LikeShareButtons({
             const idCol = itemType === "news" ? "news_id" : "event_id";
 
             if (liked) {
-                await supabase
+                const { error } = await supabase
                     .from(table)
                     .delete()
                     .eq(idCol, itemId)
                     .eq("user_id", user.id);
 
+                if (error) throw new Error(error.message);
+
                 setLiked(false);
                 setLikeCount((c) => Math.max(0, c - 1));
             } else {
-                await supabase
+                const { error } = await supabase
                     .from(table)
                     .insert({ [idCol]: itemId, user_id: user.id });
+
+                if (error) throw new Error(error.message);
 
                 setLiked(true);
                 setLikeCount((c) => c + 1);

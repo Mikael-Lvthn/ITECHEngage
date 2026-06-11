@@ -115,11 +115,16 @@ export default async function NewsAndEventsPage() {
             .order("name");
         userOrganizations = (allOrgs || []).map(o => ({ id: o.id, name: o.name }));
     } else if (structuralRoles) {
-        userOrganizations = structuralRoles.map(r => ({
-            id: r.organization_id,
-            name: (Array.isArray(r.organizations) 
+        const uniqueOrgs = new Map<string, string>();
+        for (const r of structuralRoles) {
+            const name = (Array.isArray(r.organizations) 
                 ? r.organizations[0]?.name 
-                : (r.organizations as { name: string } | null)?.name) || "Unknown"
+                : (r.organizations as { name: string } | null)?.name) || "Unknown";
+            uniqueOrgs.set(r.organization_id, name);
+        }
+        userOrganizations = Array.from(uniqueOrgs.entries()).map(([id, name]) => ({
+            id,
+            name
         }));
     }
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingButton } from "@/components/loading/LoadingButton";
+import { Eye, EyeOff } from "lucide-react";
 
 type RegistrationType = "student" | "faculty";
 
@@ -19,7 +20,9 @@ export default function SignupPage() {
     const [schoolEmail, setSchoolEmail] = useState("");
     const [personalEmail, setPersonalEmail] = useState("");
     const [contactNumber, setContactNumber] = useState("");
-    const [lrn, setLrn] = useState("");
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -55,10 +58,7 @@ export default function SignupPage() {
                 setError("Contact number is required");
                 return;
             }
-            if (!lrn.trim()) {
-                setError("LRN is required");
-                return;
-            }
+
         }
 
         setLoading(true);
@@ -75,7 +75,7 @@ export default function SignupPage() {
                         school_email: schoolEmail,
                         personal_email: personalEmail,
                         contact_number: contactNumber,
-                        lrn: lrn,
+
                         student_number: studentNumber,
                     }),
                 },
@@ -313,21 +313,6 @@ export default function SignupPage() {
                                                             className={inputClasses}
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <label htmlFor="lrn" className="text-sm font-medium text-foreground">
-                                                            LRN <span className="text-destructive">*</span>
-                                                        </label>
-                                                        <input
-                                                            id="lrn"
-                                                            type="text"
-                                                            value={lrn}
-                                                            onChange={(e) => setLrn(e.target.value)}
-                                                            placeholder="12-digit LRN"
-                                                            required
-                                                            maxLength={12}
-                                                            className={inputClasses}
-                                                        />
-                                                    </div>
                                                 </div>
                                             </div>
                                         </>
@@ -337,29 +322,49 @@ export default function SignupPage() {
                                         <label htmlFor="password" className="text-sm font-medium text-foreground">
                                             Password
                                         </label>
-                                        <input
-                                            id="password"
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            required
-                                            className={inputClasses}
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                id="password"
+                                                type={showPassword ? "text" : "password"}
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                required
+                                                className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 pl-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword((v) => !v)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                            >
+                                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                                             Confirm Password
                                         </label>
-                                        <input
-                                            id="confirmPassword"
-                                            type="password"
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            required
-                                            className={inputClasses}
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                id="confirmPassword"
+                                                type={showConfirm ? "text" : "password"}
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                required
+                                                className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 pl-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirm((v) => !v)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                                            >
+                                                {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <LoadingButton

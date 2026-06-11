@@ -96,11 +96,11 @@ export async function updateOrganization(formData: FormData) {
     const description = formData.get("description") as string;
     const visibility = (formData.get("visibility") as string) || "public";
 
-    const logo_url = formData.get("logo_url") as string;
-    const cover_photo_url = formData.get("cover_photo_url") as string;
-    const mission = formData.get("mission") as string;
-    const vision = formData.get("vision") as string;
-    const core_values = formData.get("core_values") as string;
+    const logo_url = formData.get("logo_url");
+    const cover_photo_url = formData.get("cover_photo_url");
+    const mission = formData.get("mission");
+    const vision = formData.get("vision");
+    const core_values = formData.get("core_values");
 
     if (!id) throw new Error("Organization ID is required");
     if (!name || name.trim().length === 0) {
@@ -122,11 +122,11 @@ export async function updateOrganization(formData: FormData) {
         visibility,
     };
 
-    if (logo_url && logo_url.trim().length > 0) updateData.logo_url = logo_url;
-    if (cover_photo_url && cover_photo_url.trim().length > 0) updateData.cover_photo_url = cover_photo_url;
-    if (mission !== null && mission !== undefined) updateData.mission = mission.trim();
-    if (vision !== null && vision !== undefined) updateData.vision = vision.trim();
-    if (core_values !== null && core_values !== undefined) updateData.core_values = core_values.trim();
+    if (logo_url !== null && (logo_url as string).trim().length > 0) updateData.logo_url = (logo_url as string).trim();
+    if (cover_photo_url !== null && (cover_photo_url as string).trim().length > 0) updateData.cover_photo_url = (cover_photo_url as string).trim();
+    if (mission !== null) updateData.mission = (mission as string).trim();
+    if (vision !== null) updateData.vision = (vision as string).trim();
+    if (core_values !== null) updateData.core_values = (core_values as string).trim();
 
     const { error } = await supabase
         .from("organizations")

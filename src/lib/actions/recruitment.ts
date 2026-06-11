@@ -19,16 +19,21 @@ export async function createRecruitment(formData: FormData) {
         throw new Error("Organization ID and title are required");
     }
 
-    const { data: membership } = await supabase
-        .from("memberships")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("organization_id", organizationId)
-        .eq("status", "approved")
-        .maybeSingle();
+    const { data: role } = await supabase.rpc("get_my_role");
+    const isAdmin = role === "admin";
 
-    if (!membership || membership.role !== "officer") {
-        throw new Error("Unauthorized: Officer role required");
+    if (!isAdmin) {
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
+            .select("id")
+            .eq("assigned_user_id", user.id)
+            .eq("organization_id", organizationId)
+            .limit(1)
+            .maybeSingle();
+
+        if (!structuralRole) {
+            throw new Error("Unauthorized: Officer or Admin role required");
+        }
     }
 
     const { error } = await supabase.from("recruitment_requests").insert({
@@ -52,16 +57,21 @@ export async function closeRecruitment(recruitmentId: string, organizationId: st
 
     if (!user) throw new Error("Not authenticated");
 
-    const { data: membership } = await supabase
-        .from("memberships")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("organization_id", organizationId)
-        .eq("status", "approved")
-        .maybeSingle();
+    const { data: role } = await supabase.rpc("get_my_role");
+    const isAdmin = role === "admin";
 
-    if (!membership || membership.role !== "officer") {
-        throw new Error("Unauthorized: Officer role required");
+    if (!isAdmin) {
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
+            .select("id")
+            .eq("assigned_user_id", user.id)
+            .eq("organization_id", organizationId)
+            .limit(1)
+            .maybeSingle();
+
+        if (!structuralRole) {
+            throw new Error("Unauthorized: Officer or Admin role required");
+        }
     }
 
     const { error } = await supabase

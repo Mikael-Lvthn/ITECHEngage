@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import LikeShareButtons from "@/components/LikeShareButtons";
+import AttendanceQRPanel from "@/components/events/AttendanceQRPanel";
 
 interface EventWithDetails {
     id: string;
@@ -12,6 +13,7 @@ interface EventWithDetails {
     end_datetime: string | null;
     location: string;
     status: string;
+    created_by: string;
     created_at: string;
     organizations: {
         name: string;
@@ -66,6 +68,16 @@ export default async function EventDetailPage({ params }: Props) {
             .maybeSingle();
 
         userLiked = !!likeRow;
+    }
+
+    let canManageAttendance = false;
+    if (user) {
+        const { data: userProfile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+        canManageAttendance = (rawEvent as unknown as { created_by: string }).created_by === user.id || userProfile?.role === "admin";
     }
 
     return (
@@ -206,6 +218,10 @@ export default async function EventDetailPage({ params }: Props) {
                     </div>
                 </div>
             </article>
+
+            {canManageAttendance && event.status === "published" && (
+                <AttendanceQRPanel eventId={id} eventTitle={event.title} />
+            )}
         </div>
     );
 }

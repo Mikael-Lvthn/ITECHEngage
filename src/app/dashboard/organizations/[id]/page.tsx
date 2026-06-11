@@ -84,7 +84,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
     const { data: memberPreviewsData } = await supabase
         .rpc("get_org_member_previews", { org_id: id, limit_val: 5 });
 
-    const memberPreviews = (memberPreviewsData || []).map((m: any) => ({
+    const memberPreviews = ((memberPreviewsData as { id: string; full_name: string; avatar_url: string | null }[]) || []).map((m) => ({
         id: m.id,
         full_name: m.full_name,
         avatar_url: m.avatar_url,
@@ -94,7 +94,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
     const { data: followerPreviewsData } = await supabase
         .rpc("get_org_follower_previews", { org_id: id, limit_val: 5 });
 
-    const followerPreviews = (followerPreviewsData || []).map((f: any) => ({
+    const followerPreviews = ((followerPreviewsData as { id: string; full_name: string; avatar_url: string | null }[]) || []).map((f) => ({
         id: f.id,
         full_name: f.full_name,
         avatar_url: f.avatar_url,

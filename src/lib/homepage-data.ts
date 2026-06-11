@@ -94,8 +94,6 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
     if (newsResult.error) console.error("[Homepage] News error:", newsResult.error.message);
     if (electionsResult.error) console.error("[Homepage] Elections error:", electionsResult.error.message);
 
-    console.log(`[Homepage] Fetched: ${eventsResult.data?.length ?? 0} events, ${organizationsResult.data?.length ?? 0} orgs, ${newsResult.data?.length ?? 0} news, ${electionsResult.data?.length ?? 0} elections`);
-
     return {
         events: (eventsResult.data ?? []) as HomepageEvent[],
         organizations: (organizationsResult.data ?? []) as HomepageOrganization[],

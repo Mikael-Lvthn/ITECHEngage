@@ -52,7 +52,7 @@ export async function updateProfile(formData: FormData) {
         const school_email = formData.get("school_email") as string;
         const personal_email = formData.get("personal_email") as string;
         const contact_number = formData.get("contact_number") as string;
-        const lrn = formData.get("lrn") as string;
+
         const student_number = formData.get("student_number") as string;
         const program = formData.get("program") as string;
 
@@ -62,7 +62,7 @@ export async function updateProfile(formData: FormData) {
                 school_email: school_email?.trim() || null,
                 personal_email: personal_email?.trim() || null,
                 contact_number: contact_number?.trim() || null,
-                lrn: lrn?.trim() || null,
+
                 student_number: student_number?.trim() || "",
                 program: program?.trim() || "",
             })

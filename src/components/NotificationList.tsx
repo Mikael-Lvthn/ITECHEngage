@@ -86,7 +86,6 @@ export default function NotificationList({ notifications }: NotificationListProp
                     {groupItems.map((n) => {
                         const inner = (
                             <div
-                                key={n.id}
                                 className={`flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
                                     n.status !== "unread" ? "hover:bg-accent/50" : "bg-[#800000]/5 hover:bg-[#800000]/10"
                                 }`}

@@ -23,7 +23,7 @@ interface Student {
     school_email: string | null;
     personal_email: string | null;
     contact_number: string | null;
-    lrn: string | null;
+
     student_number: string | null;
     program: string | null;
 }
@@ -261,17 +261,7 @@ export default function ProfilePage() {
                                         placeholder="+63 9XX XXX XXXX"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">LRN (Learner Reference Number)</label>
-                                    <input
-                                        type="text"
-                                        name="lrn"
-                                        defaultValue={student?.lrn || ""}
-                                        maxLength={12}
-                                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                                        placeholder="12-digit LRN"
-                                    />
-                                </div>
+
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Student Number</label>
                                     <input

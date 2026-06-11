@@ -15,17 +15,16 @@ async function requireOfficerOrAdmin(orgId: string) {
     const { data: role } = await supabase.rpc("get_my_role");
     if (role === "admin") return { supabase, user };
 
-    // Check if officer of this specific org
-    const { data: membership } = await supabase
-        .from("memberships")
+    // Check if officer via structural roles (organization_roles)
+    const { data: structuralRole } = await supabase
+        .from("organization_roles")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("assigned_user_id", user.id)
         .eq("organization_id", orgId)
-        .eq("role", "officer")
-        .eq("status", "approved")
+        .limit(1)
         .maybeSingle();
 
-    if (!membership) {
+    if (!structuralRole) {
         throw new Error("Unauthorized: Officer or admin role required");
     }
 

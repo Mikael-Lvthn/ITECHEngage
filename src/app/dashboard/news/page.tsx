@@ -79,10 +79,14 @@ export default async function NewsManagementPage() {
                     organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
                 })) as unknown as News[]}
                 userRole="officer"
-                userOrganizations={memberships.map(m => ({
-                    id: m.organization_id,
-                    name: (Array.isArray(m.organizations) ? m.organizations[0]?.name : (m.organizations as { name: string } | null)?.name) || ""
-                }))}
+                userOrganizations={Array.from(
+                    new Map(
+                        memberships.map(m => [
+                            m.organization_id,
+                            (Array.isArray(m.organizations) ? m.organizations[0]?.name : (m.organizations as { name: string } | null)?.name) || ""
+                        ])
+                    ).entries()
+                ).map(([id, name]) => ({ id, name }))}
             />
         </div>
     );

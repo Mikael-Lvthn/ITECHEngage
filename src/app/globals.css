@@ -282,6 +282,7 @@
         color: #2B2B2B !important;
     }
 }
+
 /* Force clean styles for image capture */
 .capture-mode {
     background-color: #FFFFFF !important;
@@ -289,4 +290,10 @@
 }
 .capture-mode * {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Hide browser-default password reveal/clear buttons (Edge, IE) so our custom eye toggle works everywhere */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
 }

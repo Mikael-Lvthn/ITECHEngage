@@ -30,7 +30,6 @@ export interface Student {
     school_email?: string | null;
     personal_email?: string | null;
     contact_number?: string | null;
-    lrn?: string | null;
 }
 
 export interface Organization {
@@ -66,6 +65,7 @@ export interface Event {
     start_datetime: string;
     end_datetime: string | null;
     location: string;
+    max_participants: number | null;
     status: EventStatus;
     created_by: string;
     created_at: string;
@@ -134,6 +134,7 @@ export interface Accreditation {
     academic_year: string;
     status: AccreditationStatus;
     documents_url: string | null;
+    uploaded_files: AccreditationFile[];
     notes: string | null;
     submitted_at: string;
     submitted_by: string | null;
@@ -168,3 +169,70 @@ export interface Notification {
     status: NotificationStatus;
     created_at: string;
 }
+
+export type AttendanceSessionStatus = "active" | "expired" | "closed";
+
+export interface AttendanceSession {
+    id: string;
+    event_id: string;
+    created_by: string;
+    token: string;
+    expires_at: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export type EngagementRecordType = "membership" | "officer_role" | "event_attended" | "election_winner" | "accreditation";
+
+export interface EngagementRecord {
+    id: string;
+    user_id: string;
+    organization_id: string | null;
+    event_id: string | null;
+    record_type: EngagementRecordType;
+    title: string;
+    description: string | null;
+    organization_name: string | null;
+    role_title: string | null;
+    hours_credit: number;
+    date_earned: string;
+    academic_year: string | null;
+    semester: string | null;
+    verified: boolean;
+    verified_by: string | null;
+    verified_at: string | null;
+    created_at: string;
+}
+
+export interface AccreditationFile {
+    name: string;
+    path: string;
+    size: number;
+    type: string;
+    uploadedAt: string;
+}
+
+export type AnnouncementVisibility = "members" | "members_and_followers";
+
+export interface OrgAnnouncement {
+    id: string;
+    organization_id: string;
+    created_by: string;
+    title: string;
+    body: string;
+    pinned: boolean;
+    visibility: AnnouncementVisibility;
+    created_at: string;
+    profiles?: Profile;
+}
+
+export interface NotificationPreferences {
+    user_id: string;
+    election_started: boolean;
+    membership_updates: boolean;
+    event_reminders: boolean;
+    org_announcements: boolean;
+    admin_announcements: boolean;
+    updated_at: string | null;
+}
+

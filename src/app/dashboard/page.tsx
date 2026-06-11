@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types";
 
@@ -109,11 +110,16 @@ export default async function DashboardPage() {
         data: { user },
     } = await supabase.auth.getUser();
 
+    if (!user) {
+        redirect("/login");
+        return;
+    }
+
     const [profileResult, orgCountResult, membershipCountResult, followCountResult] = await Promise.all([
         supabase
             .from("profiles")
             .select("full_name, role")
-            .eq("id", user!.id)
+            .eq("id", user.id)
             .single(),
         supabase
             .from("organizations")
@@ -122,12 +128,12 @@ export default async function DashboardPage() {
         supabase
             .from("memberships")
             .select("*", { count: "exact", head: true })
-            .eq("user_id", user!.id)
+            .eq("user_id", user.id)
             .eq("status", "approved"),
         supabase
             .from("organization_follows")
             .select("*", { count: "exact", head: true })
-            .eq("user_id", user!.id),
+            .eq("user_id", user.id),
     ]);
 
     const profile = profileResult.data;
@@ -145,15 +151,22 @@ export default async function DashboardPage() {
 
     // Determine effective role based on officer memberships (same logic as layout)
     if (userRole !== "admin") {
-        const { data: officerships } = await supabase
-            .from("memberships")
-            .select("id")
-            .eq("user_id", user!.id)
-            .eq("role", "officer")
-            .eq("status", "approved")
-            .limit(1);
+        const [officerResult, orgRoleResult] = await Promise.all([
+            supabase
+                .from("memberships")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("role", "officer")
+                .eq("status", "approved")
+                .limit(1),
+            supabase
+                .from("organization_roles")
+                .select("id")
+                .eq("assigned_user_id", user.id)
+                .limit(1),
+        ]);
 
-        if (officerships && officerships.length > 0) {
+        if ((officerResult.data && officerResult.data.length > 0) || (orgRoleResult.data && orgRoleResult.data.length > 0)) {
             userRole = "officer";
         } else {
             userRole = "student";

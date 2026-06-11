@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { generateEngagementRecord } from "@/lib/actions/engagement-internal";
+import { checkNotificationPreference } from "@/lib/utils/notifications";
 
 export async function approveMembership(membershipId: string) {
     const supabase = await createClient();
@@ -29,6 +31,38 @@ export async function approveMembership(membershipId: string) {
         .update({ role: "officer" })
         .eq("id", membership.user_id)
         .eq("role", "student");
+
+    const { data: membershipRow } = await supabase
+        .from("memberships")
+        .select("organization_id, organizations(name)")
+        .eq("id", membershipId)
+        .single();
+
+    if (membershipRow) {
+        const org = membershipRow.organizations as unknown as { name: string } | null;
+        try {
+            await generateEngagementRecord({
+                userId: membership.user_id,
+                organizationId: membershipRow.organization_id,
+                recordType: "membership",
+                title: `Joined: ${org?.name || "Organization"}`,
+                organizationName: org?.name || null,
+            });
+        } catch (err) {
+            console.error("Failed to generate engagement record:", err);
+        }
+
+        const shouldNotify = await checkNotificationPreference(membership.user_id, "membership_updates");
+        if (shouldNotify) {
+            await supabase.from("notifications").insert({
+                user_id: membership.user_id,
+                type: "membership_approved",
+                title: "Membership Approved",
+                message: `Your membership in ${org?.name || "an organization"} has been approved.`,
+                link: `/dashboard/organizations/${membershipRow.organization_id}`,
+            });
+        }
+    }
 
     revalidatePath("/dashboard", "layout");
 }

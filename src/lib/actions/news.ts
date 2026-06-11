@@ -120,9 +120,9 @@ export async function deleteNews(news_id: string) {
 
     if (fetchError || !newsItem) throw new Error("News not found");
 
-    await requireOfficerOrAdmin(newsItem.organization_id);
+    const { supabase: verifiedClient } = await requireOfficerOrAdmin(newsItem.organization_id);
 
-    const { error } = await supabase
+    const { error } = await verifiedClient
         .from("news")
         .delete()
         .eq("id", news_id);

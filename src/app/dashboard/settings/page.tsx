@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppearanceSettings from "@/components/AppearanceSettings";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 export default async function SettingsPage() {
     const supabase = await createClient();
@@ -30,6 +31,18 @@ export default async function SettingsPage() {
             </div>
 
             <AppearanceSettings />
+
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+                <div className="mb-4">
+                    <h2 className="font-semibold flex items-center gap-2">
+                        🔔 Notification Preferences
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Control which notifications you receive
+                    </p>
+                </div>
+                <NotificationPreferences />
+            </div>
         </div>
     );
 }

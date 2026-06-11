@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
         label: "Followed",
         href: "/dashboard/followed",
         icon: "⭐",
-        roles: ["student"],
+        roles: ["student", "officer"],
     },
     {
         label: "My Memberships",
@@ -62,6 +62,12 @@ const navItems: NavItem[] = [
         label: "Notifications",
         href: "/dashboard/notifications",
         icon: "🔔",
+        roles: ["student", "officer", "admin"],
+    },
+    {
+        label: "My Record",
+        href: "/dashboard/co-curricular",
+        icon: "🎓",
         roles: ["student", "officer", "admin"],
     },
     {
@@ -104,6 +110,7 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
     const [showMenu, setShowMenu] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const supabase = createClient();
@@ -119,6 +126,18 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
                 });
         });
     }, [pathname]);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowMenu(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     const filteredNavItems = navItems.filter((item) =>
         item.roles.includes(userRole)
@@ -200,7 +219,7 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
                 <div className="my-2 border-t border-sidebar-border" />
             </nav>
 
-            <div className="relative px-3 py-3 border-t border-sidebar-border">
+            <div className="relative px-3 py-3 border-t border-sidebar-border" ref={menuRef}>
                 <button
                     onClick={() => setShowMenu(!showMenu)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-accent/50 transition-colors text-left"
