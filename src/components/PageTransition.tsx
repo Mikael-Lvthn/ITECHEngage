@@ -9,8 +9,10 @@ export default function PageTransition() {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        setVisible(true);
-        setProgress(20);
+        const t0 = setTimeout(() => {
+            setVisible(true);
+            setProgress(20);
+        }, 0);
 
         const t1 = setTimeout(() => setProgress(60), 80);
         const t2 = setTimeout(() => setProgress(90), 200);
@@ -21,6 +23,7 @@ export default function PageTransition() {
         }, 550);
 
         return () => {
+            clearTimeout(t0);
             clearTimeout(t1);
             clearTimeout(t2);
             clearTimeout(t3);

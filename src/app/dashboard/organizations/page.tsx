@@ -77,7 +77,7 @@ export default async function OrganizationsPage({
             {/* Category filter pills */}
             {(categories && categories.length > 0) && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <a
+                    <Link
                         href="/dashboard/organizations"
                         className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                             !currentCategory
@@ -86,9 +86,9 @@ export default async function OrganizationsPage({
                         }`}
                     >
                         All
-                    </a>
+                    </Link>
                     {categories.map((cat) => (
-                        <a
+                        <Link
                             key={cat.id}
                             href={`/dashboard/organizations?category=${cat.id}`}
                             className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
@@ -98,7 +98,7 @@ export default async function OrganizationsPage({
                             }`}
                         >
                             {cat.name}
-                        </a>
+                        </Link>
                     ))}
                 </div>
             )}

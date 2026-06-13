@@ -50,7 +50,7 @@ next-env.d.ts
 .github/prompts/
 
 # Supabase
-supabase/
+/supabase/
 
 # Markdown files
 *.md*   
