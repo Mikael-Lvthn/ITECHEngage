@@ -44,12 +44,24 @@ const navItems: NavItem[] = [
         label: "My Memberships",
         href: "/dashboard/memberships",
         icon: "👥",
-        roles: ["officer", "admin"],
+        roles: ["officer"],
     },
     {
         label: "News & Events",
         href: "/dashboard/news-and-events",
         icon: "📰",
+        roles: ["student", "officer", "admin"],
+    },
+    {
+        label: "Recruitment",
+        href: "/dashboard/recruitment",
+        icon: "📋",
+        roles: ["officer"],
+    },
+    {
+        label: "Bulletin Board",
+        href: "/dashboard/bulletin",
+        icon: "📌",
         roles: ["student", "officer", "admin"],
     },
     {
@@ -68,7 +80,7 @@ const navItems: NavItem[] = [
         label: "My Record",
         href: "/dashboard/co-curricular",
         icon: "🎓",
-        roles: ["student", "officer", "admin"],
+        roles: ["student", "officer"],
     },
     {
         label: "Accreditation",
@@ -100,6 +112,7 @@ interface SidebarProps {
     userRole: UserRole;
     userName: string;
     userEmail: string;
+    hasOrgRoles?: boolean;
     adminBadgeCount?: number;
     officerBadgeCount?: number;
 }
@@ -157,6 +170,12 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
         .join("")
         .toUpperCase()
         .slice(0, 2);
+    const roleLabel =
+        userRole === "admin"
+            ? "Admin"
+            : userRole === "officer"
+                ? "Student Officer"
+                : "Student";
 
     return (
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-sidebar border-r border-sidebar-border">
@@ -174,7 +193,7 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
                 </div>
             </Link>
 
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-4 space-y-1 min-h-0 overflow-y-auto no-scrollbar">
                 {filteredNavItems.map((item, i) => {
                     const isActive =
                         item.href === "/"
@@ -249,7 +268,7 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
                             <p className="text-sm font-semibold text-popover-foreground">{userName}</p>
                             <p className="text-xs text-muted-foreground">{userEmail}</p>
                             <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#800000]/10 text-[#800000] capitalize">
-                                {userRole}
+                                {roleLabel}
                             </span>
                         </div>
                         <div className="p-1">

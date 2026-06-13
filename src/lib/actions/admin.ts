@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendSchoolEmail } from "@/lib/actions/send-school-email";
 
 async function requireAdmin() {
     const supabase = await createClient();
@@ -282,5 +283,215 @@ export async function deleteCategory(categoryId: string) {
     if (error) throw new Error(error.message);
 
     revalidatePath("/dashboard/admin");
+}
+
+export async function verifyUserAccount(userId: string) {
+    const { supabase } = await requireAdmin();
+
+    // Fetch user details first to get their role and school email if they are a student
+    const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("email, full_name, role, students(school_email)")
+        .eq("id", userId)
+        .single();
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ account_status: "verified" })
+        .eq("id", userId);
+
+    if (error) throw new Error(error.message);
+
+    await supabase.from("notifications").insert({
+        user_id: userId,
+        type: "account_verified",
+        title: "Account Verified",
+        message: "Your account has been verified by an administrator. You now have full access to the platform.",
+        status: "unread",
+    });
+
+    // Send welcome email if the user is a student and has a school email
+    if (userProfile && userProfile.role === "student") {
+        const student = userProfile.students as any;
+        const schoolEmail = student?.school_email || userProfile.email;
+        if (schoolEmail) {
+            sendSchoolEmail(schoolEmail, userProfile.full_name).catch((err) => {
+                console.error("Failed to send welcome email for verified user:", userId, err);
+            });
+        }
+    }
+
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard");
+}
+
+export async function rejectUserAccount(userId: string) {
+    const { supabase } = await requireAdmin();
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ account_status: "rejected" })
+        .eq("id", userId);
+
+    if (error) throw new Error(error.message);
+
+    await supabase.from("notifications").insert({
+        user_id: userId,
+        type: "account_rejected",
+        title: "Account Not Approved",
+        message: "Your account registration was not approved. Please contact administration for more information.",
+        status: "unread",
+    });
+
+    revalidatePath("/dashboard/admin");
+}
+
+export async function createBulletinPost(formData: FormData) {
+    const { supabase, user } = await requireAdmin();
+
+    const type = formData.get("bulletin_type") as string;
+    const title = formData.get("bulletin_title") as string;
+    const body = formData.get("bulletin_body") as string;
+    const expires_at = formData.get("bulletin_expires_at") as string;
+    const pinned = formData.get("bulletin_pinned") === "on";
+
+    if (!type || !title?.trim()) {
+        throw new Error("Type and title are required.");
+    }
+
+    const { error } = await supabase.from("bulletin_board_posts").insert({
+        type,
+        title: title.trim(),
+        body: body?.trim() || null,
+        expires_at: expires_at || null,
+        pinned,
+        created_by: user.id,
+    });
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard/bulletin");
+    revalidatePath("/");
+}
+
+// ─── User Management Actions (Task 17e) ────────────────────────────────────
+
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export async function deleteUser(userId: string) {
+    await requireAdmin();
+    const adminClient = createAdminClient();
+
+    // Nullify storage ownership so deletion isn't blocked
+    await adminClient
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", userId);
+
+    const { error } = await adminClient.auth.admin.deleteUser(userId);
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/admin");
+}
+
+export async function bulkDeleteUsers(userIds: string[]) {
+    await requireAdmin();
+    if (!userIds.length) return;
+
+    const adminClient = createAdminClient();
+
+    const errors: string[] = [];
+    for (const id of userIds) {
+        const { error } = await adminClient.auth.admin.deleteUser(id);
+        if (error) errors.push(`${id}: ${error.message}`);
+    }
+
+    if (errors.length) throw new Error(`Some deletions failed:\n${errors.join("\n")}`);
+
+    revalidatePath("/dashboard/admin");
+}
+
+export async function bulkVerifyUsers(userIds: string[]) {
+    const { supabase } = await requireAdmin();
+    if (!userIds.length) return;
+
+    // Fetch user details first to get their role and school email if they are a student
+    const { data: userProfiles } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, role, students(school_email)")
+        .in("id", userIds);
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ account_status: "verified" })
+        .in("id", userIds);
+
+    if (error) throw new Error(error.message);
+
+    // Send notifications and welcome emails
+    if (userProfiles && userProfiles.length > 0) {
+        const notifications = userProfiles.map((userProfile) => ({
+            user_id: userProfile.id,
+            type: "account_verified",
+            title: "Account Verified",
+            message: "Your account has been verified by an administrator. You now have full access to the platform.",
+            status: "unread",
+        }));
+
+        await supabase.from("notifications").insert(notifications);
+
+        for (const userProfile of userProfiles) {
+            if (userProfile.role === "student") {
+                const student = userProfile.students as any;
+                const schoolEmail = student?.school_email || userProfile.email;
+                if (schoolEmail) {
+                    sendSchoolEmail(schoolEmail, userProfile.full_name).catch((err) => {
+                        console.error("Failed to send welcome email for verified user in bulk:", userProfile.id, err);
+                    });
+                }
+            }
+        }
+    }
+
+    revalidatePath("/dashboard/admin");
+}
+
+export async function bulkPromoteUsers(userIds: string[], targetRole: "student" | "officer" | "admin") {
+    const { supabase } = await requireAdmin();
+    if (!userIds.length) return;
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ role: targetRole })
+        .in("id", userIds);
+
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/admin");
+}
+
+export async function updateUserRole(userId: string, role: "student" | "officer" | "admin") {
+    const { supabase } = await requireAdmin();
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({ role })
+        .eq("id", userId);
+
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/admin");
+}
+
+export async function fetchAllUsers(offset: number = 0, limit: number = 200) {
+    const { supabase } = await requireAdmin();
+
+    const { data, error, count } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, role, account_status, created_at, students(student_number, course, section, year_level)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (error) throw new Error(error.message);
+    return { users: data || [], total: count ?? 0 };
 }
 

@@ -43,16 +43,22 @@ function applyThemeToDOM(config: ThemeConfig) {
     const html = document.documentElement;
     html.style.setProperty("--app-font-family", `"${config.fontFamily}", system-ui, sans-serif`);
     html.style.setProperty("--app-font-size", fontSizeMap[config.fontSize] || "16px");
+    // Use CSS variable instead of body.style.filter to avoid breaking scrollbars (Task 13)
     html.style.setProperty("--app-brightness", `${config.brightness}%`);
     html.style.fontSize = fontSizeMap[config.fontSize] || "16px";
     document.body.style.fontFamily = `"${config.fontFamily}", system-ui, sans-serif`;
-    document.body.style.filter = config.brightness !== 100 ? `brightness(${config.brightness / 100})` : "";
+    // Do NOT set body.style.filter — it creates a new stacking context that clips fixed scrollbars
 
     if (config.darkMode) {
         html.classList.add("dark");
     } else {
         html.classList.remove("dark");
     }
+
+    // Persist dark mode preference for FOUC prevention (Task 20)
+    try {
+        localStorage.setItem("itech-dark-mode", String(config.darkMode));
+    } catch { }
 }
 
 interface UserPrefs {
@@ -136,6 +142,18 @@ export function ThemeProvider({ children, initialPrefs }: { children: ReactNode;
 
     return (
         <ThemeContext.Provider value={{ ...theme, updateTheme, saving }}>
+            {theme.brightness !== 100 && (
+                <div
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        pointerEvents: "none",
+                        backdropFilter: `brightness(${theme.brightness / 100})`,
+                        WebkitBackdropFilter: `brightness(${theme.brightness / 100})`,
+                        zIndex: 99999,
+                    }}
+                />
+            )}
             {children}
         </ThemeContext.Provider>
     );

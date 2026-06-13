@@ -8,6 +8,8 @@ export type ElectionStatus = "draft" | "published" | "voting" | "completed";
 export type NotificationStatus = "unread" | "read" | "archived";
 export type ParticipationStatus = "registered" | "attended" | "absent";
 export type NewsStatus = "draft" | "pending" | "published" | "rejected";
+export type AccountStatus = "pending_verification" | "verified" | "rejected";
+export type BulletinPostType = "news" | "event" | "recruitment" | "system" | "special";
 
 export interface Profile {
     id: string;
@@ -19,6 +21,8 @@ export interface Profile {
     website_url?: string | null;
     social_links?: Record<string, string> | null;
     role: UserRole;
+    account_status: AccountStatus;
+    track_record?: string | null;
     created_at: string;
 }
 
@@ -26,6 +30,8 @@ export interface Student {
     id: string;
     student_number: string;
     program: string;
+    course?: string | null;
+    section?: string | null;
     year_level: number;
     school_email?: string | null;
     personal_email?: string | null;
@@ -234,5 +240,19 @@ export interface NotificationPreferences {
     org_announcements: boolean;
     admin_announcements: boolean;
     updated_at: string | null;
+}
+
+export interface BulletinBoardPost {
+    id: string;
+    type: BulletinPostType;
+    title: string;
+    body: string | null;
+    link: string | null;
+    reference_id: string | null;
+    pinned: boolean;
+    created_by: string | null;
+    organization_id: string | null;
+    expires_at: string | null;
+    created_at: string;
 }
 

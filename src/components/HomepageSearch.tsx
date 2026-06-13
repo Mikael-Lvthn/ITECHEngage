@@ -61,7 +61,7 @@ export default function HomepageSearch({ organizations, events, news, isLoggedIn
         <div className="mt-8 max-w-xl mx-auto relative">
             <div className="relative">
                 <svg
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6E6E6E]"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -80,24 +80,24 @@ export default function HomepageSearch({ organizations, events, news, isLoggedIn
                     onFocus={() => setFocused(true)}
                     onBlur={() => setTimeout(() => setFocused(false), 200)}
                     placeholder="Search for organizations, events, or news..."
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-[#2B2B2B] text-sm placeholder:text-[#6E6E6E] focus:outline-none focus:ring-2 focus:ring-[#C9A227] shadow-lg"
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-card text-foreground border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#C9A227] shadow-lg"
                 />
             </div>
 
             {showDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-xl shadow-2xl border border-border overflow-hidden z-50">
                     {results.length > 0 ? (
                         <div className="max-h-80 overflow-y-auto">
                             {results.map((item) => (
                                 <Link
                                     key={`${item.type}-${item.id}`}
                                     href={item.href}
-                                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-0"
                                 >
                                     <span className="text-xl shrink-0">{item.icon}</span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-semibold text-[#2B2B2B] truncate">{item.title}</p>
-                                        <p className="text-xs text-[#6E6E6E] truncate">{item.subtitle}</p>
+                                        <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
                                     </div>
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#800000]/60 bg-[#800000]/5 px-2 py-0.5 rounded-full shrink-0">
                                         {item.type}
@@ -106,7 +106,7 @@ export default function HomepageSearch({ organizations, events, news, isLoggedIn
                             ))}
                         </div>
                     ) : (
-                        <div className="px-4 py-6 text-center text-sm text-[#6E6E6E]">
+                        <div className="px-4 py-6 text-center text-sm text-muted-foreground">
                             No results found for &ldquo;{query}&rdquo;
                         </div>
                     )}

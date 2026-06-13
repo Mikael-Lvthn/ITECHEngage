@@ -3,6 +3,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types";
 
+const typeEmoji: Record<string, string> = {
+    membership: "👥",
+    officer_role: "🎖️",
+    event_attended: "📅",
+    election_winner: "🏆",
+    accreditation: "📋",
+};
+
 interface QuickAction {
     label: string;
     description: string;
@@ -115,7 +123,7 @@ export default async function DashboardPage() {
         return;
     }
 
-    const [profileResult, orgCountResult, membershipCountResult, followCountResult] = await Promise.all([
+    const [profileResult, orgCountResult, membershipCountResult, followCountResult, recentActivityResult, positionsResult] = await Promise.all([
         supabase
             .from("profiles")
             .select("full_name, role")
@@ -134,12 +142,30 @@ export default async function DashboardPage() {
             .from("organization_follows")
             .select("*", { count: "exact", head: true })
             .eq("user_id", user.id),
+        supabase
+            .from("engagement_records")
+            .select("id, record_type, title, organization_name, date_earned")
+            .eq("user_id", user.id)
+            .order("date_earned", { ascending: false })
+            .limit(5),
+        supabase
+            .from("organization_roles")
+            .select("title, hierarchy_level, organizations(id, name)")
+            .eq("assigned_user_id", user.id)
+            .order("hierarchy_level", { ascending: true })
+            .limit(3),
     ]);
 
     const profile = profileResult.data;
     const orgCount = orgCountResult.count;
     const membershipCount = membershipCountResult.count;
     const followCount = followCountResult.count;
+    const hasMembership = (membershipCount ?? 0) > 0;
+    const recentActivity = recentActivityResult.data || [];
+    const userPositions = (positionsResult.data || []).map((p) => ({
+        ...p,
+        organizations: Array.isArray(p.organizations) ? p.organizations[0] : p.organizations,
+    }));
 
     let userRole: UserRole = (profile?.role as UserRole) || "student";
     if (!profile) {
@@ -149,7 +175,7 @@ export default async function DashboardPage() {
         }
     }
 
-    // Determine effective role based on officer memberships (same logic as layout)
+    // Determine effective role based on approved memberships or structural roles.
     if (userRole !== "admin") {
         const [officerResult, orgRoleResult] = await Promise.all([
             supabase
@@ -166,7 +192,7 @@ export default async function DashboardPage() {
                 .limit(1),
         ]);
 
-        if ((officerResult.data && officerResult.data.length > 0) || (orgRoleResult.data && orgRoleResult.data.length > 0)) {
+        if (hasMembership || !!officerResult.data?.length || !!orgRoleResult.data?.length) {
             userRole = "officer";
         } else {
             userRole = "student";
@@ -178,6 +204,12 @@ export default async function DashboardPage() {
     );
 
     const isStudent = userRole === "student";
+    const roleLabel =
+        userRole === "admin"
+            ? "Admin"
+            : userRole === "officer"
+                ? "Student Officer"
+                : "Student";
 
     return (
         <div className="space-y-8">
@@ -195,7 +227,11 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${
+                userPositions.length > 0
+                    ? "sm:grid-cols-2 lg:grid-cols-4"
+                    : "sm:grid-cols-3"
+            }`}>
                 <div className="rounded-xl border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center">
@@ -229,10 +265,24 @@ export default async function DashboardPage() {
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Your Role</p>
-                            <p className="text-2xl font-bold mt-0.5 capitalize">{userRole}</p>
+                            <p className="text-2xl font-bold mt-0.5">{roleLabel}</p>
                         </div>
                     </div>
                 </div>
+                {userPositions.map((pos) => (
+                    <div key={pos.title} className="rounded-xl border bg-card p-5 card-hover">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-[#C9A227]/10 flex items-center justify-center">
+                                <span className="text-lg">🏅</span>
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">My Position</p>
+                                <p className="text-base font-bold mt-0.5 truncate">{pos.title}</p>
+                                <p className="text-xs text-muted-foreground truncate">{pos.organizations?.name}</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             <div>
@@ -272,10 +322,29 @@ export default async function DashboardPage() {
 
             <div className="rounded-xl border bg-card p-6">
                 <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
-                <div className="text-center py-8 text-muted-foreground">
-                    <p className="text-3xl mb-2">📋</p>
-                    <p className="text-sm">Your recent activity will appear here as you engage with the platform.</p>
-                </div>
+                {recentActivity.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-3xl mb-2">📋</p>
+                        <p className="text-sm">Your recent activity will appear here as you engage with the platform.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {recentActivity.map((rec) => (
+                            <div key={rec.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                                <span className="text-xl shrink-0">{typeEmoji[rec.record_type] || "📌"}</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{rec.title}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {rec.organization_name || "—"} · {new Date(rec.date_earned).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize shrink-0">
+                                    {rec.record_type.replace(/_/g, " ")}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

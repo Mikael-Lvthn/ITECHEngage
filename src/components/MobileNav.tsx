@@ -19,12 +19,14 @@ const navItems: NavItem[] = [
     { label: "Home", href: "/", icon: "🏠", roles: ["student", "officer", "admin"] },
     { label: "Dashboard", href: "/dashboard", icon: "📊", roles: ["student", "officer", "admin"] },
     { label: "Organizations", href: "/dashboard/organizations", icon: "🏢", roles: ["student", "officer", "admin"] },
-    { label: "Followed", href: "/dashboard/followed", icon: "⭐", roles: ["student"] },
-    { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["officer", "admin"] },
+    { label: "Followed", href: "/dashboard/followed", icon: "⭐", roles: ["student", "officer"] },
+    { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["officer"] },
     { label: "News & Events", href: "/dashboard/news-and-events", icon: "📰", roles: ["student", "officer", "admin"] },
+    { label: "Recruitment", href: "/dashboard/recruitment", icon: "📋", roles: ["officer"] },
+    { label: "Bulletin Board", href: "/dashboard/bulletin", icon: "📌", roles: ["student", "officer", "admin"] },
     { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["student", "officer", "admin"] },
     { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", roles: ["student", "officer", "admin"] },
-    { label: "My Record", href: "/dashboard/co-curricular", icon: "🎓", roles: ["student", "officer", "admin"] },
+    { label: "My Record", href: "/dashboard/co-curricular", icon: "🎓", roles: ["student", "officer"] },
     { label: "Accreditation", href: "/dashboard/accreditation", icon: "📑", roles: ["officer", "admin"] },
     { label: "Officer Panel", href: "/dashboard/officer-panel", icon: "🏛️", roles: ["officer"] },
     { label: "Admin Panel", href: "/dashboard/admin", icon: "⚙️", roles: ["admin"] },
@@ -35,6 +37,7 @@ interface MobileNavProps {
     userRole: UserRole;
     userName: string;
     userEmail: string;
+    hasOrgRoles?: boolean;
     adminBadgeCount?: number;
     officerBadgeCount?: number;
 }
@@ -79,6 +82,12 @@ export default function MobileNav({ userRole, userName, userEmail, adminBadgeCou
         .join("")
         .toUpperCase()
         .slice(0, 2);
+    const roleLabel =
+        userRole === "admin"
+            ? "Admin"
+            : userRole === "officer"
+                ? "Student Officer"
+                : "Student";
 
     return (
         <div className="lg:hidden">
@@ -171,6 +180,7 @@ export default function MobileNav({ userRole, userName, userEmail, adminBadgeCou
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate text-sidebar-foreground">{userName}</p>
                                     <p className="text-[10px] text-white/50 truncate">{userEmail}</p>
+                                    <p className="text-[10px] text-[#C9A227] truncate">{roleLabel}</p>
                                 </div>
                             </div>
                             <button

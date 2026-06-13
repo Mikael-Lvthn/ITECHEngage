@@ -5,6 +5,10 @@ import { getHomepagePublicData, getHomepageElectionsWithFollowStatus } from "@/l
 import UserMenu from "@/components/UserMenu";
 import HomepageSearch from "@/components/HomepageSearch";
 import HomepageElectionsSection from "@/components/HomepageElectionsSection";
+import HomepageOrgFilter from "@/components/HomepageOrgFilter";
+import { PendingVerificationBanner } from "@/components/PendingVerificationBanner";
+import PendingAwareHomepage from "../components/PendingAwareHomepage";
+import ScrollReveal from "@/components/ScrollReveal";
 
 export default async function HomePage({
     searchParams,
@@ -21,17 +25,17 @@ export default async function HomePage({
         {
             data: { user },
         },
-        { events, organizations, newsItems, activeElections },
+        { events, organizations, newsItems, activeElections, categories },
     ] = await Promise.all([userResultPromise, homepageDataPromise]);
 
-    let profile: { full_name: string; role: string } | null = null;
+    let profile: { full_name: string; role: string; account_status: string } | null = null;
     let electionsWithFollow = activeElections;
     
     if (user) {
         const [profileData, followedElections] = await Promise.all([
             supabase
                 .from("profiles")
-                .select("full_name, role")
+                .select("full_name, role, account_status")
                 .eq("id", user.id)
                 .single(),
             getHomepageElectionsWithFollowStatus(user.id),
@@ -40,8 +44,12 @@ export default async function HomePage({
         electionsWithFollow = followedElections;
     }
 
+    const isPending = profile?.account_status === 'pending_verification';
+
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-background">
+            {isPending && <PendingVerificationBanner />}
+            {isPending && <PendingAwareHomepage />}
             {/* ═══ Top Navigation ═══ */}
             <header className="bg-[#800000] text-white">
                 <div className="bg-[#600000] px-6 sm:px-12 py-1.5">
@@ -189,13 +197,13 @@ export default async function HomePage({
                     <Link
                         key={card.title}
                         href={card.href}
-                        className="rounded-xl bg-white border border-[#D9D9D9] p-5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all group"
+                        className="rounded-xl bg-card border border-border p-5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all group"
                     >
                         <span className="text-3xl">{card.icon}</span>
-                        <h3 className="mt-2 font-semibold text-[#2B2B2B] group-hover:text-[#800000] transition-colors">
+                        <h3 className="mt-2 font-semibold text-foreground group-hover:text-[#800000] transition-colors">
                             {card.title}
                         </h3>
-                        <p className="text-xs text-[#6E6E6E] mt-1">{card.desc}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{card.desc}</p>
                     </Link>
                 ))}
             </section>
@@ -204,8 +212,9 @@ export default async function HomePage({
             <HomepageElectionsSection elections={electionsWithFollow} isLoggedIn={!!user} />
 
             {/* ═══ Events ═══ */}
+            <ScrollReveal>
             <section id="events" className="max-w-5xl mx-auto px-6 mt-14">
-                <h2 className="text-2xl font-bold text-[#2B2B2B] mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
                     Upcoming Events
                 </h2>
                 {events && events.length > 0 ? (
@@ -214,19 +223,19 @@ export default async function HomePage({
                             <Link
                                 key={ev.id}
                                 href={user ? `/dashboard/events/${ev.id}` : "/login"}
-                                className="rounded-xl border border-[#D9D9D9] overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all bg-white cursor-pointer group"
+                                className="rounded-xl border border-border overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all bg-card cursor-pointer group"
                             >
                                 <div className="h-28 bg-gradient-to-br from-[#800000] to-[#600000] flex items-center justify-center text-3xl">
                                     📅
                                 </div>
                                 <div className="p-4">
-                                    <h3 className="font-semibold text-sm text-[#2B2B2B] line-clamp-1 group-hover:text-[#800000] transition-colors">
+                                    <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:text-[#800000] transition-colors">
                                         {ev.title}
                                     </h3>
-                                    <p className="text-xs text-[#6E6E6E] mt-1 line-clamp-2">
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                         {ev.description || "No description"}
                                     </p>
-                                    <p className="text-[10px] text-[#6E6E6E] mt-2">
+                                    <p className="text-[10px] text-muted-foreground mt-2">
                                         📍 {ev.location}
                                     </p>
                                 </div>
@@ -234,61 +243,35 @@ export default async function HomePage({
                         ))}
                     </div>
                 ) : (
-                    <div className="rounded-xl border border-[#D9D9D9] bg-white p-10 text-center">
+                    <div className="rounded-xl border border-border bg-card p-10 text-center">
                         <p className="text-3xl mb-3">📅</p>
-                        <p className="text-sm text-[#6E6E6E]">No upcoming events yet. Check back soon!</p>
+                        <p className="text-sm text-muted-foreground">No upcoming events yet. Check back soon!</p>
                     </div>
                 )}
             </section>
+            </ScrollReveal>
 
             {/* ═══ Organizations ═══ */}
+            <ScrollReveal delay={100}>
             <section id="organizations" className="max-w-5xl mx-auto px-6 mt-14">
-                <h2 className="text-2xl font-bold text-[#2B2B2B] mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
                     Student Organizations
                 </h2>
-                {organizations && organizations.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
-                        {organizations.map((org) => (
-                            <Link
-                                key={org.id}
-                                href={user ? `/dashboard/organizations/${org.id}` : "/login"}
-                                className="w-full aspect-square max-w-[220px] rounded-2xl border border-[#D9D9D9] bg-white hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center p-5 group"
-                            >
-                                <div className="relative w-20 h-20 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0 mb-4">
-                                    {org.logo_url ? (
-                                        <Image
-                                            src={org.logo_url}
-                                            alt={org.name}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    ) : (
-                                        <span className="text-3xl">🏢</span>
-                                    )}
-                                </div>
-                                <h3 className="font-bold text-sm text-[#2B2B2B] text-center line-clamp-2 group-hover:text-[#800000] transition-colors">
-                                    {org.name}
-                                </h3>
-                                <p className="text-[10px] text-[#6E6E6E] mt-1 text-center line-clamp-1">
-                                    {org.description || "Student Organization"}
-                                </p>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="rounded-xl border border-[#D9D9D9] bg-white p-10 text-center">
-                        <p className="text-3xl mb-3">🏢</p>
-                        <p className="text-sm text-[#6E6E6E]">No organizations yet. Check back soon!</p>
-                    </div>
-                )}
+                <HomepageOrgFilter
+                    organizations={organizations}
+                    categories={categories}
+                    isLoggedIn={!!user}
+                />
             </section>
+            </ScrollReveal>
 
             {/* ═══ News ═══ */}
+            <ScrollReveal delay={100}>
             <section id="news" className="max-w-5xl mx-auto px-6 mt-14">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Latest News */}
                     <div className="lg:col-span-2">
-                        <h2 className="text-2xl font-bold text-[#2B2B2B] mb-6">
+                        <h2 className="text-2xl font-bold text-foreground mb-6">
                             Latest News
                         </h2>
                         <div className="space-y-4">
@@ -297,23 +280,23 @@ export default async function HomePage({
                                     <Link
                                         key={item.id}
                                         href={user ? `/dashboard/news/${item.id}` : "/login"}
-                                        className="block rounded-xl border border-[#D9D9D9] p-5 bg-white hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
+                                        className="block rounded-xl border border-border p-5 bg-card hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
                                     >
                                         <div className="flex items-center gap-2 mb-1">
                                             <p className="text-[10px] text-[#C9A227] font-semibold uppercase tracking-wider">
                                                 {new Date(item.published_at || item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </p>
-                                            <span className="text-[10px] text-[#6E6E6E]">•</span>
-                                            <p className="text-[10px] text-[#6E6E6E] font-medium truncate">
+                                            <span className="text-[10px] text-muted-foreground">•</span>
+                                            <p className="text-[10px] text-muted-foreground font-medium truncate">
                                                 {item.organizations && typeof item.organizations === 'object' && !Array.isArray(item.organizations) ? (item.organizations as { name?: string }).name : ""}
                                             </p>
                                         </div>
-                                        <h3 className="font-semibold text-[#2B2B2B] mt-1 group-hover:text-[#800000] transition-colors">{item.title}</h3>
-                                        <p className="text-sm text-[#6E6E6E] mt-1 line-clamp-2">{item.content}</p>
+                                        <h3 className="font-semibold text-foreground mt-1 group-hover:text-[#800000] transition-colors">{item.title}</h3>
+                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
                                     </Link>
                                 ))
                             ) : (
-                                <div className="rounded-xl border border-[#D9D9D9] p-8 bg-white text-center text-[#6E6E6E] text-sm">
+                                <div className="rounded-xl border border-border p-8 bg-card text-center text-muted-foreground text-sm">
                                     No published news yet.
                                 </div>
                             )}
@@ -322,10 +305,10 @@ export default async function HomePage({
 
                     {/* Campus Links */}
                     <div>
-                        <h2 className="text-2xl font-bold text-[#2B2B2B] mb-6">
+                        <h2 className="text-2xl font-bold text-foreground mb-6">
                             Campus Links
                         </h2>
-                        <div className="rounded-xl border border-[#D9D9D9] bg-white p-5 space-y-3">
+                        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
                             {[
                                 { label: "PUP Official Website", url: "https://www.pup.edu.ph" },
                                 { label: "PUP SIS (Student Portal)", url: "https://sis2.pup.edu.ph/" },
@@ -337,7 +320,7 @@ export default async function HomePage({
                                     href={link.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-sm text-[#800000] hover:text-[#600000] hover:underline transition-colors"
+                                    className="flex items-center gap-2 text-sm text-[#800000] dark:text-[#C9A227] hover:text-[#600000] dark:hover:text-[#b8911f] hover:underline transition-colors"
                                 >
                                     <span className="text-xs">🔗</span>
                                     {link.label}
@@ -347,10 +330,12 @@ export default async function HomePage({
                     </div>
                 </div>
             </section>
+            </ScrollReveal>
 
             {/* ═══ Role Highlights ═══ */}
+            <ScrollReveal delay={80}>
             <section id="about" className="max-w-5xl mx-auto px-6 mt-14">
-                <h2 className="text-2xl font-bold text-[#2B2B2B] mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
                     Get Involved Based on Your Role
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -382,19 +367,19 @@ export default async function HomePage({
                                 "Manage elections",
                                 "Platform oversight",
                             ],
-                            color: "border-[#2B2B2B]",
+                            color: "border-border dark:border-[#2B2B2B]",
                         },
                     ].map((r, i) => (
                         <div
                             key={i}
-                            className={`rounded-xl border-2 ${r.color} p-5 bg-white`}
+                            className={`rounded-xl border-2 ${r.color} p-5 bg-card`}
                         >
-                            <h3 className="font-bold text-lg text-[#2B2B2B]">{r.role}</h3>
+                            <h3 className="font-bold text-lg text-foreground">{r.role}</h3>
                             <ul className="mt-3 space-y-2">
                                 {r.items.map((item, j) => (
                                     <li
                                         key={j}
-                                        className="flex items-start gap-2 text-sm text-[#6E6E6E]"
+                                        className="flex items-start gap-2 text-sm text-muted-foreground"
                                     >
                                         <span className="text-[#C9A227] mt-0.5">✦</span>
                                         {item}
@@ -405,6 +390,7 @@ export default async function HomePage({
                     ))}
                 </div>
             </section>
+            </ScrollReveal>
 
             {/* ═══ CTA ═══ */}
             <section className="bg-[#800000] py-12 mt-14">

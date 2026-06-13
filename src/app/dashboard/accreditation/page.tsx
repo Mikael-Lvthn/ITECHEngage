@@ -25,20 +25,39 @@ export default async function AccreditationPage() {
 
     const isAdmin = userRole === "admin";
 
-    // Check if user is officer in any org
-    const { data: officerMemberships } = await supabase
-        .from("memberships")
-        .select("organization_id, organizations(id, name)")
-        .eq("user_id", user.id)
-        .eq("role", "officer")
-        .eq("status", "approved");
+    const [membershipOrgsResult, structuralRoleOrgsResult] = await Promise.all([
+        supabase
+            .from("memberships")
+            .select("organization_id, organizations(id, name)")
+            .eq("user_id", user.id)
+            .eq("status", "approved"),
+        supabase
+            .from("organization_roles")
+            .select("organization_id, organizations(id, name)")
+            .eq("assigned_user_id", user.id),
+    ]);
 
-    const isOfficer = (officerMemberships && officerMemberships.length > 0) || false;
+    const collectOrg = (
+        item: {
+            organization_id: string | null;
+            organizations?: { id?: string | null; name?: string | null } | { id?: string | null; name?: string | null }[] | null;
+        },
+        orgMap: Map<string, { id: string; name: string }>
+    ) => {
+        const org = Array.isArray(item.organizations) ? item.organizations[0] : item.organizations;
+        const id = org?.id || item.organization_id;
+        if (!id) return;
+        if (!orgMap.has(id)) {
+            orgMap.set(id, { id, name: org?.name || "Unknown" });
+        }
+    };
 
-    const officerOrgs = (officerMemberships || []).map((m) => {
-        const org = Array.isArray(m.organizations) ? m.organizations[0] : m.organizations;
-        return { id: org?.id || m.organization_id, name: org?.name || "Unknown" };
-    });
+    const orgMap = new Map<string, { id: string; name: string }>();
+    (membershipOrgsResult.data || []).forEach((item) => collectOrg(item, orgMap));
+    (structuralRoleOrgsResult.data || []).forEach((item) => collectOrg(item, orgMap));
+
+    const officerOrgs = Array.from(orgMap.values());
+    const isOfficer = officerOrgs.length > 0;
 
     // Redirect students (non-officers, non-admins) away
     if (!isAdmin && !isOfficer) {

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import NotificationItem from "./NotificationItem";
 import NotificationFilters from "./NotificationFilters";
+import NotificationPageClient from "./NotificationPageClient";
 
 export const dynamic = "force-dynamic";
 
@@ -61,10 +62,11 @@ export default async function NotificationsPage({ searchParams }: Props) {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-12">
+            <NotificationPageClient />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-muted-foreground text-sm mt-1">
                         You have {unreadCount || 0} unread notification{unreadCount !== 1 ? "s" : ""}
                     </p>
                 </div>
@@ -89,7 +91,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
                         <h2 className="text-lg font-bold text-foreground">
                             {filter === "archived" ? "No archived notifications" : "No notifications"}
                         </h2>
-                        <p className="text-gray-500 mt-2 text-sm max-w-sm mx-auto">
+                        <p className="text-muted-foreground mt-2 text-sm max-w-sm mx-auto">
                             {filter === "archived"
                                 ? "Notifications you archive will appear here."
                                 : filter === "unread"

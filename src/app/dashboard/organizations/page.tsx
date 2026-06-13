@@ -6,7 +6,13 @@ import CreateOrgDialog from "../admin/CreateOrgDialog";
 import EditOrgDialog from "../admin/EditOrgDialog";
 import DeleteOrgButton from "../admin/DeleteOrgButton";
 
-export default async function OrganizationsPage() {
+export default async function OrganizationsPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ category?: string }>;
+}) {
+    const params = await searchParams;
+    const currentCategory = params.category || null;
     const supabase = await createClient();
 
     const {
@@ -30,17 +36,19 @@ export default async function OrganizationsPage() {
 
     // Non-admins only see public orgs unless it's their own membership
     if (!isAdmin) {
-        // Technically, regular students only see public orgs in this list. 
-        // Memberships handles private ones they are part of.
         orgQuery = orgQuery.eq("visibility", "public");
     }
 
-    const { data: organizations } = await orgQuery;
+    // Apply category filter if present
+    if (currentCategory) {
+        orgQuery = orgQuery.eq("category_id", currentCategory);
+    }
 
-    const { data: memberships } = await supabase
-        .from("memberships")
-        .select("organization_id, status")
-        .eq("user_id", user!.id);
+    const [{ data: organizations }, { data: categories }, { data: memberships }] = await Promise.all([
+        orgQuery,
+        supabase.from("organization_categories").select("id, name").order("name"),
+        supabase.from("memberships").select("organization_id, status").eq("user_id", user!.id),
+    ]);
 
     const membershipMap = new Map(
         (memberships || []).map((m) => [m.organization_id, m.status])
@@ -65,6 +73,35 @@ export default async function OrganizationsPage() {
                     </Link>
                 </div>
             </div>
+
+            {/* Category filter pills */}
+            {(categories && categories.length > 0) && (
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <a
+                        href="/dashboard/organizations"
+                        className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                            !currentCategory
+                                ? "bg-[#800000] text-white"
+                                : "bg-card border border-border text-foreground hover:border-[#800000] hover:text-[#800000]"
+                        }`}
+                    >
+                        All
+                    </a>
+                    {categories.map((cat) => (
+                        <a
+                            key={cat.id}
+                            href={`/dashboard/organizations?category=${cat.id}`}
+                            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                currentCategory === cat.id
+                                    ? "bg-[#800000] text-white"
+                                    : "bg-card border border-border text-foreground hover:border-[#800000] hover:text-[#800000]"
+                            }`}
+                        >
+                            {cat.name}
+                        </a>
+                    ))}
+                </div>
+            )}
 
             {!organizations || organizations.length === 0 ? (
                 <div className="rounded-2xl border bg-card overflow-hidden">

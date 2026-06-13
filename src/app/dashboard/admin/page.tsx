@@ -7,7 +7,9 @@ import AdminPanelClient, {
     AuditLogEntry, 
     Category, 
     Organization, 
-    LeaveRequest 
+    LeaveRequest,
+    PendingVerificationUser,
+    ManagementUser,
 } from "./AdminPanelClient";
 
 interface Props {
@@ -70,6 +72,8 @@ export default async function AdminPage({ searchParams }: Props) {
         organizationsListResult,
         pendingLeaveResult,
         leaveHistoryResult,
+        pendingVerificationResult,
+        allUsersResult,
     ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("organizations").select("*", { count: "exact", head: true }),
@@ -83,7 +87,7 @@ export default async function AdminPage({ searchParams }: Props) {
         supabase
             .from("events")
             .select("id, title, description, start_datetime, location, status, organizations(name)")
-            .in("status", ["draft", "pending"])
+            .eq("status", "draft")
             .order("created_at", { ascending: false })
             .limit(50),
         supabase
@@ -109,10 +113,33 @@ export default async function AdminPage({ searchParams }: Props) {
         // Leave requests
         pendingLeaveQuery,
         leaveHistoryQuery,
+        supabase
+            .from("profiles")
+            .select("id, email, full_name, account_status, created_at, students(student_number, course, section, year_level)")
+            .eq("account_status", "pending_verification")
+            .order("created_at", { ascending: false })
+            .limit(50),
+        // All users for User Management tab
+        supabase
+            .from("profiles")
+            .select("id, email, full_name, role, account_status, created_at, students(student_number, course, section, year_level)", { count: "exact" })
+            .order("created_at", { ascending: false })
+            .range(0, 199),
     ]);
 
     const pendingEventsCount = pendingEventsResult.data?.length ?? 0;
     const pendingLeaveCount = pendingLeaveResult.data?.length ?? 0;
+    const pendingVerificationUsers = (pendingVerificationResult.data || []).map(item => ({
+        ...item,
+        students: Array.isArray(item.students) ? item.students[0] : item.students
+    })) as PendingVerificationUser[];
+    const pendingVerificationCount = pendingVerificationUsers.length;
+
+    const allUsers = (allUsersResult.data || []).map(item => ({
+        ...item,
+        students: Array.isArray(item.students) ? item.students[0] : item.students
+    })) as ManagementUser[];
+    const totalUsersCount = allUsersResult.count ?? 0;
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
@@ -155,12 +182,16 @@ export default async function AdminPage({ searchParams }: Props) {
                     profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
                     organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
                 })) as LeaveRequest[]}
+                pendingVerificationUsers={pendingVerificationUsers}
+                allUsers={allUsers}
+                totalUsersCount={totalUsersCount}
                 stats={{
                     totalUsers: usersResult.count ?? 0,
                     totalOrgs: orgsResult.count ?? 0,
                     pendingMemberships: pendingMembershipsResult.count ?? 0,
                     pendingEventsCount,
                     pendingLeaveCount,
+                    pendingVerificationCount,
                 }}
             />
         </div>

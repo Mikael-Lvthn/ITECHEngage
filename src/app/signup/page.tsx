@@ -20,6 +20,9 @@ export default function SignupPage() {
     const [schoolEmail, setSchoolEmail] = useState("");
     const [personalEmail, setPersonalEmail] = useState("");
     const [contactNumber, setContactNumber] = useState("");
+    const [course, setCourse] = useState("");
+    const [section, setSection] = useState("");
+    const [yearLevel, setYearLevel] = useState("");
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -58,12 +61,75 @@ export default function SignupPage() {
                 setError("Contact number is required");
                 return;
             }
-
+            if (!course.trim()) {
+                setError("Course / Program is required");
+                return;
+            }
+            if (!yearLevel) {
+                setError("Year level is required");
+                return;
+            }
+            if (!section.trim()) {
+                setError("Section is required");
+                return;
+            }
         }
 
         setLoading(true);
 
         const supabase = createClient();
+
+        // Check for duplicates before attempting registration
+        if (registrationType === "student") {
+            // Check login email
+            const { data: emailCheck } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("email", email.trim().toLowerCase())
+                .maybeSingle();
+            if (emailCheck) {
+                setError("An account with this login email already exists. Please sign in instead.");
+                setLoading(false);
+                return;
+            }
+
+            // Check student number
+            const { data: snCheck } = await supabase
+                .from("students")
+                .select("id")
+                .eq("student_number", studentNumber.trim())
+                .maybeSingle();
+            if (snCheck) {
+                setError("This student number is already registered. Please contact administration if you believe this is an error.");
+                setLoading(false);
+                return;
+            }
+
+            // Check school email
+            const { data: seCheck } = await supabase
+                .from("students")
+                .select("id")
+                .eq("school_email", schoolEmail.trim().toLowerCase())
+                .maybeSingle();
+            if (seCheck) {
+                setError("This school email is already linked to an existing account.");
+                setLoading(false);
+                return;
+            }
+
+            // Check personal email
+            const { data: peCheck } = await supabase
+                .from("students")
+                .select("id")
+                .eq("personal_email", personalEmail.trim().toLowerCase())
+                .maybeSingle();
+            if (peCheck) {
+                setError("This personal email is already linked to an existing account.");
+                setLoading(false);
+                return;
+            }
+        }
+
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -75,8 +141,10 @@ export default function SignupPage() {
                         school_email: schoolEmail,
                         personal_email: personalEmail,
                         contact_number: contactNumber,
-
                         student_number: studentNumber,
+                        course: course,
+                        section: section,
+                        year_level: yearLevel,
                     }),
                 },
             },
@@ -308,7 +376,64 @@ export default function SignupPage() {
                                                             type="tel"
                                                             value={contactNumber}
                                                             onChange={(e) => setContactNumber(e.target.value)}
-                                                            placeholder="+63 9XX XXX XXXX"
+                                                            placeholder="9XX XXX XXXX"
+                                                            required
+                                                            className={inputClasses}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label htmlFor="course" className="text-sm font-medium text-foreground">
+                                                        Course / Program <span className="text-destructive">*</span>
+                                                    </label>
+                                                    <select
+                                                        id="course"
+                                                        value={course}
+                                                        onChange={(e) => setCourse(e.target.value)}
+                                                        required
+                                                        className={inputClasses}
+                                                    >
+                                                        <option value="">Select a program...</option>
+                                                        <option value="DCvET">Diploma in Civil Engineering Technology (DCvET)</option>
+                                                        <option value="DCET">Diploma in Computer Engineering Technology (DCET)</option>
+                                                        <option value="DEET">Diploma in Electrical Engineering Technology (DEET)</option>
+                                                        <option value="DECET">Diploma in Electronics Engineering Technology (DECET)</option>
+                                                        <option value="DIT">Diploma in Information Technology (DIT)</option>
+                                                        <option value="DMET">Diploma in Mechanical Engineering Technology (DMET)</option>
+                                                        <option value="DOMT">Diploma in Office Management Technology (DOMT)</option>
+                                                        <option value="DRET">Diploma in Railway Engineering Technology (DRET)</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="yearLevel" className="text-sm font-medium text-foreground">
+                                                            Year Level <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <select
+                                                            id="yearLevel"
+                                                            value={yearLevel}
+                                                            onChange={(e) => setYearLevel(e.target.value)}
+                                                            required
+                                                            className={inputClasses}
+                                                        >
+                                                            <option value="">Select</option>
+                                                            <option value="1">1st Year</option>
+                                                            <option value="2">2nd Year</option>
+                                                            <option value="3">3rd Year</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label htmlFor="section" className="text-sm font-medium text-foreground">
+                                                            Section <span className="text-destructive">*</span>
+                                                        </label>
+                                                        <input
+                                                            id="section"
+                                                            type="text"
+                                                            value={section}
+                                                            onChange={(e) => setSection(e.target.value)}
+                                                            placeholder="e.g. 1, 2, 3..."
                                                             required
                                                             className={inputClasses}
                                                         />

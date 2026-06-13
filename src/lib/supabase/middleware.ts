@@ -44,6 +44,27 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
+    if (user && isProtectedRoute) {
+        const { data: profileCheck } = await supabase
+            .from("profiles")
+            .select("account_status")
+            .eq("id", user.id)
+            .single();
+
+        if (profileCheck?.account_status === 'pending_verification') {
+            const url = request.nextUrl.clone();
+            url.pathname = "/";
+            return NextResponse.redirect(url);
+        }
+        if (profileCheck?.account_status === 'rejected') {
+            await supabase.auth.signOut();
+            const url = request.nextUrl.clone();
+            url.pathname = "/login";
+            url.searchParams.set("message", "Your account registration was not approved.");
+            return NextResponse.redirect(url);
+        }
+    }
+
     if (user && isAuthRoute) {
         const url = request.nextUrl.clone();
         url.pathname = "/dashboard";

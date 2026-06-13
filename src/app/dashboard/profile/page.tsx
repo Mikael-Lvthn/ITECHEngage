@@ -15,7 +15,7 @@ interface Profile {
     avatar_url: string | null;
     bio: string | null;
     phone_number: string | null;
-    website_url: string | null;
+    track_record: string | null;
     social_links: { facebook?: string; twitter?: string; linkedin?: string } | null;
 }
 
@@ -178,14 +178,12 @@ export default function ProfilePage() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                        <input
-                            type="text"
-                            name="full_name"
-                            defaultValue={profile?.full_name}
-                            required
-                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                        />
+                        <label className="block text-sm font-medium text-foreground mb-1">Full Name</label>
+                        <p className="px-3 py-2.5 rounded-xl border border-border bg-muted/50 text-sm text-foreground">
+                            {profile?.full_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Contact an administrator to change your name.</p>
+                        <input type="hidden" name="full_name" value={profile?.full_name || ""} />
                     </div>
 
                     <div>
@@ -201,7 +199,7 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                            <label className="block text-sm font-medium text-foreground mb-1">Phone Number</label>
                             <input
                                 type="tel"
                                 name="phone_number"
@@ -210,16 +208,17 @@ export default function ProfilePage() {
                                 placeholder="+63 9XX XXX XXXX"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
-                            <input
-                                type="url"
-                                name="website_url"
-                                defaultValue={profile?.website_url || ""}
-                                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                                placeholder="https://yourwebsite.com"
-                            />
-                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">Track Record / Portfolio</label>
+                        <textarea
+                            name="track_record"
+                            defaultValue={profile?.track_record || ""}
+                            rows={4}
+                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#800000] resize-none"
+                            placeholder="Describe your academic achievements, extracurricular activities, projects, or any relevant experience..."
+                        />
                     </div>
 
                     {student && (

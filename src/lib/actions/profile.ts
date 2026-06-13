@@ -14,7 +14,7 @@ export async function updateProfile(formData: FormData) {
     const full_name = formData.get("full_name") as string;
     const bio = formData.get("bio") as string;
     const phone_number = formData.get("phone_number") as string;
-    const website_url = formData.get("website_url") as string;
+    const track_record = formData.get("track_record") as string;
     const avatar_url = formData.get("avatar_url") as string;
 
     const socialLinksStr = formData.get("social_links") as string;
@@ -37,7 +37,7 @@ export async function updateProfile(formData: FormData) {
             full_name: full_name.trim(),
             bio: bio?.trim() || null,
             phone_number: phone_number?.trim() || null,
-            website_url: website_url?.trim() || null,
+            track_record: track_record?.trim() || null,
             avatar_url: avatar_url || null,
             social_links
         })

@@ -20,6 +20,12 @@ export interface HomepageOrganization {
     description: string | null;
     logo_url: string | null;
     accreditation_status: string;
+    category_id?: string | null;
+}
+
+export interface HomepageCategory {
+    id: string;
+    name: string;
 }
 
 export interface HomepageNews {
@@ -48,6 +54,7 @@ export interface HomepagePublicData {
     organizations: HomepageOrganization[];
     newsItems: HomepageNews[];
     activeElections: HomepageElection[];
+    categories: HomepageCategory[];
 }
 
 async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
@@ -60,7 +67,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
         supabase = createPublicClient();
     }
 
-    const [eventsResult, organizationsResult, newsResult, electionsResult] =
+    const [eventsResult, organizationsResult, newsResult, electionsResult, categoriesResult] =
         await Promise.all([
             supabase
                 .from("events")
@@ -70,7 +77,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .limit(4),
             supabase
                 .from("organizations")
-                .select("id, name, description, logo_url, accreditation_status")
+                .select("id, name, description, logo_url, accreditation_status, category_id")
                 .eq("visibility", "public")
                 .order("name", { ascending: true })
                 .limit(6),
@@ -86,6 +93,10 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .in("status", ["published", "voting"])
                 .order("start_date", { ascending: false })
                 .limit(6),
+            supabase
+                .from("organization_categories")
+                .select("id, name")
+                .order("name"),
         ]);
 
     // Debug logging - check terminal for errors
@@ -99,6 +110,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
         organizations: (organizationsResult.data ?? []) as HomepageOrganization[],
         newsItems: (newsResult.data ?? []) as HomepageNews[],
         activeElections: (electionsResult.data ?? []) as HomepageElection[],
+        categories: (categoriesResult.data ?? []) as HomepageCategory[],
     };
 }
 

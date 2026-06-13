@@ -75,33 +75,33 @@ export default function NotificationItem({ notification }: { notification: Notif
             } ${
                 isUnread
                     ? "bg-[#C9A227]/5 border-[#C9A227]/30 hover:bg-[#C9A227]/10"
-                    : "bg-white border-gray-100 hover:bg-gray-50"
+                    : "bg-card border-border hover:bg-accent/50"
             }`}
         >
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg ${
-                isUnread ? "bg-[#C9A227] text-[#2B2B2B]" : "bg-gray-100 text-gray-500"
+                isUnread ? "bg-[#C9A227] text-[#2B2B2B]" : "bg-muted text-muted-foreground"
             }`}>
                 {icon}
             </div>
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className={`text-sm font-semibold truncate ${isUnread ? "text-[#800000]" : "text-gray-900"}`}>
+                    <h3 className={`text-sm font-semibold truncate ${isUnread ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"}`}>
                         {notification.title}
                     </h3>
-                    <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
+                    <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                         {new Date(notification.created_at).toLocaleDateString()}
                     </span>
                 </div>
                 
                 {notification.message && (
-                    <p className={`text-sm mt-1 line-clamp-2 ${isUnread ? "text-gray-700" : "text-gray-500"}`}>
+                    <p className={`text-sm mt-1 line-clamp-2 ${isUnread ? "text-foreground/90" : "text-muted-foreground"}`}>
                         {notification.message}
                     </p>
                 )}
 
                 {notification.link && (
-                    <p className="text-xs text-[#800000]/70 mt-2 flex items-center gap-1">
+                    <p className="text-xs text-[#800000]/70 dark:text-[#C9A227]/70 mt-2 flex items-center gap-1">
                         <span>→</span> Click to view
                     </p>
                 )}
@@ -116,7 +116,7 @@ export default function NotificationItem({ notification }: { notification: Notif
                     <button 
                         onClick={handleArchive}
                         disabled={isPending || isDeleting}
-                        className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                        className="p-1.5 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         title="Archive"
                     >
                         {isPending ? (
@@ -130,7 +130,7 @@ export default function NotificationItem({ notification }: { notification: Notif
                 <button 
                     onClick={handleDelete}
                     disabled={isDeleting || isPending}
-                    className="p-1.5 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    className="p-1.5 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                     title="Delete"
                 >
                     {isDeleting ? (

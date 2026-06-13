@@ -297,3 +297,93 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
     display: none;
 }
+
+/* ─── Scroll Reveal ─────────────────────────────────────── */
+.scroll-reveal {
+    will-change: transform, opacity;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.scroll-reveal-up    { opacity: 0; transform: translateY(28px); }
+.scroll-reveal-left  { opacity: 0; transform: translateX(-28px); }
+.scroll-reveal-right { opacity: 0; transform: translateX(28px); }
+.scroll-reveal-fade  { opacity: 0; transform: none; }
+
+.scroll-reveal-visible {
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+/* ─── Page Progress Bar keyframe ────────────────────────── */
+@keyframes page-progress {
+    from { width: 0%; opacity: 1; }
+    to   { width: 100%; opacity: 0; }
+}
+
+/* ─── Dark Mode: form controls ──────────────────────────── */
+.dark input,
+.dark textarea,
+.dark select {
+    color-scheme: dark;
+    background-color: var(--color-card);
+    color: var(--color-foreground);
+    border-color: var(--color-border);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: var(--color-muted-foreground);
+}
+
+/* ─── Dark Mode: dialog / modal overlays ───────────────── */
+.dark [role="dialog"],
+.dark [data-radix-popper-content-wrapper],
+.dark [data-radix-dialog-content] {
+    background-color: var(--color-card);
+    color: var(--color-foreground);
+    border-color: var(--color-border);
+}
+
+/* ─── Dark Mode: white-background overrides ─────────────── */
+.dark .bg-white {
+    background-color: var(--color-card) !important;
+}
+
+.dark .text-gray-900,
+.dark .text-\[\#2B2B2B\],
+.dark .text-\[\#2b2b2b\] {
+    color: var(--color-foreground) !important;
+}
+
+.dark .text-\[\#6E6E6E\],
+.dark .text-\[\#6e6e6e\],
+.dark .text-gray-600 {
+    color: var(--color-muted-foreground) !important;
+}
+
+.dark .border-\[\#D9D9D9\],
+.dark .border-\[\#d9d9d9\],
+.dark .border-gray-100,
+.dark .border-gray-200 {
+    border-color: var(--color-border) !important;
+}
+
+.dark .bg-gray-50 {
+    background-color: var(--color-muted) !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+

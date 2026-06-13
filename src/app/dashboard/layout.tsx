@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
-import { ThemeProvider } from "@/components/ThemeProvider";
 import type { UserRole } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -22,17 +21,18 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
-    const [profileResult, prefsResult, officerResult, orgRoleResult] = await Promise.all([
+    const [profileResult, membershipResult, officerResult, orgRoleResult] = await Promise.all([
         supabase
             .from("profiles")
-            .select("full_name, role")
+            .select("full_name, role, account_status")
             .eq("id", user.id)
             .single(),
         supabase
-            .from("user_preferences")
-            .select("*")
+            .from("memberships")
+            .select("id")
             .eq("user_id", user.id)
-            .maybeSingle(),
+            .eq("status", "approved")
+            .limit(1),
         supabase
             .from("memberships")
             .select("id")
@@ -40,7 +40,6 @@ export default async function DashboardLayout({
             .eq("role", "officer")
             .eq("status", "approved")
             .limit(1),
-        // Also check organization_roles for structural role assignments
         supabase
             .from("organization_roles")
             .select("id")
@@ -49,9 +48,15 @@ export default async function DashboardLayout({
     ]);
 
     const profile = profileResult.data;
-    const prefs = prefsResult.data;
+    const memberships = membershipResult.data;
     const officerships = officerResult.data;
     const orgRoleAssignments = orgRoleResult.data;
+    const hasMembership = !!memberships?.length;
+    const hasOrgRoles = !!orgRoleAssignments?.length;
+
+    if (profile?.account_status === 'pending_verification') {
+        redirect("/");
+    }
 
     let userRole: UserRole = (profile?.role as UserRole) || "student";
     const userName: string = profile?.full_name || "User";
@@ -64,7 +69,7 @@ export default async function DashboardLayout({
     }
 
     if (userRole !== "admin") {
-        if ((officerships && officerships.length > 0) || (orgRoleAssignments && orgRoleAssignments.length > 0)) {
+        if (hasMembership || !!officerships?.length || hasOrgRoles) {
             userRole = "officer";
         } else {
             userRole = "student";
@@ -78,13 +83,19 @@ export default async function DashboardLayout({
     let officerBadgeCount = 0;
 
     if (userRole === "admin") {
-        const [pendingMembers, pendingLeave, pendingEvents, pendingNews] = await Promise.all([
+        const [pendingMembers, pendingLeave, pendingEvents, pendingAccreditations, pendingVerification] = await Promise.all([
             supabase.from("memberships").select("*", { count: "exact", head: true }).eq("status", "pending"),
             supabase.from("leave_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-            supabase.from("events").select("*", { count: "exact", head: true }).in("status", ["draft", "pending"]),
-            supabase.from("news").select("*", { count: "exact", head: true }).in("status", ["draft", "pending"]),
+            supabase.from("events").select("*", { count: "exact", head: true }).eq("status", "draft"),
+            supabase.from("accreditations").select("*", { count: "exact", head: true }).eq("status", "pending"),
+            supabase.from("profiles").select("*", { count: "exact", head: true }).eq("account_status", "pending_verification"),
         ]);
-        adminBadgeCount = (pendingMembers.count ?? 0) + (pendingLeave.count ?? 0) + (pendingEvents.count ?? 0) + (pendingNews.count ?? 0);
+        adminBadgeCount = 
+            (pendingMembers.count ?? 0) + 
+            (pendingLeave.count ?? 0) + 
+            (pendingEvents.count ?? 0) + 
+            (pendingAccreditations.count ?? 0) + 
+            (pendingVerification.count ?? 0);
     }
 
     if (userRole === "officer") {
@@ -107,23 +118,21 @@ export default async function DashboardLayout({
     }
 
     return (
-        <ThemeProvider initialPrefs={prefs}>
-            <div className="min-h-screen bg-background">
-                <Sidebar userRole={userRole} userName={userName} userEmail={userEmail} adminBadgeCount={adminBadgeCount} officerBadgeCount={officerBadgeCount} />
+        <div className="min-h-screen bg-background">
+            <Sidebar userRole={userRole} userName={userName} userEmail={userEmail} hasOrgRoles={hasOrgRoles} adminBadgeCount={adminBadgeCount} officerBadgeCount={officerBadgeCount} />
 
-                <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-card shadow-sm sticky top-0 z-30">
-                    <MobileNav userRole={userRole} userName={userName} userEmail={userEmail} adminBadgeCount={adminBadgeCount} officerBadgeCount={officerBadgeCount} />
-                    <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-primary">iE</span>
-                        <span className="text-sm font-semibold">ITECHEngage</span>
-                    </div>
-                    <div className="w-10" />
+            <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-card shadow-sm sticky top-0 z-30">
+                <MobileNav userRole={userRole} userName={userName} userEmail={userEmail} hasOrgRoles={hasOrgRoles} adminBadgeCount={adminBadgeCount} officerBadgeCount={officerBadgeCount} />
+                <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-primary">iE</span>
+                    <span className="text-sm font-semibold">ITECHEngage</span>
                 </div>
-
-                <main className="lg:pl-64">
-                    <div className="max-w-6xl mx-auto p-6 lg:p-8">{children}</div>
-                </main>
+                <div className="w-10" />
             </div>
-        </ThemeProvider>
+
+            <main className="lg:pl-64">
+                <div className="max-w-6xl mx-auto p-6 lg:p-8">{children}</div>
+            </main>
+        </div>
     );
 }
