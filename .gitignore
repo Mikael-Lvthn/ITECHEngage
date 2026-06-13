@@ -58,3 +58,6 @@ next-env.d.ts
 # Antigravity Skills
 skills-lock.json
 .agents/
+
+# VS Code settings
+.vscode/

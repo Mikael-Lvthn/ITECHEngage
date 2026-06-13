@@ -79,8 +79,8 @@ describe("Hierarchy Approval Lookup", () => {
 // ─── Profile Role Revert ────────────────────────────────────────────────────
 describe("Profile Role Revert on Leave", () => {
     it("should revert to student when no structural roles remain", () => {
-        const remainingStructuralRoles = 0;
-        const currentProfileRole = "officer";
+        const remainingStructuralRoles: number = 0;
+        const currentProfileRole: string = "officer";
 
         const shouldRevert = remainingStructuralRoles === 0 && currentProfileRole === "officer";
         const newRole = shouldRevert ? "student" : currentProfileRole;
@@ -90,8 +90,8 @@ describe("Profile Role Revert on Leave", () => {
 
     it("should NOT revert when the user holds structural roles in other orgs", () => {
         // User leaves Org A but still has a role in Org B
-        const remainingStructuralRoles = 1;
-        const currentProfileRole = "officer";
+        const remainingStructuralRoles: number = 1;
+        const currentProfileRole: string = "officer";
 
         const shouldRevert = remainingStructuralRoles === 0 && currentProfileRole === "officer";
         const newRole = shouldRevert ? "student" : currentProfileRole;
@@ -100,8 +100,8 @@ describe("Profile Role Revert on Leave", () => {
     });
 
     it("should not touch admin role during revert", () => {
-        const remainingStructuralRoles = 0;
-        const currentProfileRole = "admin";
+        const remainingStructuralRoles: number = 0;
+        const currentProfileRole: string = "admin";
 
         // Trigger only checks role === "officer"
         const shouldRevert = remainingStructuralRoles === 0 && currentProfileRole === "officer";
