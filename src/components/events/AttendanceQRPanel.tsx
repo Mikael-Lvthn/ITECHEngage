@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { generateAttendanceQR, closeAttendanceSession, markAbsentees } from "@/lib/actions/attendance";
+import { generateAttendanceQR, closeAttendanceSession, markAbsentees, getActiveAttendanceSession } from "@/lib/actions/attendance";
 import { useToast } from "@/components/Toast";
 
 interface AttendanceQRPanelProps {
@@ -21,6 +21,25 @@ export default function AttendanceQRPanel({ eventId, eventTitle }: AttendanceQRP
     const [closing, setClosing] = useState(false);
     const [markingAbsent, setMarkingAbsent] = useState(false);
     const { showToast } = useToast();
+
+    // Fetch active session from db on mount
+    useEffect(() => {
+        async function fetchActiveSession() {
+            try {
+                const session = await getActiveAttendanceSession(eventId);
+                if (session) {
+                    setToken(session.token);
+                    setSessionId(session.sessionId);
+                    setExpiresAt(session.expiresAt);
+                    const remaining = Math.max(0, Math.floor((new Date(session.expiresAt).getTime() - Date.now()) / 1000));
+                    setTimeLeft(remaining);
+                }
+            } catch (err) {
+                console.error("Error loading active attendance session:", err);
+            }
+        }
+        fetchActiveSession();
+    }, [eventId]);
 
     const pollScanCount = useCallback(async () => {
         try {
@@ -137,6 +156,14 @@ export default function AttendanceQRPanel({ eventId, eventTitle }: AttendanceQRP
                         >
                             {generating ? "Generating..." : "Generate QR Code"}
                         </button>
+                        <div className="pt-2 border-t border-border">
+                            <a
+                                href={`/api/attendance-export?eventId=${eventId}`}
+                                className="w-full px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 hover:opacity-95"
+                            >
+                                📊 Export Attendance List (.xlsx)
+                            </a>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -168,7 +195,7 @@ export default function AttendanceQRPanel({ eventId, eventTitle }: AttendanceQRP
                                 download={`attendance-${eventTitle.replace(/\s+/g, "-")}.png`}
                                 className="flex-1 px-3 py-2 rounded-lg border text-xs font-medium text-center hover:bg-accent transition-colors"
                             >
-                                📥 Download
+                                📥 Download QR
                             </a>
                             <button
                                 onClick={handleClose}
@@ -186,6 +213,15 @@ export default function AttendanceQRPanel({ eventId, eventTitle }: AttendanceQRP
                         >
                             {markingAbsent ? "Marking..." : "Mark remaining as absent"}
                         </button>
+
+                        <div className="pt-2 border-t border-border">
+                            <a
+                                href={`/api/attendance-export?eventId=${eventId}`}
+                                className="w-full px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 hover:opacity-95"
+                            >
+                                📊 Export Attendance List (.xlsx)
+                            </a>
+                        </div>
                     </div>
                 )}
             </div>

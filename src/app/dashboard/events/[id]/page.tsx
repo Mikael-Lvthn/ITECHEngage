@@ -4,6 +4,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import LikeShareButtons from "@/components/LikeShareButtons";
 import AttendanceQRPanel from "@/components/events/AttendanceQRPanel";
+import AttendanceScanPanel from "@/components/events/AttendanceScanPanel";
 
 interface EventWithDetails {
     id: string;
@@ -71,6 +72,7 @@ export default async function EventDetailPage({ params }: Props) {
     }
 
     let canManageAttendance = false;
+    let hasActiveSession = false;
     if (user) {
         const { data: userProfile } = await supabase
             .from("profiles")
@@ -78,6 +80,15 @@ export default async function EventDetailPage({ params }: Props) {
             .eq("id", user.id)
             .single();
         canManageAttendance = (rawEvent as unknown as { created_by: string }).created_by === user.id || userProfile?.role === "admin";
+
+        const { data: activeSession } = await supabase
+            .from("event_attendance_sessions")
+            .select("id")
+            .eq("event_id", id)
+            .eq("is_active", true)
+            .limit(1)
+            .maybeSingle();
+        hasActiveSession = !!activeSession;
     }
 
     return (
@@ -221,6 +232,10 @@ export default async function EventDetailPage({ params }: Props) {
 
             {canManageAttendance && event.status === "published" && (
                 <AttendanceQRPanel eventId={id} eventTitle={event.title} />
+            )}
+
+            {!canManageAttendance && hasActiveSession && event.status === "published" && (
+                <AttendanceScanPanel eventId={id} eventTitle={event.title} />
             )}
         </div>
     );

@@ -312,6 +312,7 @@ export async function verifyUserAccount(userId: string) {
 
     // Send welcome email if the user is a student and has a school email
     if (userProfile && userProfile.role === "student") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const student = userProfile.students as any;
         const schoolEmail = student?.school_email || userProfile.email;
         if (schoolEmail) {
@@ -443,6 +444,7 @@ export async function bulkVerifyUsers(userIds: string[]) {
 
         for (const userProfile of userProfiles) {
             if (userProfile.role === "student") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const student = userProfile.students as any;
                 const schoolEmail = student?.school_email || userProfile.email;
                 if (schoolEmail) {

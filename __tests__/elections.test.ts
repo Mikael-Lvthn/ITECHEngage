@@ -81,13 +81,13 @@ describe("Voting Eligibility", () => {
     });
 
     it("should block voting when election is not in voting status", () => {
-        const electionStatus = "draft";
+        const electionStatus: string = "draft";
         const canVote = electionStatus === "voting";
         expect(canVote).toBe(false);
     });
 
     it("should allow voting when election is in voting status", () => {
-        const electionStatus = "voting";
+        const electionStatus: string = "voting";
         const canVote = electionStatus === "voting";
         expect(canVote).toBe(true);
     });

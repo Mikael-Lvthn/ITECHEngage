@@ -54,6 +54,30 @@ export async function generateAttendanceQR(eventId: string, durationMinutes: num
     return { token: session.token, expiresAt: session.expires_at, sessionId: session.id };
 }
 
+export async function getActiveAttendanceSession(eventId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: session } = await supabase
+        .from("event_attendance_sessions")
+        .select("id, token, expires_at")
+        .eq("event_id", eventId)
+        .eq("is_active", true)
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (!session) return null;
+
+    return {
+        sessionId: session.id,
+        token: session.token,
+        expiresAt: session.expires_at,
+    };
+}
+
 export async function scanAttendanceQR(token: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
