@@ -51,39 +51,106 @@ The backend database runs on PostgreSQL (managed via Supabase). Row-Level Securi
 
 ```mermaid
 erDiagram
+
     profiles {
         uuid id PK
+        text email
         text full_name
-        text role "admin | officer | student"
+        text role "student | officer | admin"
         text account_status "pending_verification | verified | rejected"
-        text track_record "portfolio"
+        text bio
+        text track_record
     }
+
     students {
         uuid id PK, FK
         text student_number
-        text course
-        text section
+        text program
         integer year_level
         text school_email
+        text course
+        text section
     }
+
     organizations {
         uuid id PK
         text name
+        text description
+        text visibility "public | private"
+        text accreditation_status "pending | approved | rejected"
         uuid category_id FK
     }
+
     memberships {
         uuid id PK
         uuid user_id FK
         uuid organization_id FK
+        text role "member | officer"
         text status "pending | approved | rejected"
     }
+
     organization_roles {
         uuid id PK
+        uuid organization_id FK
         text title
         integer hierarchy_level
+        boolean can_manage_roles
         uuid assigned_user_id FK
-        uuid organization_id FK
+        uuid parent_role_id FK
     }
+
+    events {
+        uuid id PK
+        uuid organization_id FK
+        text title
+        timestamptz start_datetime
+        timestamptz end_datetime
+        text location
+        integer max_participants
+        text status "draft | active | completed"
+    }
+
+    event_participations {
+        uuid id PK
+        uuid event_id FK
+        uuid user_id FK
+        text status "registered | attended"
+        timestamptz registered_at
+    }
+
+    elections {
+        uuid id PK
+        uuid organization_id FK
+        text title
+        timestamptz start_date
+        timestamptz end_date
+        text status "draft | active | closed"
+    }
+
+    candidates {
+        uuid id PK
+        uuid election_id FK
+        uuid user_id FK
+        text position
+        uuid organization_role_id FK
+    }
+
+    votes {
+        uuid id PK
+        uuid election_id FK
+        uuid membership_id FK
+        uuid candidate_id FK
+    }
+
+    accreditations {
+        uuid id PK
+        uuid organization_id FK
+        text academic_year
+        text status "pending | approved | rejected"
+        text cycle_type
+        date deadline
+    }
+
     bulletin_board_posts {
         uuid id PK
         text type "news | event | recruitment | system | special"
@@ -94,12 +161,51 @@ erDiagram
         timestamptz expires_at
     }
 
-    profiles ||--|| students : "extended info"
-    profiles ||--o{ memberships : "applies"
-    profiles ||--o{ organization_roles : "assigned position"
-    organizations ||--o{ memberships : "hosts"
-    organizations ||--o{ organization_roles : "manages"
-    organizations ||--o{ bulletin_board_posts : "posts"
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        text type
+        text title
+        text message
+        boolean is_read
+    }
+
+    engagement_records {
+        uuid id PK
+        uuid user_id FK
+        uuid organization_id FK
+        uuid event_id FK
+        text record_type "membership | officer_role | event_attended"
+        numeric hours_credit
+        boolean verified
+    }
+
+
+    profiles ||--|| students : "extended profile"
+
+    profiles ||--o{ memberships : "joins"
+    organizations ||--o{ memberships : "accepts members"
+
+    organizations ||--o{ organization_roles : "defines roles"
+    profiles ||--o{ organization_roles : "assigned role"
+
+    organizations ||--o{ events : "organizes"
+    events ||--o{ event_participations : "registrations"
+    profiles ||--o{ event_participations : "participates"
+
+    organizations ||--o{ elections : "conducts"
+    elections ||--o{ candidates : "contains candidates"
+    candidates ||--o{ votes : "receives votes"
+
+    organizations ||--o{ accreditations : "submits"
+
+    organizations ||--o{ bulletin_board_posts : "publishes"
+
+    profiles ||--o{ notifications : "receives"
+
+    profiles ||--o{ engagement_records : "earns"
+    organizations ||--o{ engagement_records : "issues"
+    events ||--o{ engagement_records : "generates"
 ```
 
 ---
