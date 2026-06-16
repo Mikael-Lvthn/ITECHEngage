@@ -1,4 +1,4 @@
-# 🏛️ ITechEngage
+# 🏛️ ITECHEngage
 
 ITechEngage is a premium, secure, and modern full-stack student engagement portal designed for the Polytechnic University of the Philippines. Built with **Next.js 16**, **React 19**, and **Supabase**, the platform streamlines student organization accreditation, event attendance tracking via QR codes, bulletin announcements, elections, and role-based student records.
 
