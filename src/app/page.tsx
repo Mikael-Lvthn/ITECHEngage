@@ -9,16 +9,21 @@ import HomepageOrgFilter from "@/components/HomepageOrgFilter";
 import { PendingVerificationBanner } from "@/components/PendingVerificationBanner";
 import PendingAwareHomepage from "../components/PendingAwareHomepage";
 import ScrollReveal from "@/components/ScrollReveal";
-
+import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage({
     searchParams,
 }: {
-    searchParams: Promise<{ error?: string; error_description?: string; message?: string }>;
+    searchParams: Promise<{ error?: string; error_description?: string; message?: string; code?: string }>;
 }) {
-    const { error, error_description, message } = await searchParams;
+    const { error, error_description, message, code } = await searchParams;
+
+    if (code) {
+        redirect(`/auth/callback?code=${code}`);
+    }
+
     const supabase = await createClient();
 
     const userResultPromise = supabase.auth.getUser();
