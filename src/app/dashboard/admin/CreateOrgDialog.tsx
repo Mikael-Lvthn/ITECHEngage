@@ -12,6 +12,11 @@ interface Student {
     email: string;
 }
 
+interface Category {
+    id: string;
+    name: string;
+}
+
 export default function CreateOrgDialog() {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -23,6 +28,8 @@ export default function CreateOrgDialog() {
     const [showStudentDropdown, setShowStudentDropdown] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const [categories, setCategories] = useState<Category[]>([]);
 
     const [logoUrl, setLogoUrl] = useState("");
     const [coverPhotoUrl, setCoverPhotoUrl] = useState("");
@@ -36,6 +43,7 @@ export default function CreateOrgDialog() {
         setMounted(true);
         if (open) {
             fetchStudents();
+            fetchCategories();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
@@ -60,6 +68,15 @@ export default function CreateOrgDialog() {
             .order("full_name");
 
         if (data) setStudents(data);
+    }
+
+    async function fetchCategories() {
+        const { data, error: _error } = await supabase
+            .from("organization_categories")
+            .select("id, name")
+            .order("name");
+
+        if (data) setCategories(data);
     }
 
     const filteredStudents = useMemo(() => {
@@ -234,6 +251,21 @@ export default function CreateOrgDialog() {
                                                     )}
                                                 </div>
                                             )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-foreground mb-2">Organization Category</label>
+                                            <select
+                                                name="category_id"
+                                                defaultValue=""
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                            >
+                                                <option value="">No Category</option>
+                                                {categories.map((cat) => (
+                                                    <option key={cat.id} value={cat.id}>
+                                                        {cat.name}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-foreground mb-2">Visibility Level</label>

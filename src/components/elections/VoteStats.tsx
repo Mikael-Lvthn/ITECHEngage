@@ -1,41 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
-
 interface VoteStatsProps {
     electionId: string;
+    eligibleVoters: number;
+    votesCast: number;
 }
 
-export default function VoteStats({ electionId }: VoteStatsProps) {
-    const [stats, setStats] = useState<{ total_votes_cast: number; total_eligible_voters: number } | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    const fetchStats = useCallback(async () => {
-        try {
-            const supabase = createClient();
-            const { data, error } = await supabase.rpc("get_election_vote_stats", {
-                p_election_id: electionId,
-            });
-
-            if (!error && data) {
-                setStats(data as { total_votes_cast: number; total_eligible_voters: number });
-            }
-        } catch {
-            /* ignore */
-        } finally {
-            setLoading(false);
-        }
-    }, [electionId]);
-
-    useEffect(() => {
-        fetchStats();
-    }, [fetchStats]);
-
-    if (loading || !stats) return null;
-
-    const percentage = stats.total_eligible_voters > 0
-        ? Math.round((stats.total_votes_cast / stats.total_eligible_voters) * 100)
+export default function VoteStats({ eligibleVoters, votesCast }: VoteStatsProps) {
+    const percentage = eligibleVoters > 0
+        ? Math.round((votesCast / eligibleVoters) * 100)
         : 0;
 
     return (
@@ -45,7 +18,9 @@ export default function VoteStats({ electionId }: VoteStatsProps) {
                 <div>
                     <p className="text-3xl font-bold text-[#800000]">{percentage}%</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                        {stats.total_votes_cast} of {stats.total_eligible_voters} eligible voters
+                        {eligibleVoters === 0
+                            ? "No eligible voters (all members are candidates for every position)"
+                            : `${votesCast} of ${eligibleVoters} eligible voter${eligibleVoters !== 1 ? "s" : ""}`}
                     </p>
                 </div>
                 <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
@@ -55,6 +30,11 @@ export default function VoteStats({ electionId }: VoteStatsProps) {
                     />
                 </div>
             </div>
+            {eligibleVoters === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    ⚠️ Every member is nominated for every position — there are no eligible voters.
+                </p>
+            )}
         </div>
     );
 }

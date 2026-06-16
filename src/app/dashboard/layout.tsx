@@ -44,6 +44,7 @@ export default async function DashboardLayout({
             .from("organization_roles")
             .select("id")
             .eq("assigned_user_id", user.id)
+            .lte("hierarchy_level", 2)
             .limit(1),
     ]);
 

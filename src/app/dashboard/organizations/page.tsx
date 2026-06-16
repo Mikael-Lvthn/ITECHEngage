@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import JoinButton from "./JoinButton";
 import CreateOrgDialog from "../admin/CreateOrgDialog";
 import EditOrgDialog from "../admin/EditOrgDialog";
 import DeleteOrgButton from "../admin/DeleteOrgButton";
+import CategoryDropdown from "./CategoryDropdown";
 
 export default async function OrganizationsPage({
     searchParams,
@@ -44,15 +44,10 @@ export default async function OrganizationsPage({
         orgQuery = orgQuery.eq("category_id", currentCategory);
     }
 
-    const [{ data: organizations }, { data: categories }, { data: memberships }] = await Promise.all([
+    const [{ data: organizations }, { data: categories }] = await Promise.all([
         orgQuery,
         supabase.from("organization_categories").select("id, name").order("name"),
-        supabase.from("memberships").select("organization_id, status").eq("user_id", user!.id),
     ]);
-
-    const membershipMap = new Map(
-        (memberships || []).map((m) => [m.organization_id, m.status])
-    );
 
     return (
         <div className="space-y-6">
@@ -74,33 +69,9 @@ export default async function OrganizationsPage({
                 </div>
             </div>
 
-            {/* Category filter pills */}
+            {/* Category filter dropdown */}
             {(categories && categories.length > 0) && (
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <Link
-                        href="/dashboard/organizations"
-                        className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                            !currentCategory
-                                ? "bg-[#800000] text-white"
-                                : "bg-card border border-border text-foreground hover:border-[#800000] hover:text-[#800000]"
-                        }`}
-                    >
-                        All
-                    </Link>
-                    {categories.map((cat) => (
-                        <Link
-                            key={cat.id}
-                            href={`/dashboard/organizations?category=${cat.id}`}
-                            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                currentCategory === cat.id
-                                    ? "bg-[#800000] text-white"
-                                    : "bg-card border border-border text-foreground hover:border-[#800000] hover:text-[#800000]"
-                            }`}
-                        >
-                            {cat.name}
-                        </Link>
-                    ))}
-                </div>
+                <CategoryDropdown categories={categories} currentCategory={currentCategory} />
             )}
 
             {!organizations || organizations.length === 0 ? (
@@ -119,15 +90,12 @@ export default async function OrganizationsPage({
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {organizations.map((org, i) => {
-                        const status = membershipMap.get(org.id) || "none";
                         return (
                             <div
                                 key={org.id}
                                 className="rounded-xl border bg-card flex flex-col overflow-hidden card-hover animate-slide-up relative"
                                 style={{ animationDelay: `${i * 80}ms` }}
                             >
-                                <div className="h-1.5 bg-gradient-to-r from-[#800000] to-[#C9A227] shrink-0" />
-
                                 {isAdmin && (
                                     <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-background/80 backdrop-blur border rounded-lg p-1 shadow-sm z-10">
                                         <EditOrgDialog
@@ -140,7 +108,8 @@ export default async function OrganizationsPage({
                                                 cover_photo_url: org.cover_photo_url,
                                                 mission: org.mission,
                                                 vision: org.vision,
-                                                core_values: org.core_values
+                                                core_values: org.core_values,
+                                                category_id: org.category_id
                                             }}
                                         />
                                         <DeleteOrgButton
@@ -149,66 +118,21 @@ export default async function OrganizationsPage({
                                         />
                                     </div>
                                 )}
-
-                                <div className="p-5 flex-1 flex flex-col">
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className="w-14 h-14 rounded-xl border border-border/50 bg-[#800000]/5 flex flex-col items-center justify-center overflow-hidden shrink-0 relative">
-                                            {org.logo_url ? (
-                                                <Image src={org.logo_url} alt={org.name} fill className="object-cover" />
-                                            ) : (
-                                                <span className="text-2xl">🏢</span>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0 pt-0.5">
-                                            <Link
-                                                href={`/dashboard/organizations/${org.id}`}
-                                                className="font-semibold text-base hover:text-primary transition-colors block truncate pr-16"
-                                                title={org.name}
-                                            >
-                                                {org.name}
-                                            </Link>
-                                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${org.visibility === 'public'
-                                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                                        : 'bg-slate-50 text-slate-700 border-slate-200'
-                                                    }`}>
-                                                    {org.visibility === 'public' ? '🌐 Public' : '🔒 Private'}
-                                                </span>
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize border ${org.accreditation_status === 'approved'
-                                                        ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                                                    }`}>
-                                                    {org.accreditation_status === 'approved' ? '✓ Official' : '⏳ ' + org.accreditation_status}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
-                                        {org.description || "No description provided."}
-                                    </p>
-
-                                    <div className="mt-5 pt-4 border-t flex flex-wrap items-center justify-between gap-3 shrink-0">
-                                        <Link
-                                            href={`/dashboard/organizations/${org.id}`}
-                                            className="text-sm text-primary font-semibold hover:underline"
-                                        >
-                                            View Details →
-                                        </Link>
-
-                                        {!isAdmin && (
-                                            <JoinButton
-                                                organizationId={org.id}
-                                                membershipStatus={status as "none" | "pending" | "approved"}
-                                            />
-                                        )}
-                                        {isAdmin && (
-                                            <div className="text-xs text-muted-foreground font-medium px-2 py-1 bg-muted rounded-md">
-                                                Admin View
-                                            </div>
+                                <Link
+                                    href={`/dashboard/organizations/${org.id}`}
+                                    className="p-6 flex-1 flex flex-col items-center justify-center text-center min-h-[180px]"
+                                >
+                                    <div className="w-24 h-24 rounded-full bg-[#800000]/5 border border-border flex items-center justify-center shrink-0 overflow-hidden mb-4 relative shadow-sm">
+                                        {org.logo_url ? (
+                                            <Image src={org.logo_url} alt={org.name} fill className="object-cover" />
+                                        ) : (
+                                            <span className="text-4xl">🏢</span>
                                         )}
                                     </div>
-                                </div>
+                                    <h3 className="font-medium text-foreground hover:text-[#800000] transition-colors text-base line-clamp-2">
+                                        {org.name}
+                                    </h3>
+                                </Link>
                             </div>
                         );
                     })}

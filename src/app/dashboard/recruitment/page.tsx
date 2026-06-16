@@ -14,6 +14,7 @@ export default async function RecruitmentPage() {
         .from("organization_roles")
         .select("id, title, organization_id, organizations(id, name)")
         .eq("assigned_user_id", user.id)
+        .lte("hierarchy_level", 2)
         .limit(10);
 
     const hasOrgRole = orgRoles && orgRoles.length > 0;

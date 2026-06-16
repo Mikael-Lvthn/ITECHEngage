@@ -24,7 +24,19 @@ async function requireOfficerOrAdmin(orgId: string) {
         .limit(1)
         .maybeSingle();
 
-    if (!structuralRole) {
+    if (structuralRole) return { supabase, user };
+
+    // Fallback: check membership role (officer via memberships table)
+    const { data: membership } = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("organization_id", orgId)
+        .eq("role", "officer")
+        .eq("status", "approved")
+        .maybeSingle();
+
+    if (!membership) {
         throw new Error("Unauthorized: Officer or admin role required");
     }
 
@@ -41,6 +53,7 @@ export async function approveMember(membershipId: string, orgId: string) {
 
     if (error) throw new Error(error.message);
     revalidatePath(`/dashboard/organizations/${orgId}/members`);
+    revalidatePath(`/dashboard/officer-panel`);
     revalidatePath(`/dashboard/requests`);
 }
 
@@ -49,11 +62,12 @@ export async function rejectMember(membershipId: string, orgId: string) {
 
     const { error } = await supabase
         .from("memberships")
-        .delete()
+        .update({ status: "rejected" })
         .eq("id", membershipId);
 
     if (error) throw new Error(error.message);
     revalidatePath(`/dashboard/organizations/${orgId}/members`);
+    revalidatePath(`/dashboard/officer-panel`);
     revalidatePath(`/dashboard/requests`);
 }
 

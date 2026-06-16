@@ -21,6 +21,20 @@ async function requireAdmin(supabase: SupabaseClient) {
     }
 }
 
+async function requireAccreditedOrg(supabase: SupabaseClient, organizationId: string) {
+    const { data: org } = await supabase
+        .from("organizations")
+        .select("accreditation_status")
+        .eq("id", organizationId)
+        .single();
+
+    if (org?.accreditation_status !== "approved") {
+        throw new Error(
+            `Action is only available to accredited organizations. Your status is: ${org?.accreditation_status || "unknown"}.`
+        );
+    }
+}
+
 export async function createElection(formData: FormData) {
     const { supabase, user } = await getAuthUser();
 
@@ -40,6 +54,8 @@ export async function createElection(formData: FormData) {
     if (endDate && new Date(endDate) <= new Date(startDate)) {
         throw new Error("End date must be after start date.");
     }
+
+    await requireAccreditedOrg(supabase, organizationId);
 
     // Create election in 'draft' status - immediately visible in org's Elections tab
     const { data: election, error } = await supabase.from("elections").insert({

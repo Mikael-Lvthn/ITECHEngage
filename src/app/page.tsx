@@ -10,6 +10,9 @@ import { PendingVerificationBanner } from "@/components/PendingVerificationBanne
 import PendingAwareHomepage from "../components/PendingAwareHomepage";
 import ScrollReveal from "@/components/ScrollReveal";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function HomePage({
     searchParams,
 }: {
@@ -25,7 +28,7 @@ export default async function HomePage({
         {
             data: { user },
         },
-        { events, organizations, newsItems, activeElections, categories },
+        { events, organizations, newsItems, activeElections, categories, recruitments },
     ] = await Promise.all([userResultPromise, homepageDataPromise]);
 
     let profile: { full_name: string; role: string; account_status: string } | null = null;
@@ -45,6 +48,28 @@ export default async function HomePage({
     }
 
     const isPending = profile?.account_status === 'pending_verification';
+
+    // Build combined news + recruitments feed sorted by date
+    const combinedFeed = [
+        ...(newsItems || []).map((n) => ({
+            id: n.id,
+            type: "news" as const,
+            title: n.title,
+            body: n.content?.slice(0, 200) || null,
+            link: `/dashboard/news/${n.id}`,
+            created_at: n.published_at || n.created_at,
+            organizations: Array.isArray(n.organizations) ? n.organizations[0] : n.organizations,
+        })),
+        ...(recruitments || []).map((r) => ({
+            id: r.id,
+            type: "recruitment" as const,
+            title: r.title,
+            body: r.description?.slice(0, 200) || null,
+            link: `/dashboard/organizations/${r.organization_id}`,
+            created_at: r.created_at,
+            organizations: Array.isArray(r.organizations) ? r.organizations[0] : r.organizations,
+        })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return (
         <div className="min-h-screen bg-background">
@@ -275,30 +300,49 @@ export default async function HomePage({
                             Latest News
                         </h2>
                         <div className="space-y-4">
-                            {newsItems && newsItems.length > 0 ? (
-                                newsItems.map((item) => (
+                            {combinedFeed.length === 0 ? (
+                                <div className="rounded-xl border border-border p-8 bg-card text-center text-muted-foreground text-sm">
+                                    No published news or recruitment posts yet.
+                                </div>
+                            ) : (
+                                combinedFeed.map((post) => (
                                     <Link
-                                        key={item.id}
-                                        href={user ? `/dashboard/news/${item.id}` : "/login"}
-                                        className="block rounded-xl border border-border p-5 bg-card hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
+                                        key={`${post.type}-${post.id}`}
+                                        href={user ? post.link : "/login"}
+                                        className="block rounded-xl border border-border bg-card overflow-hidden transition-colors hover:bg-accent/30 group"
                                     >
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <p className="text-[10px] text-[#C9A227] font-semibold uppercase tracking-wider">
-                                                {new Date(item.published_at || item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                            </p>
-                                            <span className="text-[10px] text-muted-foreground">•</span>
-                                            <p className="text-[10px] text-muted-foreground font-medium truncate">
-                                                {item.organizations && typeof item.organizations === 'object' && !Array.isArray(item.organizations) ? (item.organizations as { name?: string }).name : ""}
-                                            </p>
+                                        <div className={`h-1 ${post.type === "recruitment" ? "bg-gradient-to-r from-green-500 to-green-400" : "bg-gradient-to-r from-[#800000] to-[#A52A2A]"}`} />
+                                        <div className="p-5">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0 text-xl">
+                                                    {post.type === "recruitment" ? "📋" : "📰"}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border capitalize ${post.type === "recruitment" ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"}`}>
+                                                            {post.type}
+                                                        </span>
+                                                        {post.organizations && (
+                                                            <span className="text-[10px] text-muted-foreground">{(post.organizations as { name: string }).name}</span>
+                                                        )}
+                                                    </div>
+                                                    <h3 className="font-semibold text-foreground leading-tight group-hover:text-[#800000] transition-colors">{post.title}</h3>
+                                                    {post.body && (
+                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{post.body}</p>
+                                                    )}
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            {new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                                        </p>
+                                                        <span className="text-[10px] font-semibold text-[#800000] group-hover:underline">
+                                                            View →
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <h3 className="font-semibold text-foreground mt-1 group-hover:text-[#800000] transition-colors">{item.title}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
                                     </Link>
                                 ))
-                            ) : (
-                                <div className="rounded-xl border border-border p-8 bg-card text-center text-muted-foreground text-sm">
-                                    No published news yet.
-                                </div>
                             )}
                         </div>
                     </div>

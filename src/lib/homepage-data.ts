@@ -32,9 +32,11 @@ export interface HomepageNews {
     id: string;
     title: string;
     content: string;
+    image_url: string | null;
     published_at: string | null;
     created_at: string;
     organizations: RelatedOrganization;
+    creator?: { full_name: string | null } | { full_name: string | null }[] | null;
 }
 
 export interface HomepageElection {
@@ -49,12 +51,22 @@ export interface HomepageElection {
     isFollowed?: boolean;
 }
 
+export interface HomepageRecruitment {
+    id: string;
+    title: string;
+    description: string | null;
+    created_at: string;
+    organization_id: string;
+    organizations: RelatedOrganization;
+}
+
 export interface HomepagePublicData {
     events: HomepageEvent[];
     organizations: HomepageOrganization[];
     newsItems: HomepageNews[];
     activeElections: HomepageElection[];
     categories: HomepageCategory[];
+    recruitments: HomepageRecruitment[];
 }
 
 async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
@@ -67,7 +79,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
         supabase = createPublicClient();
     }
 
-    const [eventsResult, organizationsResult, newsResult, electionsResult, categoriesResult] =
+    const [eventsResult, organizationsResult, newsResult, electionsResult, categoriesResult, recruitmentsResult] =
         await Promise.all([
             supabase
                 .from("events")
@@ -83,7 +95,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .limit(6),
             supabase
                 .from("news")
-                .select("id, title, content, published_at, created_at, organizations(name)")
+                .select("id, title, content, image_url, published_at, created_at, organizations(name), creator:profiles(full_name)")
                 .eq("status", "published")
                 .order("published_at", { ascending: false })
                 .limit(3),
@@ -97,6 +109,12 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .from("organization_categories")
                 .select("id, name")
                 .order("name"),
+            supabase
+                .from("recruitment_requests")
+                .select("id, title, description, created_at, organization_id, organizations(name)")
+                .eq("is_active", true)
+                .order("created_at", { ascending: false })
+                .limit(4),
         ]);
 
     // Debug logging - check terminal for errors
@@ -104,6 +122,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
     if (organizationsResult.error) console.error("[Homepage] Orgs error:", organizationsResult.error.message);
     if (newsResult.error) console.error("[Homepage] News error:", newsResult.error.message);
     if (electionsResult.error) console.error("[Homepage] Elections error:", electionsResult.error.message);
+    if (recruitmentsResult.error) console.error("[Homepage] Recruitments error:", recruitmentsResult.error.message);
 
     return {
         events: (eventsResult.data ?? []) as HomepageEvent[],
@@ -111,6 +130,7 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
         newsItems: (newsResult.data ?? []) as HomepageNews[],
         activeElections: (electionsResult.data ?? []) as HomepageElection[],
         categories: (categoriesResult.data ?? []) as HomepageCategory[],
+        recruitments: (recruitmentsResult.data ?? []) as HomepageRecruitment[],
     };
 }
 

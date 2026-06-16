@@ -118,13 +118,18 @@ export default function OfficerPanelClient({
                             <span>{tab.icon}</span>
                             {tab.label}
                             {tab.key === "members" && pendingMemberships.length > 0 && (
-                                <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {pendingMemberships.length}
+                                <span className="ml-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                                    {pendingMemberships.length > 99 ? "99+" : pendingMemberships.length}
                                 </span>
                             )}
                             {tab.key === "leave" && pendingLeaveRequests.length > 0 && (
-                                <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {pendingLeaveRequests.length}
+                                <span className="ml-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                                    {pendingLeaveRequests.length > 99 ? "99+" : pendingLeaveRequests.length}
+                                </span>
+                            )}
+                            {tab.key === "content" && (pendingEvents.length + pendingNews.length) > 0 && (
+                                <span className="ml-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                                    {(pendingEvents.length + pendingNews.length) > 99 ? "99+" : (pendingEvents.length + pendingNews.length)}
                                 </span>
                             )}
                         </button>

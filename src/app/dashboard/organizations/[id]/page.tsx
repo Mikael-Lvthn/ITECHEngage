@@ -10,6 +10,7 @@ import OrgDetailTabs from "./OrgDetailTabs";
 import FollowButton from "@/components/organizations/FollowButton";
 import ElectionsTabContent from "./ElectionsTabContent";
 import MemberFollowerPreview from "@/components/organizations/MemberFollowerPreview";
+import AccreditationBanner from "@/components/accreditation/AccreditationBanner";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -186,6 +187,12 @@ export default async function OrganizationDetailPage({ params }: Props) {
                 ← Back to Organizations
             </Link>
 
+            <AccreditationBanner 
+                status={org.accreditation_status || 'pending'} 
+                expiresAt={org.accreditation_expires_at} 
+                isOfficer={isOfficer} 
+            />
+
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="h-44 md:h-56 bg-muted relative">
                     {org.cover_photo_url ? (
@@ -264,6 +271,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
             </div>
 
             <OrgDetailTabs
+                calendarHref={`/dashboard/organizations/${id}/calendar`}
                 aboutContent={
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="space-y-6">

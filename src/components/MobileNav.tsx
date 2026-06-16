@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,6 +14,7 @@ interface NavItem {
     href: string;
     icon: string;
     roles: UserRole[];
+    requireOrgRole?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -22,13 +24,13 @@ const navItems: NavItem[] = [
     { label: "Followed", href: "/dashboard/followed", icon: "⭐", roles: ["student", "officer"] },
     { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["officer"] },
     { label: "News & Events", href: "/dashboard/news-and-events", icon: "📰", roles: ["student", "officer", "admin"] },
-    { label: "Recruitment", href: "/dashboard/recruitment", icon: "📋", roles: ["officer"] },
+    { label: "Recruitment", href: "/dashboard/recruitment", icon: "📋", roles: ["officer"], requireOrgRole: true },
     { label: "Bulletin Board", href: "/dashboard/bulletin", icon: "📌", roles: ["student", "officer", "admin"] },
     { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["student", "officer", "admin"] },
     { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", roles: ["student", "officer", "admin"] },
     { label: "My Record", href: "/dashboard/co-curricular", icon: "🎓", roles: ["student", "officer"] },
     { label: "Accreditation", href: "/dashboard/accreditation", icon: "📑", roles: ["officer", "admin"] },
-    { label: "Officer Panel", href: "/dashboard/officer-panel", icon: "🏛️", roles: ["officer"] },
+    { label: "Officer Panel", href: "/dashboard/officer-panel", icon: "🏛️", roles: ["officer"], requireOrgRole: true },
     { label: "Admin Panel", href: "/dashboard/admin", icon: "⚙️", roles: ["admin"] },
     { label: "Settings", href: "/dashboard/settings", icon: "🎨", roles: ["student", "officer", "admin"] },
 ];
@@ -42,31 +44,18 @@ interface MobileNavProps {
     officerBadgeCount?: number;
 }
 
-export default function MobileNav({ userRole, userName, userEmail, adminBadgeCount = 0, officerBadgeCount = 0 }: MobileNavProps) {
+export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles = false, adminBadgeCount = 0, officerBadgeCount = 0 }: MobileNavProps) {
     const [open, setOpen] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadCount] = useState(0);
     const pathname = usePathname();
     const router = useRouter();
 
-    useEffect(() => {
-        const supabase = createClient();
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            if (!user) return;
-            supabase
-                .from("notifications")
-                .select("*", { count: "exact", head: true })
-                .eq("user_id", user.id)
-                .eq("status", "unread")
-                .then(({ count }) => {
-                    setUnreadCount(count || 0);
-                });
-        });
-    }, [pathname]);
-
-    const filteredNavItems = navItems.filter((item) =>
-        item.roles.includes(userRole)
-    );
+    const filteredNavItems = navItems.filter((item) => {
+        if (!item.roles.includes(userRole)) return false;
+        if (item.requireOrgRole && !hasOrgRoles) return false;
+        return true;
+    });
 
     const handleSignOut = async () => {
         setSigningOut(true);

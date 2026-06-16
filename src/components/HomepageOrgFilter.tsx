@@ -28,32 +28,23 @@ export default function HomepageOrgFilter({ organizations, categories, isLoggedI
 
     return (
         <div>
-            {/* Pill filter row */}
+            {/* Category filter dropdown */}
             {categories.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide">
-                    <button
-                        onClick={() => handleFilter(null)}
-                        className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                            !activeCategory
-                                ? "bg-[#800000] text-white shadow-sm"
-                                : "bg-card border border-border text-foreground hover:border-[#800000] hover:text-[#800000]"
-                        }`}
+                <div className="mb-6 max-w-xs">
+                    <label htmlFor="category-select" className="sr-only">Filter by Category</label>
+                    <select
+                        id="category-select"
+                        value={activeCategory || ""}
+                        onChange={(e) => handleFilter(e.target.value || null)}
+                        className="w-full bg-card border border-border text-foreground rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#800000]/30 focus:border-[#800000] transition-all"
                     >
-                        All
-                    </button>
-                    {categories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => handleFilter(cat.id)}
-                            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                activeCategory === cat.id
-                                    ? "bg-[#800000] text-white shadow-sm"
-                                    : "bg-card border border-border text-foreground hover:border-[#800000] hover:text-[#800000]"
-                            }`}
-                        >
-                            {cat.name}
-                        </button>
-                    ))}
+                        <option value="">All Categories</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             )}
 
@@ -75,31 +66,19 @@ export default function HomepageOrgFilter({ organizations, categories, isLoggedI
                             <a
                                 key={org.id}
                                 href={isLoggedIn ? `/dashboard/organizations/${org.id}` : "/login"}
-                                className="rounded-xl bg-card border border-border p-5 hover:shadow-md hover:-translate-y-0.5 transition-all group block"
+                                className="rounded-xl bg-card border border-border p-6 hover:shadow-md hover:-translate-y-0.5 transition-all group block text-center flex flex-col items-center justify-center min-h-[180px]"
                             >
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-[#800000]/5 border border-border flex items-center justify-center shrink-0 overflow-hidden">
-                                        {org.logo_url ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-2xl">🏢</span>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-foreground group-hover:text-[#800000] transition-colors truncate">
-                                            {org.name}
-                                        </h3>
-                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                            {org.description || "No description provided."}
-                                        </p>
-                                        {org.accreditation_status === "approved" && (
-                                            <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50">
-                                                ✓ Official
-                                            </span>
-                                        )}
-                                    </div>
+                                <div className="w-24 h-24 rounded-full bg-[#800000]/5 border border-border flex items-center justify-center shrink-0 overflow-hidden mb-4 shadow-sm">
+                                    {org.logo_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-4xl">🏢</span>
+                                    )}
                                 </div>
+                                <h3 className="font-medium text-foreground group-hover:text-[#800000] transition-colors text-base line-clamp-2">
+                                    {org.name}
+                                </h3>
                             </a>
                         ))}
                     </div>

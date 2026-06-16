@@ -126,7 +126,7 @@ export default function CoCurricularPage() {
                 </div>
                 <div className="rounded-xl border bg-card p-4 shadow-sm">
                     <div className="text-3xl font-bold text-[#C9A227]">{(summary?.totalHours || 0).toFixed(1)}</div>
-                    <p className="text-sm text-muted-foreground mt-1">Total Hours</p>
+                    <p className="text-sm text-muted-foreground mt-1">Total Engagement</p>
                 </div>
                 <div className="rounded-xl border bg-card p-4 shadow-sm">
                     <div className="text-3xl font-bold text-green-600">{summary?.records.filter((r) => r.verified).length || 0}</div>

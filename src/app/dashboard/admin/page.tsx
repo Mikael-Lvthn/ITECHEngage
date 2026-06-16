@@ -92,9 +92,9 @@ export default async function AdminPage({ searchParams }: Props) {
             .limit(50),
         supabase
             .from("accreditations")
-            .select("id, organization_id, status, created_at, organizations(name)")
+            .select("id, organization_id, status, submitted_at, organizations(name)")
             .eq("status", "pending")
-            .order("created_at", { ascending: false })
+            .order("submitted_at", { ascending: false })
             .limit(50),
         supabase
             .from("audit_logs")
@@ -141,6 +141,21 @@ export default async function AdminPage({ searchParams }: Props) {
     })) as ManagementUser[];
     const totalUsersCount = allUsersResult.count ?? 0;
 
+    // Supabase returns the profile under an aliased key when using !fkey syntax.
+    // This helper normalizes it to the plain `profiles` field that LeaveRequest expects.
+    function normalizeLeaveRequest(item: Record<string, unknown>) {
+        const rawProfile =
+            item['profiles!leave_requests_user_id_fkey'] ||
+            item.profiles;
+        return {
+            ...item,
+            profiles: Array.isArray(rawProfile) ? rawProfile[0] : rawProfile,
+            organizations: Array.isArray(item.organizations)
+                ? (item.organizations as unknown[])[0]
+                : item.organizations,
+        };
+    }
+
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
             <div className="flex items-center justify-between">
@@ -172,16 +187,8 @@ export default async function AdminPage({ searchParams }: Props) {
                 })) as AuditLogEntry[]}
                 categories={(categoriesResult.data as Category[]) || []}
                 organizations={(organizationsListResult.data as Organization[]) || []}
-                pendingLeaveRequests={(pendingLeaveResult.data || []).map(item => ({
-                    ...item,
-                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
-                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
-                })) as LeaveRequest[]}
-                leaveHistory={(leaveHistoryResult.data || []).map(item => ({
-                    ...item,
-                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
-                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
-                })) as LeaveRequest[]}
+                pendingLeaveRequests={(pendingLeaveResult.data || []).map(normalizeLeaveRequest) as LeaveRequest[]}
+                leaveHistory={(leaveHistoryResult.data || []).map(normalizeLeaveRequest) as LeaveRequest[]}
                 pendingVerificationUsers={pendingVerificationUsers}
                 allUsers={allUsers}
                 totalUsersCount={totalUsersCount}

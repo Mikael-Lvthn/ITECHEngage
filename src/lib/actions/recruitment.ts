@@ -2,6 +2,21 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function requireAccreditedOrg(supabase: SupabaseClient, organizationId: string) {
+    const { data: org } = await supabase
+        .from("organizations")
+        .select("accreditation_status")
+        .eq("id", organizationId)
+        .single();
+
+    if (org?.accreditation_status !== "approved") {
+        throw new Error(
+            `Action is only available to accredited organizations. Your status is: ${org?.accreditation_status || "unknown"}.`
+        );
+    }
+}
 
 export async function createRecruitment(formData: FormData) {
     const supabase = await createClient();
@@ -35,6 +50,8 @@ export async function createRecruitment(formData: FormData) {
             throw new Error("Unauthorized: Officer or Admin role required");
         }
     }
+
+    await requireAccreditedOrg(supabase, organizationId);
 
     const { error } = await supabase.from("recruitment_requests").insert({
         organization_id: organizationId,

@@ -32,7 +32,7 @@ export interface PendingAccreditation {
     id: string;
     organization_id: string;
     status: string;
-    created_at: string;
+    submitted_at: string;
     organizations: { name: string } | null;
 }
 
@@ -175,21 +175,35 @@ export default function AdminPanelClient({
 
             {/* Tab Navigation */}
             <div className="border-b border-border">
-                <div className="flex gap-1 overflow-x-auto">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.key}
-                            onClick={() => switchTab(tab.key)}
-                            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                                activeTab === tab.key
-                                    ? "border-primary text-primary"
-                                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                            }`}
-                        >
-                            <span>{tab.icon}</span>
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                    {tabs.map((tab) => {
+                        let badgeCount = 0;
+                        if (tab.key === "verification") badgeCount = stats.pendingVerificationCount;
+                        if (tab.key === "roster") badgeCount = stats.pendingMemberships + pendingAccreditations.length;
+                        if (tab.key === "events") badgeCount = stats.pendingEventsCount;
+                        // For User Management, maybe leave requests?
+                        if (tab.key === "users") badgeCount = stats.pendingLeaveCount;
+
+                        return (
+                            <button
+                                key={tab.key}
+                                onClick={() => switchTab(tab.key)}
+                                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                    activeTab === tab.key
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                                }`}
+                            >
+                                <span>{tab.icon}</span>
+                                {tab.label}
+                                {badgeCount > 0 && (
+                                    <span className="ml-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                                        {badgeCount > 99 ? "99+" : badgeCount}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -256,39 +270,10 @@ function RosterTab({
     return (
         <div className="space-y-6">
             {/* Membership Requests */}
-            <section className="rounded-xl border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent">
-                    <h3 className="font-semibold text-foreground">📋 Membership Requests</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Approve or reject pending join requests</p>
-                </div>
-                <div className="p-4">
-                    {membershipRequests.length === 0 ? (
-                        <EmptyState icon="✅" message="No pending membership requests." />
-                    ) : (
-                        <div className="space-y-2">
-                            {membershipRequests.map((req) => (
-                                <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
-                                    <div>
-                                        <p className="text-sm font-medium">{req.profiles?.full_name || "Unknown"}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Wants to join <span className="font-medium">{req.organizations?.name}</span>
-                                            {" · "}{new Date(req.created_at).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Link
-                                            href={`/dashboard/organizations/${req.organization_id}/members`}
-                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
-                                        >
-                                            Review →
-                                        </Link>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </section>
+            <MembershipRequestsSection
+                organizations={organizations}
+                membershipRequests={membershipRequests}
+            />
 
             {/* Leave Requests */}
             <LeaveRequestsSection
@@ -313,7 +298,7 @@ function RosterTab({
                                     <div>
                                         <p className="text-sm font-medium">{acc.organizations?.name || "Unknown Org"}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            Submitted {new Date(acc.created_at).toLocaleDateString()}
+                                            Submitted {new Date(acc.submitted_at).toLocaleDateString()}
                                         </p>
                                     </div>
                                     <Link
@@ -332,6 +317,121 @@ function RosterTab({
     );
 }
 
+/* ---------- Membership Requests Section ---------- */
+function MembershipRequestsSection({
+    organizations,
+    membershipRequests,
+}: {
+    organizations: Organization[];
+    membershipRequests: MembershipRequest[];
+}) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const activeOrg = searchParams.get("org") || "all";
+    const [searchText, setSearchText] = useState("");
+
+    const filteredRequests = membershipRequests.filter((req) => {
+        const matchSearch =
+            !searchText ||
+            req.profiles?.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+            req.organizations?.name?.toLowerCase().includes(searchText.toLowerCase());
+        const matchOrg = activeOrg === "all" || req.organization_id === activeOrg;
+        return matchSearch && matchOrg;
+    });
+
+    const activeOrgName = activeOrg === "all"
+        ? "All Organizations"
+        : organizations.find((o) => o.id === activeOrg)?.name || "Unknown";
+
+    function setOrgFilter(orgId: string) {
+        const next = new URLSearchParams(searchParams.toString());
+        next.set("tab", "roster");
+        if (orgId === "all") {
+            next.delete("org");
+        } else {
+            next.set("org", orgId);
+        }
+        router.replace(`/dashboard/admin?${next.toString()}`, { scroll: false });
+        router.refresh();
+    }
+
+    return (
+        <section className="rounded-xl border bg-card overflow-hidden">
+            <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent">
+                <h3 className="font-semibold text-foreground">📋 Membership Requests</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Approve or reject pending join requests</p>
+            </div>
+            
+            <div className="p-4 space-y-4">
+                {/* Search & Filter */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                        <input
+                            type="text"
+                            placeholder="Search by student or organization..."
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 pl-8"
+                        />
+                        <span className="absolute left-2.5 top-2.5 text-muted-foreground text-sm">🔍</span>
+                    </div>
+                    <select
+                        value={activeOrg}
+                        onChange={(e) => setOrgFilter(e.target.value)}
+                        className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[200px]"
+                    >
+                        <option value="all">All Organizations</option>
+                        {organizations.map((org) => (
+                            <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {activeOrg !== "all" && (
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className="px-2 py-1 rounded-full bg-[#800000]/10 text-[#800000] font-medium">
+                            Filtering: {activeOrgName}
+                        </span>
+                        <button
+                            onClick={() => setOrgFilter("all")}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            ✕ Clear
+                        </button>
+                    </div>
+                )}
+
+                {/* List */}
+                {filteredRequests.length === 0 ? (
+                    <EmptyState icon="✅" message="No pending membership requests." />
+                ) : (
+                    <div className="space-y-2">
+                        {filteredRequests.map((req) => (
+                            <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{req.profiles?.full_name || "Unknown"}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Wants to join <span className="font-medium">{req.organizations?.name}</span>
+                                        {" · "}{new Date(req.created_at).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2 shrink-0 ml-3">
+                                    <Link
+                                        href={`/dashboard/organizations/${req.organization_id}/members`}
+                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+                                    >
+                                        Review →
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </section>
+    );
+}
+
 /* ---------- Leave Requests Section ---------- */
 function LeaveRequestsSection({
     organizations,
@@ -345,14 +445,26 @@ function LeaveRequestsSection({
     const router = useRouter();
     const searchParams = useSearchParams();
     const activeOrg = searchParams.get("org") || "all";
-    const [orgSearchText, setOrgSearchText] = useState("");
+    const [searchText, setSearchText] = useState("");
     const [isPending, startTransition] = useTransition();
     const [actioningId, setActioningId] = useState<string | null>(null);
     const [showHistory, setShowHistory] = useState(false);
 
-    const filteredOrgs = organizations.filter((o) =>
-        o.name.toLowerCase().includes(orgSearchText.toLowerCase())
-    );
+    const filteredPending = pendingLeaveRequests.filter((req) => {
+        const matchSearch =
+            !searchText ||
+            req.profiles?.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+            req.organizations?.name?.toLowerCase().includes(searchText.toLowerCase());
+        return matchSearch;
+    });
+
+    const filteredHistory = leaveHistory.filter((req) => {
+        const matchSearch =
+            !searchText ||
+            req.profiles?.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+            req.organizations?.name?.toLowerCase().includes(searchText.toLowerCase());
+        return matchSearch;
+    });
 
     function setOrgFilter(orgId: string) {
         const next = new URLSearchParams(searchParams.toString());
@@ -420,14 +532,14 @@ function LeaveRequestsSection({
             </div>
 
             <div className="p-4 space-y-4">
-                {/* Organization Filter */}
+                {/* Organization Filter & Search */}
                 <div className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
                         <input
                             type="text"
-                            placeholder="Search organizations..."
-                            value={orgSearchText}
-                            onChange={(e) => setOrgSearchText(e.target.value)}
+                            placeholder="Search by student or organization..."
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
                             className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 pl-8"
                         />
                         <span className="absolute left-2.5 top-2.5 text-muted-foreground text-sm">🔍</span>
@@ -438,7 +550,7 @@ function LeaveRequestsSection({
                         className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[200px]"
                     >
                         <option value="all">All Organizations</option>
-                        {filteredOrgs.map((org) => (
+                        {organizations.map((org) => (
                             <option key={org.id} value={org.id}>{org.name}</option>
                         ))}
                     </select>
@@ -459,14 +571,14 @@ function LeaveRequestsSection({
                 )}
 
                 {/* Pending Leave Requests */}
-                {pendingLeaveRequests.length === 0 ? (
+                {filteredPending.length === 0 ? (
                     <EmptyState icon="✅" message="No pending leave requests." />
                 ) : (
                     <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Pending ({pendingLeaveRequests.length})
+                            Pending ({filteredPending.length})
                         </p>
-                        {pendingLeaveRequests.map((req) => (
+                        {filteredPending.map((req) => (
                             <div
                                 key={req.id}
                                 className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
@@ -505,12 +617,12 @@ function LeaveRequestsSection({
                 )}
 
                 {/* Leave Request History */}
-                {showHistory && leaveHistory.length > 0 && (
+                {showHistory && filteredHistory.length > 0 && (
                     <div className="space-y-2 pt-2 border-t">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            History ({leaveHistory.length})
+                            History ({filteredHistory.length})
                         </p>
-                        {leaveHistory.map((req) => (
+                        {filteredHistory.map((req) => (
                             <div
                                 key={req.id}
                                 className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
@@ -1045,7 +1157,7 @@ function VerificationTab({ pendingUsers }: { pendingUsers: PendingVerificationUs
                                             <td className="py-3 pr-4 text-muted-foreground text-xs">{user.email}</td>
                                             <td className="py-3 pr-4 text-xs font-mono">{user.students?.student_number || "—"}</td>
                                             <td className="py-3 pr-4 text-xs">{user.students?.course || "—"}</td>
-                                            <td className="py-3 pr-4 text-xs">{user.students?.year_level ? `${user.students.year_level}${user.students.year_level === 1 ? 'st' : user.students.year_level === 2 ? 'nd' : 'rd'} Year` : "—"}</td>
+                                            <td className="py-3 pr-4 text-xs">{user.students?.year_level ? `${user.students.year_level}${user.students.year_level === 1 ? 'st' : user.students.year_level === 2 ? 'nd' : user.students.year_level === 3 ? 'rd' : 'th'} Year` : "—"}</td>
                                             <td className="py-3 pr-4 text-xs">{user.students?.section || "—"}</td>
                                             <td className="py-3 pr-4 text-xs text-muted-foreground">
                                                 {new Date(user.created_at).toLocaleDateString()}
@@ -1448,6 +1560,7 @@ function UserManagementTab({
                                     </th>
                                     <th className="py-3 px-3 text-left">User</th>
                                     <th className="py-3 px-3 text-left hidden md:table-cell">Student No.</th>
+                                    <th className="py-3 px-3 text-left hidden lg:table-cell">Program Info</th>
                                     <th className="py-3 px-3 text-left">Role</th>
                                     <th className="py-3 px-3 text-left">Status</th>
                                     <th className="py-3 px-3 text-left hidden lg:table-cell">Joined</th>
@@ -1473,6 +1586,18 @@ function UserManagementTab({
                                             <p className="text-xs text-muted-foreground font-mono">
                                                 {u.students?.student_number || "—"}
                                             </p>
+                                        </td>
+                                        <td className="py-3 px-3 hidden lg:table-cell">
+                                            {u.students ? (
+                                                <div className="text-xs">
+                                                    <span className="font-semibold">{u.students.course || "—"}</span>
+                                                    <span className="text-muted-foreground ml-1">
+                                                        ({u.students.year_level ? `${u.students.year_level}${u.students.year_level === 1 ? 'st' : u.students.year_level === 2 ? 'nd' : u.students.year_level === 3 ? 'rd' : 'th'} Yr` : "—"} - {u.students.section || "—"})
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground">—</p>
+                                            )}
                                         </td>
                                         <td className="py-3 px-3">
                                             <select

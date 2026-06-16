@@ -100,6 +100,58 @@ export default async function ElectionDetailPage({ params }: Props) {
 
     const votedRoles: string[] = Array.isArray(votedRolesData) ? votedRolesData : [];
 
+    // ─── Compute accurate voter turnout server-side ───────────────────────────
+    // Eligible voter = approved org member (non-admin) who can vote for at least
+    // one position (i.e., they are NOT a candidate in every contested role).
+    const contestedRoleIds = [...new Set((candidates || []).map(c => c.organization_role_id).filter(Boolean))] as string[];
+
+    let eligibleVoterCount = 0;
+    let totalVotesCast = 0;
+
+    if (election.status === "voting" || election.status === "completed") {
+        // Fetch all non-admin approved members
+        const { data: allMembers } = await supabase
+            .from("memberships")
+            .select("user_id")
+            .eq("organization_id", election.organization_id)
+            .eq("status", "approved");
+
+        // Get admin user ids to exclude them
+        const { data: adminProfiles } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("role", "admin");
+        const adminIds = new Set((adminProfiles || []).map(p => p.id));
+
+        // Map: candidateUserId → Set of role_ids they are nominated for
+        const candidateRoleMap = new Map<string, Set<string>>();
+        (candidates || []).forEach(c => {
+            if (!c.user_id || !c.organization_role_id) return;
+            if (!candidateRoleMap.has(c.user_id)) candidateRoleMap.set(c.user_id, new Set());
+            candidateRoleMap.get(c.user_id)!.add(c.organization_role_id);
+        });
+
+        // A member is eligible to vote if:
+        // - They are NOT an admin
+        // - There is at least one contested role they are NOT a candidate for
+        const nonAdminMembers = (allMembers || []).filter(m => !adminIds.has(m.user_id));
+        eligibleVoterCount = nonAdminMembers.filter(m => {
+            if (contestedRoleIds.length === 0) return false; // no contested roles = no one is eligible
+            const nominatedRoles = candidateRoleMap.get(m.user_id) || new Set();
+            // Eligible if they can vote in at least one role
+            return contestedRoleIds.some(roleId => !nominatedRoles.has(roleId));
+        }).length;
+
+        // Fetch total votes cast via RPC
+        const { data: statsData } = await supabase.rpc("get_election_vote_stats", {
+            p_election_id: id,
+        });
+        if (statsData && typeof statsData === "object" && "total_votes_cast" in statsData) {
+            totalVotesCast = (statsData as { total_votes_cast: number }).total_votes_cast;
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     let electionResults: ElectionResult[] = [];
     const isClosed = election.status === "completed";
     if (isClosed || canManage) {
@@ -276,18 +328,24 @@ export default async function ElectionDetailPage({ params }: Props) {
                 />
             )}
 
-            {/* Vote stats */}
-            {(isClosed || (canManage && isVotingOpen)) && (
-                <VoteStats electionId={id} />
+            {/* Vote stats — visible to all users for transparency */}
+            {(isVotingOpen || isClosed) && (
+                <VoteStats
+                    electionId={id}
+                    eligibleVoters={eligibleVoterCount}
+                    votesCast={totalVotesCast}
+                />
             )}
 
             {/* Actions bar */}
             <div className="flex flex-wrap items-center gap-3">
-                {/* Officers can nominate (not admin) */}
+                {/* Officers can nominate (not admin) — only for vacant positions */}
                 {isMember && !isAdmin && canNominate && (
                     <NominateDialog
                         electionId={id}
-                        roles={rolesWithAssignments.map(r => ({ id: r.id, title: r.title, assigned_user_id: r.assigned_user_id }))}
+                        roles={rolesWithAssignments
+                            .filter(r => !r.assigned_user_id)  // only vacant positions
+                            .map(r => ({ id: r.id, title: r.title, assigned_user_id: r.assigned_user_id }))}
                         alreadyNominated={myCandidateRoleIds}
                     />
                 )}
@@ -308,7 +366,7 @@ export default async function ElectionDetailPage({ params }: Props) {
 
                 <ElectionBoard
                     electionId={id}
-                    roles={rolesWithAssignments}
+                    roles={isClosed ? rolesWithAssignments : rolesWithAssignments.filter(r => !r.assigned_user_id)}
                     candidatesByRole={candidatesByRole}
                     resultsByRole={isClosed ? resultsByRole : undefined}
                     votedRoles={votedRoles}

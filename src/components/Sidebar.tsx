@@ -13,6 +13,7 @@ interface NavItem {
     href: string;
     icon: string;
     roles: UserRole[];
+    requireOrgRole?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -57,6 +58,7 @@ const navItems: NavItem[] = [
         href: "/dashboard/recruitment",
         icon: "📋",
         roles: ["officer"],
+        requireOrgRole: true,
     },
     {
         label: "Bulletin Board",
@@ -93,6 +95,7 @@ const navItems: NavItem[] = [
         href: "/dashboard/officer-panel",
         icon: "🏛️",
         roles: ["officer"],
+        requireOrgRole: true,
     },
     {
         label: "Admin Panel",
@@ -117,7 +120,7 @@ interface SidebarProps {
     officerBadgeCount?: number;
 }
 
-export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount = 0, officerBadgeCount = 0 }: SidebarProps) {
+export default function Sidebar({ userRole, userName, userEmail, hasOrgRoles = false, adminBadgeCount = 0, officerBadgeCount = 0 }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [showMenu, setShowMenu] = useState(false);
@@ -152,9 +155,11 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
         };
     }, []);
 
-    const filteredNavItems = navItems.filter((item) =>
-        item.roles.includes(userRole)
-    );
+    const filteredNavItems = navItems.filter((item) => {
+        if (!item.roles.includes(userRole)) return false;
+        if (item.requireOrgRole && !hasOrgRoles) return false;
+        return true;
+    });
 
     const handleSignOut = async () => {
         setSigningOut(true);
@@ -193,7 +198,7 @@ export default function Sidebar({ userRole, userName, userEmail, adminBadgeCount
                 </div>
             </Link>
 
-            <nav className="flex-1 px-3 py-4 space-y-1 min-h-0 overflow-y-auto no-scrollbar">
+            <nav className="flex-1 px-3 py-4 space-y-1 min-h-0 overflow-y-auto sidebar-scrollbar">
                 {filteredNavItems.map((item, i) => {
                     const isActive =
                         item.href === "/"

@@ -27,6 +27,7 @@ export async function createOrganization(formData: FormData) {
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const visibility = (formData.get("visibility") as string) || "public";
+    const category_id = formData.get("category_id") as string;
 
     const logo_url = formData.get("logo_url") as string;
     const cover_photo_url = formData.get("cover_photo_url") as string;
@@ -51,7 +52,8 @@ export async function createOrganization(formData: FormData) {
         cover_photo_url,
         mission: mission.trim(),
         vision: vision.trim(),
-        core_values: core_values.trim()
+        core_values: core_values.trim(),
+        category_id: category_id || null
     }).select().single();
 
     if (orgError) throw new Error(orgError.message);
@@ -96,6 +98,7 @@ export async function updateOrganization(formData: FormData) {
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const visibility = (formData.get("visibility") as string) || "public";
+    const category_id = formData.get("category_id");
 
     const logo_url = formData.get("logo_url");
     const cover_photo_url = formData.get("cover_photo_url");
@@ -117,6 +120,7 @@ export async function updateOrganization(formData: FormData) {
         mission?: string;
         vision?: string;
         core_values?: string;
+        category_id?: string | null;
     } = {
         name: name.trim(),
         description: description?.trim() || null,
@@ -128,6 +132,9 @@ export async function updateOrganization(formData: FormData) {
     if (mission !== null) updateData.mission = (mission as string).trim();
     if (vision !== null) updateData.vision = (vision as string).trim();
     if (core_values !== null) updateData.core_values = (core_values as string).trim();
+    if (category_id !== null) {
+        updateData.category_id = (category_id as string).trim() || null;
+    }
 
     const { error } = await supabase
         .from("organizations")

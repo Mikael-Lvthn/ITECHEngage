@@ -1,6 +1,22 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AccreditationClient from "./AccreditationClient";
+import { getAccreditationFileUrl } from "@/lib/actions/accreditation";
+
+/** Pre-generate signed download URLs for a list of accreditation documents. */
+async function attachDownloadUrls<T extends { id: string; storage_path: string }>(docs: T[]) {
+    return Promise.all(
+        docs.map(async (doc) => {
+            try {
+                const url = await getAccreditationFileUrl(doc.storage_path);
+                return { ...doc, downloadUrl: url };
+            } catch (err: unknown) {
+                console.error("Failed to generate signed URL for doc:", doc.id, (err as Error).message);
+                return doc;
+            }
+        })
+    );
+}
 
 export default async function AccreditationPage() {
     const supabase = await createClient();
@@ -57,7 +73,8 @@ export default async function AccreditationPage() {
     (structuralRoleOrgsResult.data || []).forEach((item) => collectOrg(item, orgMap));
 
     const officerOrgs = Array.from(orgMap.values());
-    const isOfficer = officerOrgs.length > 0;
+    // Admins are never treated as officers for UI purposes — they have their own review view
+    const isOfficer = !isAdmin && officerOrgs.length > 0;
 
     // Redirect students (non-officers, non-admins) away
     if (!isAdmin && !isOfficer) {
@@ -67,8 +84,8 @@ export default async function AccreditationPage() {
     // Fetch pending accreditations
     let pendingQuery = supabase
         .from("accreditations")
-        .select("id, organization_id, academic_year, status, documents_url, notes, submitted_at, submitted_by, reviewed_at, organizations(name), profiles!accreditations_submitted_by_fkey(full_name)")
-        .eq("status", "pending")
+        .select("id, organization_id, academic_year, status, documents_url, notes, submitted_at, submitted_by, reviewed_at, organizations(name), profiles!accreditations_submitted_by_fkey(full_name), accreditation_documents(id, file_name, storage_path, requirement_id)")
+        .in("status", ["pending", "forwarded", "deliberating", "decision_received"])
         .order("submitted_at", { ascending: false });
 
     // Officers only see their own orgs' accreditations
@@ -77,13 +94,23 @@ export default async function AccreditationPage() {
         pendingQuery = pendingQuery.in("organization_id", orgIds);
     }
 
-    const { data: pendingData } = await pendingQuery;
+    const { data: rawPendingData, error: pendingError } = await pendingQuery;
+    if (pendingError) {
+        console.error("PENDING QUERY ERROR:", pendingError);
+    }
+
+    const pendingData = await Promise.all(
+        (rawPendingData || []).map(async (acc) => ({
+            ...acc,
+            accreditation_documents: await attachDownloadUrls(acc.accreditation_documents || []),
+        }))
+    );
 
     // Fetch accreditation history
     let historyQuery = supabase
         .from("accreditations")
-        .select("id, organization_id, academic_year, status, documents_url, notes, submitted_at, submitted_by, reviewed_at, organizations(name)")
-        .neq("status", "pending")
+        .select("id, organization_id, academic_year, status, documents_url, notes, submitted_at, submitted_by, reviewed_at, organizations(name), profiles!accreditations_submitted_by_fkey(full_name), accreditation_documents(id, file_name, storage_path, requirement_id)")
+        .in("status", ["approved", "rejected", "revalidation_required"])
         .order("reviewed_at", { ascending: false })
         .limit(50);
 
@@ -92,20 +119,40 @@ export default async function AccreditationPage() {
         historyQuery = historyQuery.in("organization_id", orgIds);
     }
 
-    const { data: historyData } = await historyQuery;
+    const { data: rawHistoryData } = await historyQuery;
 
-    const pendingAccreditations = (pendingData || []).map((item) => ({
-        ...item,
-        organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations,
-        submitter: Array.isArray((item as Record<string, unknown>).profiles)
-            ? ((item as Record<string, unknown>).profiles as { full_name: string }[])[0]
-            : (item as Record<string, unknown>).profiles as { full_name: string } | null,
-    }));
+    const historyData = await Promise.all(
+        (rawHistoryData || []).map(async (acc) => ({
+            ...acc,
+            accreditation_documents: await attachDownloadUrls(acc.accreditation_documents || []),
+        }))
+    );
 
-    const accreditationHistory = (historyData || []).map((item) => ({
-        ...item,
-        organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations,
-    }));
+    // Fetch accreditation requirements
+    const { data: requirementsData } = await supabase
+        .from("accreditation_requirements")
+        .select("*")
+        .order("order_index", { ascending: true });
+
+    const pendingAccreditations = (pendingData || []).map((item) => {
+        const rawProfile = (item as Record<string, unknown>)['profiles!accreditations_submitted_by_fkey'] || (item as Record<string, unknown>).profiles;
+        const submitter = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+        return {
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations,
+            submitter: submitter as { full_name: string } | null,
+        };
+    });
+
+    const accreditationHistory = (historyData || []).map((item) => {
+        const rawProfile = (item as Record<string, unknown>)['profiles!accreditations_submitted_by_fkey'] || (item as Record<string, unknown>).profiles;
+        const submitter = Array.isArray(rawProfile) ? rawProfile[0] : rawProfile;
+        return {
+            ...item,
+            organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations,
+            submitter: submitter as { full_name: string } | null,
+        };
+    });
 
     return (
         <div className="space-y-6">
@@ -126,6 +173,7 @@ export default async function AccreditationPage() {
                 pendingAccreditations={pendingAccreditations}
                 accreditationHistory={accreditationHistory}
                 officerOrgs={officerOrgs}
+                requirements={requirementsData || []}
             />
         </div>
     );

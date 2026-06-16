@@ -17,13 +17,21 @@ interface EditOrgDialogProps {
         mission?: string | null;
         vision?: string | null;
         core_values?: string | null;
+        category_id?: string | null;
     };
+}
+
+interface Category {
+    id: string;
+    name: string;
 }
 
 export default function EditOrgDialog({ org }: EditOrgDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const [categories, setCategories] = useState<Category[]>([]);
 
     const [logoUrl, setLogoUrl] = useState(org.logo_url || "");
     const [coverPhotoUrl, setCoverPhotoUrl] = useState(org.cover_photo_url || "");
@@ -35,7 +43,20 @@ export default function EditOrgDialog({ org }: EditOrgDialogProps) {
 
     useEffect(() => {
         setMounted(true);
-    }, []);
+        if (open) {
+            fetchCategories();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
+    async function fetchCategories() {
+        const { data, error: _error } = await supabase
+            .from("organization_categories")
+            .select("id, name")
+            .order("name");
+
+        if (data) setCategories(data);
+    }
 
     async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'cover') {
         if (!event.target.files || event.target.files.length === 0) return;
@@ -132,6 +153,21 @@ export default function EditOrgDialog({ org }: EditOrgDialogProps) {
                                                 defaultValue={org.description || ""}
                                                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors resize-none"
                                             />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Organization Category</label>
+                                            <select
+                                                name="category_id"
+                                                defaultValue={org.category_id || ""}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                            >
+                                                <option value="">No Category</option>
+                                                {categories.map((cat) => (
+                                                    <option key={cat.id} value={cat.id}>
+                                                        {cat.name}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">Visibility Level</label>

@@ -1,8 +1,123 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { submitAccreditation, approveAccreditation, rejectAccreditation } from "@/lib/actions/accreditation";
+import { submitAccreditation, updateAccreditationStatus, deleteAccreditationHistory } from "@/lib/actions/accreditation";
 import { useRouter } from "next/navigation";
+import DocumentChecklist, { AccreditationRequirement } from "@/components/accreditation/DocumentChecklist";
+import RecordDecisionModal, { DecisionStatus } from "@/components/accreditation/RecordDecisionModal";
+import AccreditationTimeline from "@/components/accreditation/AccreditationTimeline";
+import DocumentViewerModal from "@/components/accreditation/DocumentViewerModal";
+import { createClient } from "@/lib/supabase/client";
+
+/* ─── HistoryCard sub-component ─────────────────────────────────────── */
+interface HistoryDoc { id: string; file_name: string; storage_path: string; requirement_id: string; downloadUrl?: string; }
+interface HistoryAcc {
+    id: string;
+    academic_year: string;
+    status: string;
+    notes: string | null;
+    submitted_at: string;
+    reviewed_at: string | null;
+    organizations: { name: string } | null;
+    submitter?: { full_name: string } | null;
+    accreditation_documents?: HistoryDoc[] | null;
+}
+
+function HistoryCard({
+    acc,
+    isAdmin,
+    onDocumentClick,
+}: {
+    acc: HistoryAcc;
+    isAdmin: boolean;
+    onDocumentClick: (doc: HistoryDoc) => void;
+}) {
+    const [deleting, startDelete] = useTransition();
+    const router = useRouter();
+
+    const statusColor =
+        acc.status === "approved"
+            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+            : acc.status === "rejected"
+            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+            : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400";
+
+    function handleDelete() {
+        if (!confirm(`Delete the accreditation record for "${acc.organizations?.name}" (${acc.academic_year})? This cannot be undone and will also remove it from officers' history.`)) return;
+        startDelete(async () => {
+            try {
+                await deleteAccreditationHistory(acc.id);
+                router.refresh();
+            } catch (err) {
+                alert(err instanceof Error ? err.message : "Delete failed.");
+            }
+        });
+    }
+
+    return (
+        <div className="p-4 rounded-lg border bg-muted/50 space-y-3">
+            {/* Header row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold">{acc.organizations?.name || "Unknown Organization"}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        Academic Year: <span className="font-medium">{acc.academic_year}</span>
+                    </p>
+                    {acc.submitter?.full_name && (
+                        <p className="text-xs text-muted-foreground">Submitted by: {acc.submitter.full_name}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                        Submitted: {new Date(acc.submitted_at).toLocaleDateString()}
+                        {acc.reviewed_at && (
+                            <> · Reviewed: {new Date(acc.reviewed_at).toLocaleDateString()}</>
+                        )}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColor}`}>
+                        {acc.status === "revalidation_required" ? "Revalidation Required" : acc.status.charAt(0).toUpperCase() + acc.status.slice(1)}
+                    </span>
+                    {isAdmin && (
+                        <button
+                            onClick={handleDelete}
+                            disabled={deleting}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-destructive/40 text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                        >
+                            {deleting ? "Deleting…" : "🗑 Delete"}
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Notes */}
+            {acc.notes && (
+                <div className="px-3 py-2 rounded-md bg-background border text-xs text-muted-foreground italic">
+                    📝 {acc.notes}
+                </div>
+            )}
+
+            {/* Uploaded documents */}
+            {acc.accreditation_documents && acc.accreditation_documents.length > 0 && (
+                <div>
+                    <p className="text-xs font-semibold mb-2">Submitted Documents ({acc.accreditation_documents.length}):</p>
+                    <div className="flex flex-wrap gap-2">
+                        {acc.accreditation_documents.map((doc) => (
+                            <button
+                                key={doc.id}
+                                onClick={() => onDocumentClick(doc)}
+                                className="flex items-center gap-1.5 text-xs bg-background hover:bg-accent border px-2 py-1.5 rounded transition-colors text-left"
+                            >
+                                <span>📄</span>
+                                <span className="truncate max-w-[160px]">{doc.file_name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+/* ─────────────────────────────────────────────────────────────────── */
 
 interface AccreditationEntry {
     id: string;
@@ -16,6 +131,7 @@ interface AccreditationEntry {
     reviewed_at: string | null;
     organizations: { name: string } | null;
     submitter?: { full_name: string } | null;
+    accreditation_documents?: { id: string; file_name: string; storage_path: string; requirement_id: string; downloadUrl?: string }[] | null;
 }
 
 interface OfficerOrg {
@@ -31,6 +147,7 @@ interface AccreditationClientProps {
     pendingAccreditations: AccreditationEntry[];
     accreditationHistory: AccreditationEntry[];
     officerOrgs: OfficerOrg[];
+    requirements: AccreditationRequirement[];
 }
 
 export default function AccreditationClient({
@@ -39,25 +156,70 @@ export default function AccreditationClient({
     pendingAccreditations,
     accreditationHistory,
     officerOrgs,
+    requirements,
 }: AccreditationClientProps) {
     const router = useRouter();
-    const [activeView, setActiveView] = useState<ActiveView>("pending");
+    const [activeView, setActiveView] = useState<ActiveView>(isAdmin ? "pending" : isOfficer ? "submit" : "pending");
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-    const [rejectingId, setRejectingId] = useState<string | null>(null);
-    const [rejectionNotes, setRejectionNotes] = useState("");
+    const [recordingDecisionFor, setRecordingDecisionFor] = useState<{ id: string; orgName: string } | null>(null);
+
+    const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
+    const [cycleType, setCycleType] = useState<"initial" | "revalidation">("initial");
+    const [viewingDocument, setViewingDocument] = useState<{url: string, name: string} | null>(null);
+
+    const handleDocumentClick = async (doc: { downloadUrl?: string; storage_path: string; file_name: string }) => {
+        if (doc.downloadUrl) {
+            setViewingDocument({ url: doc.downloadUrl, name: doc.file_name });
+            return;
+        }
+        try {
+            const supabase = createClient();
+            const { data, error } = await supabase.storage
+                .from("accreditation-documents")
+                .createSignedUrl(doc.storage_path, 3600);
+            if (error) throw error;
+            setViewingDocument({ url: data.signedUrl, name: doc.file_name });
+        } catch (err) {
+            console.error("Failed to load document:", err);
+            alert("Could not load the document. Please try downloading it or contact support.");
+        }
+    };
+
+    const handleFileSelect = (requirementId: string, file: File) => {
+        setSelectedFiles(prev => ({ ...prev, [requirementId]: file }));
+    };
+
+    const initialNames = ['Constitution and By-Laws (CBL)', 'General Plan of Activities (GPOA)', 'Advocacy Plan', 'Tracker Form', 'Waiver of Responsibility', 'Officer\'s Profile', 'Official List of Officers'];
+    const revalidationNames = ['Constitution and By-Laws (CBL)', 'Resolutions', 'Memorandum Order', 'List of Officers/ Organizational Chart', 'General Plan of Activities (GPOA)', 'Minutes of the Meetings', 'Narrative Reports', 'Financial Report', 'Turnover Documents'];
+
+    const isSubmissionComplete = requirements
+        .filter(r => (cycleType === "initial" ? initialNames.includes(r.name) : revalidationNames.includes(r.name)) && r.is_required)
+        .every(r => selectedFiles[r.id]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
         setSuccess("");
+
+        if (!isSubmissionComplete) {
+            setError("Please upload all required documents.");
+            return;
+        }
+
         const formData = new FormData(e.currentTarget);
+        // Append all selected files
+        Object.entries(selectedFiles).forEach(([reqId, file]) => {
+            formData.append(`file_${reqId}`, file);
+        });
+
         startTransition(async () => {
             try {
                 await submitAccreditation(formData);
                 setSuccess("Accreditation application submitted successfully!");
                 setActiveView("pending");
+                setSelectedFiles({}); // Clear form state
                 router.refresh();
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Submission failed.");
@@ -65,34 +227,30 @@ export default function AccreditationClient({
         });
     };
 
-    const handleApprove = (id: string) => {
-        startTransition(async () => {
-            try {
-                await approveAccreditation(id);
-                router.refresh();
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Approval failed.");
-            }
-        });
+    const handleRecordDecision = async (status: DecisionStatus, notes?: string, expiresAt?: string) => {
+        if (!recordingDecisionFor) return;
+
+        try {
+            await updateAccreditationStatus(recordingDecisionFor.id, status, notes, expiresAt);
+            router.refresh();
+        } catch (err) {
+            throw err;
+        }
     };
 
-    const handleReject = (id: string) => {
-        startTransition(async () => {
-            try {
-                await rejectAccreditation(id, rejectionNotes);
-                setRejectingId(null);
-                setRejectionNotes("");
-                router.refresh();
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Rejection failed.");
-            }
-        });
+    const handleProgressUpdate = async (accreditationId: string, newStatus: 'pending' | 'forwarded' | 'deliberating' | 'decision_received') => {
+        try {
+            await updateAccreditationStatus(accreditationId, newStatus);
+            router.refresh();
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to update progress.");
+        }
     };
 
     const views: { key: ActiveView; label: string; icon: string; show: boolean }[] = [
+        { key: "submit", label: "Submit Application", icon: "📝", show: isOfficer && !isAdmin },
         { key: "pending", label: "Pending Review", icon: "⏳", show: true },
         { key: "history", label: "History", icon: "📋", show: true },
-        { key: "submit", label: "Submit Application", icon: "📝", show: isOfficer },
     ];
 
     return (
@@ -134,6 +292,16 @@ export default function AccreditationClient({
             )}
             {success && (
                 <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm">{success}</div>
+            )}
+
+            {/* Modal */}
+            {recordingDecisionFor && (
+                <RecordDecisionModal
+                    accreditationId={recordingDecisionFor.id}
+                    organizationName={recordingDecisionFor.orgName}
+                    onClose={() => setRecordingDecisionFor(null)}
+                    onSave={handleRecordDecision}
+                />
             )}
 
             {/* Pending Review */}
@@ -181,62 +349,86 @@ export default function AccreditationClient({
                                                         📎 View Documents
                                                     </a>
                                                 )}
+                                                {acc.accreditation_documents && acc.accreditation_documents.length > 0 && (
+                                                    <div className="mt-3 space-y-1">
+                                                        <p className="text-xs font-semibold">Uploaded Documents:</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {acc.accreditation_documents.map(doc => (
+                                                                <button
+                                                                    key={doc.id}
+                                                                    onClick={() => handleDocumentClick(doc)}
+                                                                    className="flex items-center gap-1.5 text-xs bg-background hover:bg-accent border px-2 py-1.5 rounded transition-colors text-left"
+                                                                >
+                                                                    <span>📄</span>
+                                                                    <span className="truncate max-w-[150px]">{doc.file_name}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {acc.notes && (
-                                                    <p className="text-xs text-muted-foreground mt-1 italic">
+                                                    <p className="text-xs text-muted-foreground mt-2 italic">
                                                         Notes: {acc.notes}
                                                     </p>
                                                 )}
                                             </div>
                                             {isAdmin && (
                                                 <div className="flex flex-col gap-2 shrink-0">
-                                                    {rejectingId === acc.id ? (
-                                                        <div className="space-y-2 w-48">
-                                                            <textarea
-                                                                value={rejectionNotes}
-                                                                onChange={(e) => setRejectionNotes(e.target.value)}
-                                                                placeholder="Reason for rejection (optional)..."
-                                                                rows={2}
-                                                                className="w-full px-3 py-2 rounded-lg border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                                                            />
-                                                            <div className="flex gap-1.5">
-                                                                <button
-                                                                    onClick={() => handleReject(acc.id)}
-                                                                    disabled={isPending}
-                                                                    className="flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-                                                                >
-                                                                    {isPending ? "..." : "Confirm"}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setRejectingId(null);
-                                                                        setRejectionNotes("");
-                                                                    }}
-                                                                    className="px-2 py-1.5 text-xs font-semibold rounded-lg border hover:bg-accent transition-colors"
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleApprove(acc.id)}
-                                                                disabled={isPending}
-                                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
-                                                            >
-                                                                {isPending ? "..." : "Approve"}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setRejectingId(acc.id)}
-                                                                disabled={isPending}
-                                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                                                            >
-                                                                Reject
-                                                            </button>
-                                                        </>
+                                                    {acc.status === "pending" && (
+                                                        <button
+                                                            onClick={() => handleProgressUpdate(acc.id, "forwarded")}
+                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                                                        >
+                                                            Acknowledge & Forward
+                                                        </button>
+                                                    )}
+                                                    {acc.status === "forwarded" && (
+                                                        <button
+                                                            onClick={() => handleProgressUpdate(acc.id, "deliberating")}
+                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                                                        >
+                                                            Begin Deliberation
+                                                        </button>
+                                                    )}
+                                                    {acc.status === "deliberating" && (
+                                                        <button
+                                                            onClick={() => handleProgressUpdate(acc.id, "decision_received")}
+                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+                                                        >
+                                                            Receive Decision
+                                                        </button>
+                                                    )}
+                                                    {acc.status === "decision_received" && (
+                                                        <button
+                                                            onClick={() => setRecordingDecisionFor({
+                                                                id: acc.id,
+                                                                orgName: acc.organizations?.name || "Unknown Organization"
+                                                            })}
+                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-[#800000] text-white hover:bg-[#800000]/90 transition-colors"
+                                                        >
+                                                            Record Decision
+                                                        </button>
                                                     )}
                                                 </div>
                                             )}
+                                        </div>
+                                        <div className="mt-6 pt-4 border-t">
+                                            <h4 className="text-sm font-semibold mb-4">Tracking</h4>
+                                            <AccreditationTimeline
+                                                status={acc.status}
+                                                submittedAt={acc.submitted_at}
+                                                reviewedAt={acc.reviewed_at}
+                                            />
+                                        </div>
+                                        <div className="mt-6 pt-4 border-t flex justify-end">
+                                            <a
+                                                href={`/dashboard/accreditation/${acc.id}/manifest`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-4 py-2 text-sm font-medium rounded-lg border bg-background hover:bg-accent text-foreground transition-colors inline-flex items-center gap-2"
+                                            >
+                                                📄 Export for Commission
+                                            </a>
                                         </div>
                                     </div>
                                 ))}
@@ -251,7 +443,9 @@ export default function AccreditationClient({
                 <section className="rounded-xl border bg-card overflow-hidden">
                     <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-500/5 to-transparent">
                         <h3 className="font-semibold text-foreground">📋 Accreditation History</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">Past accreditation decisions</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            {isAdmin ? "All completed accreditation records — only admins can delete entries" : "Past accreditation decisions for your organizations"}
+                        </p>
                     </div>
                     <div className="p-4">
                         {accreditationHistory.length === 0 ? (
@@ -260,37 +454,14 @@ export default function AccreditationClient({
                                 <p className="text-sm text-muted-foreground">No accreditation history yet.</p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
+                            <div className="space-y-4">
                                 {accreditationHistory.map((acc) => (
-                                    <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium truncate">
-                                                {acc.organizations?.name || "Unknown Org"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {acc.academic_year} · Reviewed{" "}
-                                                {acc.reviewed_at
-                                                    ? new Date(acc.reviewed_at).toLocaleDateString()
-                                                    : "N/A"}
-                                            </p>
-                                            {acc.notes && (
-                                                <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">
-                                                    {acc.notes}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <span
-                                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ml-3 ${
-                                                acc.status === "approved"
-                                                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                                    : acc.status === "rejected"
-                                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                                                    : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                                            }`}
-                                        >
-                                            {acc.status.charAt(0).toUpperCase() + acc.status.slice(1)}
-                                        </span>
-                                    </div>
+                                    <HistoryCard
+                                        key={acc.id}
+                                        acc={acc}
+                                        isAdmin={isAdmin}
+                                        onDocumentClick={handleDocumentClick}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -316,49 +487,78 @@ export default function AccreditationClient({
                                 </p>
                             </div>
                         ) : (
-                            <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1.5">
-                                        Organization <span className="text-destructive">*</span>
-                                    </label>
-                                    <select
-                                        name="organization_id"
-                                        required
-                                        className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                    >
-                                        <option value="">Select an organization</option>
-                                        {officerOrgs.map((org) => (
-                                            <option key={org.id} value={org.id}>
-                                                {org.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                            <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1.5">
+                                            Organization <span className="text-destructive">*</span>
+                                        </label>
+                                        <select
+                                            name="organization_id"
+                                            required
+                                            className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                        >
+                                            <option value="">Select an organization</option>
+                                            {officerOrgs.map((org) => (
+                                                <option key={org.id} value={org.id}>
+                                                    {org.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1.5">
+                                            Academic Year <span className="text-destructive">*</span>
+                                        </label>
+                                        <input
+                                            name="academic_year"
+                                            required
+                                            placeholder="e.g., 2025-2026"
+                                            className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                        />
+                                    </div>
                                 </div>
+                                
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5">
-                                        Academic Year <span className="text-destructive">*</span>
+                                        Cycle Type <span className="text-destructive">*</span>
                                     </label>
-                                    <input
-                                        name="academic_year"
-                                        required
-                                        placeholder="e.g., 2025-2026"
-                                        className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="cycle_type" 
+                                                value="initial" 
+                                                checked={cycleType === "initial"}
+                                                onChange={() => setCycleType("initial")}
+                                                className="accent-primary" 
+                                            />
+                                            <span className="text-sm">Initial Accreditation</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="cycle_type" 
+                                                value="revalidation" 
+                                                checked={cycleType === "revalidation"}
+                                                onChange={() => setCycleType("revalidation")}
+                                                className="accent-primary" 
+                                            />
+                                            <span className="text-sm">Revalidation</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t">
+                                    <h4 className="text-sm font-semibold mb-3">Required Documents</h4>
+                                    <DocumentChecklist
+                                        requirements={requirements}
+                                        selectedFiles={selectedFiles}
+                                        onFileSelect={handleFileSelect}
+                                        cycleType={cycleType}
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1.5">
-                                        Documents URL
-                                    </label>
-                                    <input
-                                        name="documents_url"
-                                        type="url"
-                                        placeholder="https://drive.google.com/..."
-                                        className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        Link to your accreditation documents (Google Drive, etc.)
-                                    </p>
-                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5">
                                         Notes
@@ -370,10 +570,11 @@ export default function AccreditationClient({
                                         className="w-full px-3 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                     />
                                 </div>
+                                
                                 <button
                                     type="submit"
-                                    disabled={isPending}
-                                    className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                    disabled={isPending || !isSubmissionComplete}
+                                    className="px-6 py-2.5 rounded-lg bg-[#800000] text-white text-sm font-medium hover:bg-[#800000]/90 transition-colors disabled:opacity-50"
                                 >
                                     {isPending ? "Submitting..." : "Submit Application"}
                                 </button>
@@ -381,6 +582,14 @@ export default function AccreditationClient({
                         )}
                     </div>
                 </section>
+            )}
+
+            {viewingDocument && (
+                <DocumentViewerModal
+                    fileUrl={viewingDocument.url}
+                    fileName={viewingDocument.name}
+                    onClose={() => setViewingDocument(null)}
+                />
             )}
         </div>
     );
