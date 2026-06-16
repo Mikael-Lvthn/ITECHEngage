@@ -36,16 +36,7 @@ export interface PendingAccreditation {
     organizations: { name: string } | null;
 }
 
-export interface AuditLogEntry {
-    id: string;
-    actor_id: string | null;
-    action: string;
-    entity_type: string;
-    entity_id: string | null;
-    metadata: unknown;
-    created_at: string;
-    profiles: { full_name: string } | null;
-}
+
 
 export interface Category {
     id: string;
@@ -105,7 +96,6 @@ interface AdminPanelClientProps {
     membershipRequests: MembershipRequest[];
     pendingEvents: PendingEvent[];
     pendingAccreditations: PendingAccreditation[];
-    auditLogs: AuditLogEntry[];
     categories: Category[];
     organizations: Organization[];
     pendingLeaveRequests: LeaveRequest[];
@@ -138,7 +128,6 @@ export default function AdminPanelClient({
     membershipRequests,
     pendingEvents,
     pendingAccreditations,
-    auditLogs,
     categories,
     organizations,
     pendingLeaveRequests,
@@ -229,7 +218,7 @@ export default function AdminPanelClient({
                 )}
                 {activeTab === "comms" && <CommsTab organizations={organizations} />}
                 {activeTab === "config" && (
-                    <ConfigTab auditLogs={auditLogs} categories={categories} />
+                    <ConfigTab categories={categories} />
                 )}
             </div>
         </div>
@@ -938,7 +927,7 @@ function CommsTab({ organizations }: { organizations: Organization[] }) {
 }
 
 /* ---------- Tab 4: Configuration ---------- */
-function ConfigTab({ auditLogs, categories }: { auditLogs: AuditLogEntry[]; categories: Category[] }) {
+function ConfigTab({ categories }: { categories: Category[] }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [showCatForm, setShowCatForm] = useState(false);
@@ -1047,39 +1036,6 @@ function ConfigTab({ auditLogs, categories }: { auditLogs: AuditLogEntry[]; cate
                                         >
                                             {isPending && deletingId === cat.id ? "..." : "Delete"}
                                         </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {/* Audit Logs */}
-            <section className="rounded-xl border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-500/5 to-transparent">
-                    <h3 className="font-semibold text-foreground">📝 Audit Logs</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Recent system activity and changes</p>
-                </div>
-                <div className="p-4">
-                    {auditLogs.length === 0 ? (
-                        <EmptyState icon="📝" message="No audit log entries yet. Activity will be recorded as actions occur." />
-                    ) : (
-                        <div className="space-y-2">
-                            {auditLogs.map((log) => (
-                                <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
-                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                                        <span className="text-xs">📋</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm">
-                                            <span className="font-medium">{log.profiles?.full_name || "System"}</span>
-                                            {" "}<span className="text-muted-foreground">{log.action}</span>
-                                            {" on "}<span className="font-medium">{log.entity_type}</span>
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                            {new Date(log.created_at).toLocaleString()}
-                                        </p>
                                     </div>
                                 </div>
                             ))}

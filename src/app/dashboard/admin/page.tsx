@@ -4,7 +4,6 @@ import AdminPanelClient, {
     MembershipRequest, 
     PendingEvent, 
     PendingAccreditation, 
-    AuditLogEntry, 
     Category, 
     Organization, 
     LeaveRequest,
@@ -67,7 +66,6 @@ export default async function AdminPage({ searchParams }: Props) {
         membershipRequestsResult,
         pendingEventsResult,
         pendingAccreditationsResult,
-        auditLogsResult,
         categoriesResult,
         organizationsListResult,
         pendingLeaveResult,
@@ -95,11 +93,6 @@ export default async function AdminPage({ searchParams }: Props) {
             .select("id, organization_id, status, submitted_at, organizations(name)")
             .eq("status", "pending")
             .order("submitted_at", { ascending: false })
-            .limit(50),
-        supabase
-            .from("audit_logs")
-            .select("id, actor_id, action, entity_type, entity_id, metadata, created_at, profiles(full_name)")
-            .order("created_at", { ascending: false })
             .limit(50),
         supabase
             .from("organization_categories")
@@ -181,10 +174,6 @@ export default async function AdminPage({ searchParams }: Props) {
                     ...item,
                     organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
                 })) as PendingAccreditation[]}
-                auditLogs={(auditLogsResult.data || []).map(item => ({
-                    ...item,
-                    profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
-                })) as AuditLogEntry[]}
                 categories={(categoriesResult.data as Category[]) || []}
                 organizations={(organizationsListResult.data as Organization[]) || []}
                 pendingLeaveRequests={(pendingLeaveResult.data || []).map(normalizeLeaveRequest) as LeaveRequest[]}
