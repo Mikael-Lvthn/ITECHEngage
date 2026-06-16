@@ -229,48 +229,6 @@ Create a `.env.local` file in the root of the project:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_public_anon_key
 ```
-
-### 3. Run Database Migrations
-Apply the SQL migrations located in the `/supabase/migrations/` directory. Ensure the trigger function responsible for populating user records is updated:
-```sql
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, role, account_status)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
-    'student',
-    CASE WHEN NEW.raw_user_meta_data->>'registration_type' = 'faculty' 
-         THEN 'verified' ELSE 'pending_verification' END
-  );
-  
-  IF NEW.raw_user_meta_data->>'registration_type' = 'student' THEN
-    INSERT INTO public.students (id, student_number, course, section, year_level, school_email, personal_email, contact_number)
-    VALUES (
-      NEW.id,
-      COALESCE(NEW.raw_user_meta_data->>'student_number', ''),
-      COALESCE(NEW.raw_user_meta_data->>'course', ''),
-      COALESCE(NEW.raw_user_meta_data->>'section', ''),
-      COALESCE((NEW.raw_user_meta_data->>'year_level')::int, 1),
-      NEW.raw_user_meta_data->>'school_email',
-      NEW.raw_user_meta_data->>'personal_email',
-      NEW.raw_user_meta_data->>'contact_number'
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$;
-```
-
-### 4. Run the Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
 ## 📚 Project Structure
 
 ```
