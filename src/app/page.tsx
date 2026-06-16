@@ -33,7 +33,7 @@ export default async function HomePage({
 
     let profile: { full_name: string; role: string; account_status: string } | null = null;
     let electionsWithFollow = activeElections;
-    
+
     if (user) {
         const [profileData, followedElections] = await Promise.all([
             supabase
@@ -238,202 +238,202 @@ export default async function HomePage({
 
             {/* ═══ Events ═══ */}
             <ScrollReveal>
-            <section id="events" className="max-w-5xl mx-auto px-6 mt-14">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Upcoming Events
-                </h2>
-                {events && events.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {events.map((ev) => (
-                            <Link
-                                key={ev.id}
-                                href={user ? `/dashboard/events/${ev.id}` : "/login"}
-                                className="rounded-xl border border-border overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all bg-card cursor-pointer group"
-                            >
-                                <div className="h-28 bg-gradient-to-br from-[#800000] to-[#600000] flex items-center justify-center text-3xl">
-                                    📅
-                                </div>
-                                <div className="p-4">
-                                    <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:text-[#800000] transition-colors">
-                                        {ev.title}
-                                    </h3>
-                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                        {ev.description || "No description"}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground mt-2">
-                                        📍 {ev.location}
-                                    </p>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="rounded-xl border border-border bg-card p-10 text-center">
-                        <p className="text-3xl mb-3">📅</p>
-                        <p className="text-sm text-muted-foreground">No upcoming events yet. Check back soon!</p>
-                    </div>
-                )}
-            </section>
+                <section id="events" className="max-w-5xl mx-auto px-6 mt-14">
+                    <h2 className="text-2xl font-bold text-foreground mb-6">
+                        Upcoming Events
+                    </h2>
+                    {events && events.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {events.map((ev) => (
+                                <Link
+                                    key={ev.id}
+                                    href={user ? `/dashboard/events/${ev.id}` : "/login"}
+                                    className="rounded-xl border border-border overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all bg-card cursor-pointer group"
+                                >
+                                    <div className="h-28 bg-gradient-to-br from-[#800000] to-[#600000] flex items-center justify-center text-3xl">
+                                        📅
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:text-[#800000] transition-colors">
+                                            {ev.title}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                            {ev.description || "No description"}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-2">
+                                            📍 {ev.location}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-border bg-card p-10 text-center">
+                            <p className="text-3xl mb-3">📅</p>
+                            <p className="text-sm text-muted-foreground">No upcoming events yet. Check back soon!</p>
+                        </div>
+                    )}
+                </section>
             </ScrollReveal>
 
             {/* ═══ Organizations ═══ */}
             <ScrollReveal delay={100}>
-            <section id="organizations" className="max-w-5xl mx-auto px-6 mt-14">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Student Organizations
-                </h2>
-                <HomepageOrgFilter
-                    organizations={organizations}
-                    categories={categories}
-                    isLoggedIn={!!user}
-                />
-            </section>
+                <section id="organizations" className="max-w-5xl mx-auto px-6 mt-14">
+                    <h2 className="text-2xl font-bold text-foreground mb-6">
+                        Student Organizations
+                    </h2>
+                    <HomepageOrgFilter
+                        organizations={organizations}
+                        categories={categories}
+                        isLoggedIn={!!user}
+                    />
+                </section>
             </ScrollReveal>
 
             {/* ═══ News ═══ */}
             <ScrollReveal delay={100}>
-            <section id="news" className="max-w-5xl mx-auto px-6 mt-14">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Latest News */}
-                    <div className="lg:col-span-2">
-                        <h2 className="text-2xl font-bold text-foreground mb-6">
-                            Latest News
-                        </h2>
-                        <div className="space-y-4">
-                            {combinedFeed.length === 0 ? (
-                                <div className="rounded-xl border border-border p-8 bg-card text-center text-muted-foreground text-sm">
-                                    No published news or recruitment posts yet.
-                                </div>
-                            ) : (
-                                combinedFeed.map((post) => (
-                                    <Link
-                                        key={`${post.type}-${post.id}`}
-                                        href={user ? post.link : "/login"}
-                                        className="block rounded-xl border border-border bg-card overflow-hidden transition-colors hover:bg-accent/30 group"
-                                    >
-                                        <div className={`h-1 ${post.type === "recruitment" ? "bg-gradient-to-r from-green-500 to-green-400" : "bg-gradient-to-r from-[#800000] to-[#A52A2A]"}`} />
-                                        <div className="p-5">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0 text-xl">
-                                                    {post.type === "recruitment" ? "📋" : "📰"}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border capitalize ${post.type === "recruitment" ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"}`}>
-                                                            {post.type}
-                                                        </span>
-                                                        {post.organizations && (
-                                                            <span className="text-[10px] text-muted-foreground">{(post.organizations as { name: string }).name}</span>
-                                                        )}
+                <section id="news" className="max-w-5xl mx-auto px-6 mt-14">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Latest News */}
+                        <div className="lg:col-span-2">
+                            <h2 className="text-2xl font-bold text-foreground mb-6">
+                                Latest News
+                            </h2>
+                            <div className="space-y-4">
+                                {combinedFeed.length === 0 ? (
+                                    <div className="rounded-xl border border-border p-8 bg-card text-center text-muted-foreground text-sm">
+                                        No published news or recruitment posts yet.
+                                    </div>
+                                ) : (
+                                    combinedFeed.map((post) => (
+                                        <Link
+                                            key={`${post.type}-${post.id}`}
+                                            href={user ? post.link : "/login"}
+                                            className="block rounded-xl border border-border bg-card overflow-hidden transition-colors hover:bg-accent/30 group"
+                                        >
+                                            <div className={`h-1 ${post.type === "recruitment" ? "bg-gradient-to-r from-green-500 to-green-400" : "bg-gradient-to-r from-[#800000] to-[#A52A2A]"}`} />
+                                            <div className="p-5">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0 text-xl">
+                                                        {post.type === "recruitment" ? "📋" : "📰"}
                                                     </div>
-                                                    <h3 className="font-semibold text-foreground leading-tight group-hover:text-[#800000] transition-colors">{post.title}</h3>
-                                                    {post.body && (
-                                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{post.body}</p>
-                                                    )}
-                                                    <div className="flex items-center gap-3 mt-2">
-                                                        <p className="text-[10px] text-muted-foreground">
-                                                            {new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                                        </p>
-                                                        <span className="text-[10px] font-semibold text-[#800000] group-hover:underline">
-                                                            View →
-                                                        </span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border capitalize ${post.type === "recruitment" ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"}`}>
+                                                                {post.type}
+                                                            </span>
+                                                            {post.organizations && (
+                                                                <span className="text-[10px] text-muted-foreground">{(post.organizations as { name: string }).name}</span>
+                                                            )}
+                                                        </div>
+                                                        <h3 className="font-semibold text-foreground leading-tight group-hover:text-[#800000] transition-colors">{post.title}</h3>
+                                                        {post.body && (
+                                                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{post.body}</p>
+                                                        )}
+                                                        <div className="flex items-center gap-3 mt-2">
+                                                            <p className="text-[10px] text-muted-foreground">
+                                                                {new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                                            </p>
+                                                            <span className="text-[10px] font-semibold text-[#800000] group-hover:underline">
+                                                                View →
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Link>
-                                ))
-                            )}
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Campus Links */}
-                    <div>
-                        <h2 className="text-2xl font-bold text-foreground mb-6">
-                            Campus Links
-                        </h2>
-                        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                            {[
-                                { label: "PUP Official Website", url: "https://www.pup.edu.ph" },
-                                { label: "PUP SIS (Student Portal)", url: "https://sis2.pup.edu.ph/" },
-                                { label: "PUPLMS", url: "https://lms.pup.edu.ph/maincampus/" },
-                                { label: "Academic Calendar", url: "https://www.pup.edu.ph/about/calendar" },
-                            ].map((link, i) => (
-                                <a
-                                    key={i}
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-sm text-[#800000] dark:text-[#C9A227] hover:text-[#600000] dark:hover:text-[#b8911f] hover:underline transition-colors"
-                                >
-                                    <span className="text-xs">🔗</span>
-                                    {link.label}
-                                </a>
-                            ))}
+                        {/* Campus Links */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-foreground mb-6">
+                                Campus Links
+                            </h2>
+                            <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                                {[
+                                    { label: "PUP Official Website", url: "https://www.pup.edu.ph" },
+                                    { label: "PUP SIS (Student Portal)", url: "https://sis2.pup.edu.ph/" },
+                                    { label: "PUPLMS", url: "https://lms.pup.edu.ph/maincampus/" },
+                                    { label: "Academic Calendar", url: "https://www.pup.edu.ph/about/calendar" },
+                                ].map((link, i) => (
+                                    <a
+                                        key={i}
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-[#800000] dark:text-[#C9A227] hover:text-[#600000] dark:hover:text-[#b8911f] hover:underline transition-colors"
+                                    >
+                                        <span className="text-xs">🔗</span>
+                                        {link.label}
+                                    </a>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
             </ScrollReveal>
 
             {/* ═══ Role Highlights ═══ */}
             <ScrollReveal delay={80}>
-            <section id="about" className="max-w-5xl mx-auto px-6 mt-14">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Get Involved Based on Your Role
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                        {
-                            role: "🎓 Student",
-                            items: [
-                                "Join student organizations",
-                                "Register for campus events",
-                                "Track your involvement",
-                            ],
-                            color: "border-[#800000]",
-                        },
-                        {
-                            role: "🛡️ Student Officer",
-                            items: [
-                                "Manage organization members",
-                                "Create and publish events",
-                                "Submit accreditation documents",
-                                "Vote in elections",
-                            ],
-                            color: "border-[#C9A227]",
-                        },
-                        {
-                            role: "⚙️ Administrator",
-                            items: [
-                                "Approve organizations",
-                                "Review accreditation",
-                                "Manage elections",
-                                "Platform oversight",
-                            ],
-                            color: "border-border dark:border-[#2B2B2B]",
-                        },
-                    ].map((r, i) => (
-                        <div
-                            key={i}
-                            className={`rounded-xl border-2 ${r.color} p-5 bg-card`}
-                        >
-                            <h3 className="font-bold text-lg text-foreground">{r.role}</h3>
-                            <ul className="mt-3 space-y-2">
-                                {r.items.map((item, j) => (
-                                    <li
-                                        key={j}
-                                        className="flex items-start gap-2 text-sm text-muted-foreground"
-                                    >
-                                        <span className="text-[#C9A227] mt-0.5">✦</span>
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                <section id="about" className="max-w-5xl mx-auto px-6 mt-14">
+                    <h2 className="text-2xl font-bold text-foreground mb-6">
+                        Get Involved Based on Your Role
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[
+                            {
+                                role: "🎓 Student",
+                                items: [
+                                    "Join student organizations",
+                                    "Register for campus events",
+                                    "Track your involvement",
+                                ],
+                                color: "border-[#800000]",
+                            },
+                            {
+                                role: "🛡️ Student Officer",
+                                items: [
+                                    "Manage organization members",
+                                    "Create and publish events",
+                                    "Submit accreditation documents",
+                                    "Vote in elections",
+                                ],
+                                color: "border-[#C9A227]",
+                            },
+                            {
+                                role: "⚙️ Administrator",
+                                items: [
+                                    "Approve organizations",
+                                    "Review accreditation",
+                                    "Manage elections",
+                                    "Platform oversight",
+                                ],
+                                color: "border-border dark:border-[#2B2B2B]",
+                            },
+                        ].map((r, i) => (
+                            <div
+                                key={i}
+                                className={`rounded-xl border-2 ${r.color} p-5 bg-card`}
+                            >
+                                <h3 className="font-bold text-lg text-foreground">{r.role}</h3>
+                                <ul className="mt-3 space-y-2">
+                                    {r.items.map((item, j) => (
+                                        <li
+                                            key={j}
+                                            className="flex items-start gap-2 text-sm text-muted-foreground"
+                                        >
+                                            <span className="text-[#C9A227] mt-0.5">✦</span>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             </ScrollReveal>
 
             {/* ═══ CTA ═══ */}
@@ -515,7 +515,7 @@ export default async function HomePage({
                     </div>
                     <div className="border-t border-white/10 pt-6 text-xs text-center">
                         © 2026 ITECHEngage — Polytechnic University of the Philippines,
-                        Institute of Technology. All rights reserved.
+                        Institute of Technology.
                     </div>
                 </div>
             </footer>
