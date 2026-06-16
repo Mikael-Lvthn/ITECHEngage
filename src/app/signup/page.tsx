@@ -134,6 +134,7 @@ export default function SignupPage() {
             email,
             password,
             options: {
+                emailRedirectTo: `${location.origin}/auth/callback`,
                 data: {
                     full_name: fullName,
                     registration_type: registrationType,
