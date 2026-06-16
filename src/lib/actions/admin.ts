@@ -383,6 +383,21 @@ export async function createBulletinPost(formData: FormData) {
     revalidatePath("/");
 }
 
+export async function deleteBulletinPost(postId: string) {
+    const { supabase } = await requireAdmin();
+
+    const { error } = await supabase
+        .from("bulletin_board_posts")
+        .delete()
+        .eq("id", postId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard/bulletin");
+    revalidatePath("/");
+}
+
 // ─── User Management Actions (Task 17e) ────────────────────────────────────
 
 import { createAdminClient } from "@/lib/supabase/admin";

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteBulletinButton } from "./DeleteBulletinButton";
 
 /* ─── Type config ──────────────────────────────────────────────────── */
 const TYPE_CONFIG: Record<string, { label: string; bg: string; text: string; accent: string }> = {
@@ -42,6 +43,7 @@ interface Post {
     pinned: boolean;
     created_at: string;
     organizations: { name: string } | null;
+    isBulletinBoard: boolean;
 }
 
 /* ─── Server Component ─────────────────────────────────────────────── */
@@ -50,6 +52,9 @@ export default async function BulletinPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect("/login");
+
+    const { data: role } = await supabase.rpc("get_my_role");
+    const isAdmin = role === "admin";
 
     /* Parallel data fetch */
     const [
@@ -99,6 +104,7 @@ export default async function BulletinPage() {
     const bulletinPosts: Post[] = (bulletinResult.data || []).map((p) => ({
         ...p,
         organizations: Array.isArray(p.organizations) ? p.organizations[0] : p.organizations,
+        isBulletinBoard: true,
     })) as Post[];
 
     /* Top news (>3 likes) */
@@ -116,6 +122,7 @@ export default async function BulletinPage() {
             pinned: false,
             created_at: n.created_at,
             organizations: Array.isArray(n.organizations) ? n.organizations[0] : n.organizations,
+            isBulletinBoard: false,
         }));
 
     /* Top events (>3 likes) */
@@ -133,6 +140,7 @@ export default async function BulletinPage() {
             pinned: false,
             created_at: e.created_at,
             organizations: Array.isArray(e.organizations) ? e.organizations[0] : e.organizations,
+            isBulletinBoard: false,
         }));
 
     /* Active recruitments */
@@ -145,6 +153,7 @@ export default async function BulletinPage() {
         pinned: false,
         created_at: r.created_at,
         organizations: Array.isArray(r.organizations) ? r.organizations[0] : r.organizations,
+        isBulletinBoard: false,
     }));
 
     /* Merge & sort: pinned first, then by date */
@@ -243,7 +252,7 @@ export default async function BulletinPage() {
                                 </p>
                                 <div className="columns-2 gap-3 space-y-0">
                                     {pinnedPosts.map((post) => (
-                                        <PostCard key={`pin-${post.id}`} post={post} />
+                                        <PostCard key={`pin-${post.id}`} post={post} isAdmin={isAdmin} />
                                     ))}
                                 </div>
                             </div>
@@ -253,7 +262,7 @@ export default async function BulletinPage() {
                         {recentPosts.length > 0 && (
                             <div className="columns-2 gap-3">
                                 {recentPosts.map((post) => (
-                                    <PostCard key={`${post.type}-${post.id}`} post={post} />
+                                    <PostCard key={`${post.type}-${post.id}`} post={post} isAdmin={isAdmin} />
                                 ))}
                             </div>
                         )}
@@ -323,7 +332,7 @@ export default async function BulletinPage() {
 }
 
 /* ─── Post Card ────────────────────────────────────────────────────── */
-function PostCard({ post }: { post: Post }) {
+function PostCard({ post, isAdmin }: { post: Post; isAdmin: boolean }) {
     const cfg = getConfig(post.type);
     const cardBg = getCardBg(post.type, post.pinned);
     const orgName = (post.organizations as { name: string } | null)?.name;
@@ -337,6 +346,10 @@ function PostCard({ post }: { post: Post }) {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                 <div className={`w-3 h-3 rounded-full ${cfg.bg} ring-2 ring-white shadow-sm`} />
             </div>
+
+            {isAdmin && post.isBulletinBoard && (
+                <DeleteBulletinButton postId={post.id} />
+            )}
 
             <div className="px-4 pt-5 pb-4">
                 {/* Badges */}
