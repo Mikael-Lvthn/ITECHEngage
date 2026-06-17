@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     title: "ITECHEngage — Campus Engagement Platform",
     description:
         "Connect with student organizations, attend events, and engage with the PUP ITECH community.",
+    icons: {
+        icon: "/icon.png",
+    },
 };
 
 export default function RootLayout({
