@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { CalendarDays, Building2, BarChart3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getHomepagePublicData, getHomepageElectionsWithFollowStatus } from "@/lib/homepage-data";
 import UserMenu from "@/components/UserMenu";
@@ -206,19 +207,19 @@ export default async function HomePage({
             <section className="-mt-8 relative z-10 max-w-5xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                     {
-                        icon: "🏢",
+                        icon: <Building2 className="w-8 h-8" />,
                         title: "Find Organizations",
                         desc: "Browse clubs, councils, and more",
                         href: user ? "/dashboard/organizations" : "/login",
                     },
                     {
-                        icon: "📅",
+                        icon: <CalendarDays className="w-8 h-8" />,
                         title: "Attend Events",
                         desc: "RSVP for campus activities",
                         href: user ? "/dashboard/news-and-events" : "/login",
                     },
                     {
-                        icon: "📊",
+                        icon: <BarChart3 className="w-8 h-8" />,
                         title: "Track My Involvement",
                         desc: "View your memberships and history",
                         href: user ? "/dashboard/memberships" : "/login",
@@ -229,7 +230,7 @@ export default async function HomePage({
                         href={card.href}
                         className="rounded-xl bg-card border border-border p-5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all group"
                     >
-                        <span className="text-3xl">{card.icon}</span>
+                        <div className="text-muted-foreground group-hover:text-[#800000] transition-colors">{card.icon}</div>
                         <h3 className="mt-2 font-semibold text-foreground group-hover:text-[#800000] transition-colors">
                             {card.title}
                         </h3>
@@ -256,7 +257,7 @@ export default async function HomePage({
                                     className="rounded-xl border border-border overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all bg-card cursor-pointer group"
                                 >
                                     <div className="h-28 bg-gradient-to-br from-[#800000] to-[#600000] flex items-center justify-center text-3xl">
-                                        📅
+                                        <CalendarDays className="w-10 h-10 text-white/80" />
                                     </div>
                                     <div className="p-4">
                                         <h3 className="font-semibold text-sm text-foreground line-clamp-1 group-hover:text-[#800000] transition-colors">
@@ -273,8 +274,8 @@ export default async function HomePage({
                             ))}
                         </div>
                     ) : (
-                        <div className="rounded-xl border border-border bg-card p-10 text-center">
-                            <p className="text-3xl mb-3">📅</p>
+                        <div className="rounded-xl border border-border bg-card p-10 flex flex-col items-center justify-center text-center">
+                            <CalendarDays className="w-10 h-10 mb-3 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">No upcoming events yet. Check back soon!</p>
                         </div>
                     )}
