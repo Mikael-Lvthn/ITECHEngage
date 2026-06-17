@@ -292,7 +292,7 @@ export async function deleteCategory(categoryId: string) {
     revalidatePath("/dashboard/admin");
 }
 
-export async function verifyUserAccount(userId: string) {
+export async function verifyUserAccount(userId: string, promoteToAdmin: boolean = false) {
     const { supabase } = await requireAdmin();
 
     // Fetch user details first to get their role and school email if they are a student
@@ -302,9 +302,17 @@ export async function verifyUserAccount(userId: string) {
         .eq("id", userId)
         .single();
 
+    const updateData: { account_status: string; role?: string } = {
+        account_status: "verified"
+    };
+
+    if (promoteToAdmin) {
+        updateData.role = "admin";
+    }
+
     const { error } = await supabase
         .from("profiles")
-        .update({ account_status: "verified" })
+        .update(updateData)
         .eq("id", userId);
 
     if (error) throw new Error(error.message);
@@ -317,13 +325,14 @@ export async function verifyUserAccount(userId: string) {
         status: "unread",
     });
 
-    // Send welcome email if the user is a student and has a school email
-    if (userProfile && userProfile.role === "student") {
+    // Send welcome email to the newly verified user
+    if (userProfile) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const student = userProfile.students as any;
-        const schoolEmail = student?.school_email || userProfile.email;
-        if (schoolEmail) {
-            sendSchoolEmail(schoolEmail, userProfile.full_name).catch((err) => {
+        const emailToSend = student?.school_email || userProfile.email;
+        const roleToSend = promoteToAdmin ? "admin" : userProfile.role;
+        if (emailToSend) {
+            sendSchoolEmail(emailToSend, userProfile.full_name, roleToSend).catch((err) => {
                 console.error("Failed to send welcome email for verified user:", userId, err);
             });
         }
@@ -435,7 +444,7 @@ export async function bulkDeleteUsers(userIds: string[]) {
     revalidatePath("/dashboard/admin");
 }
 
-export async function bulkVerifyUsers(userIds: string[]) {
+export async function bulkVerifyUsers(userIds: string[], promoteToAdmin: boolean = false) {
     const { supabase } = await requireAdmin();
     if (!userIds.length) return;
 
@@ -445,9 +454,17 @@ export async function bulkVerifyUsers(userIds: string[]) {
         .select("id, email, full_name, role, students(school_email)")
         .in("id", userIds);
 
+    const updateData: { account_status: string; role?: string } = {
+        account_status: "verified"
+    };
+
+    if (promoteToAdmin) {
+        updateData.role = "admin";
+    }
+
     const { error } = await supabase
         .from("profiles")
-        .update({ account_status: "verified" })
+        .update(updateData)
         .in("id", userIds);
 
     if (error) throw new Error(error.message);
@@ -465,15 +482,14 @@ export async function bulkVerifyUsers(userIds: string[]) {
         await supabase.from("notifications").insert(notifications);
 
         for (const userProfile of userProfiles) {
-            if (userProfile.role === "student") {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const student = userProfile.students as any;
-                const schoolEmail = student?.school_email || userProfile.email;
-                if (schoolEmail) {
-                    sendSchoolEmail(schoolEmail, userProfile.full_name).catch((err) => {
-                        console.error("Failed to send welcome email for verified user in bulk:", userProfile.id, err);
-                    });
-                }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const student = userProfile.students as any;
+            const emailToSend = student?.school_email || userProfile.email;
+            const roleToSend = promoteToAdmin ? "admin" : userProfile.role;
+            if (emailToSend) {
+                sendSchoolEmail(emailToSend, userProfile.full_name, roleToSend).catch((err) => {
+                    console.error("Failed to send welcome email for verified user in bulk:", userProfile.id, err);
+                });
             }
         }
     }

@@ -100,7 +100,8 @@ interface AdminPanelClientProps {
     organizations: Organization[];
     pendingLeaveRequests: LeaveRequest[];
     leaveHistory: LeaveRequest[];
-    pendingVerificationUsers: PendingVerificationUser[];
+    pendingStudents: PendingVerificationUser[];
+    pendingAdmins: PendingVerificationUser[];
     allUsers: ManagementUser[];
     totalUsersCount: number;
     stats: {
@@ -132,7 +133,8 @@ export default function AdminPanelClient({
     organizations,
     pendingLeaveRequests,
     leaveHistory,
-    pendingVerificationUsers,
+    pendingStudents,
+    pendingAdmins,
     allUsers,
     totalUsersCount,
     stats,
@@ -199,10 +201,13 @@ export default function AdminPanelClient({
             {/* Tab Content */}
             <div className="animate-scale-in">
                 {activeTab === "verification" && (
-                    <VerificationTab pendingUsers={pendingVerificationUsers} />
+                    <VerificationTab pendingStudents={pendingStudents} pendingAdmins={pendingAdmins} />
                 )}
                 {activeTab === "users" && (
-                    <UserManagementTab users={allUsers} totalCount={totalUsersCount} />
+                    <UserManagementTab
+                        users={allUsers}
+                        totalCount={totalUsersCount}
+                    />
                 )}
                 {activeTab === "roster" && (
                     <RosterTab
@@ -1033,16 +1038,22 @@ function ConfigTab({ categories }: { categories: Category[] }) {
 }
 
 /* ---------- Verification Tab ---------- */
-function VerificationTab({ pendingUsers }: { pendingUsers: PendingVerificationUser[] }) {
+function VerificationTab({
+    pendingStudents,
+    pendingAdmins,
+}: {
+    pendingStudents: PendingVerificationUser[];
+    pendingAdmins: PendingVerificationUser[];
+}) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [actioningId, setActioningId] = useState<string | null>(null);
 
-    function handleVerify(userId: string) {
+    function handleVerify(userId: string, promoteToAdmin = false) {
         setActioningId(userId);
         startTransition(async () => {
             try {
-                await verifyUserAccount(userId);
+                await verifyUserAccount(userId, promoteToAdmin);
                 router.refresh();
             } catch (err) {
                 console.error("Verify failed:", getErrorMessage(err));
@@ -1067,15 +1078,18 @@ function VerificationTab({ pendingUsers }: { pendingUsers: PendingVerificationUs
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
+            {/* ── Student Verification ── */}
             <section className="rounded-xl border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-green-500/5 to-transparent">
-                    <h3 className="font-semibold text-foreground">🆕 Pending Account Verification</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Review and verify new student accounts</p>
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent">
+                    <h3 className="font-semibold text-foreground">🎓 Pending Student Accounts</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        Review and verify new student registrations
+                    </p>
                 </div>
                 <div className="p-4">
-                    {pendingUsers.length === 0 ? (
-                        <EmptyState icon="✅" message="No accounts pending verification." />
+                    {pendingStudents.length === 0 ? (
+                        <EmptyState icon="✅" message="No student accounts pending verification." />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
@@ -1092,13 +1106,17 @@ function VerificationTab({ pendingUsers }: { pendingUsers: PendingVerificationUs
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {pendingUsers.map((user) => (
+                                    {pendingStudents.map((user) => (
                                         <tr key={user.id} className="hover:bg-muted/30 transition-colors">
                                             <td className="py-3 pr-4 font-medium">{user.full_name}</td>
                                             <td className="py-3 pr-4 text-muted-foreground text-xs">{user.email}</td>
                                             <td className="py-3 pr-4 text-xs font-mono">{user.students?.student_number || "—"}</td>
                                             <td className="py-3 pr-4 text-xs">{user.students?.course || "—"}</td>
-                                            <td className="py-3 pr-4 text-xs">{user.students?.year_level ? `${user.students.year_level}${user.students.year_level === 1 ? 'st' : user.students.year_level === 2 ? 'nd' : user.students.year_level === 3 ? 'rd' : 'th'} Year` : "—"}</td>
+                                            <td className="py-3 pr-4 text-xs">
+                                                {user.students?.year_level
+                                                    ? `${user.students.year_level}${user.students.year_level === 1 ? "st" : user.students.year_level === 2 ? "nd" : user.students.year_level === 3 ? "rd" : "th"} Year`
+                                                    : "—"}
+                                            </td>
                                             <td className="py-3 pr-4 text-xs">{user.students?.section || "—"}</td>
                                             <td className="py-3 pr-4 text-xs text-muted-foreground">
                                                 {new Date(user.created_at).toLocaleDateString()}
@@ -1106,7 +1124,7 @@ function VerificationTab({ pendingUsers }: { pendingUsers: PendingVerificationUs
                                             <td className="py-3 text-right">
                                                 <div className="flex gap-2 justify-end">
                                                     <button
-                                                        onClick={() => handleVerify(user.id)}
+                                                        onClick={() => handleVerify(user.id, false)}
                                                         disabled={isPending && actioningId === user.id}
                                                         className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
                                                     >
@@ -1129,9 +1147,67 @@ function VerificationTab({ pendingUsers }: { pendingUsers: PendingVerificationUs
                     )}
                 </div>
             </section>
+
+            {/* ── Admin / Faculty Verification ── */}
+            <section className="rounded-xl border bg-card overflow-hidden">
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#C9A227]/5 to-transparent">
+                    <h3 className="font-semibold text-foreground">🛡️ Pending Admin / Faculty Accounts</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        Verify and automatically promote approved applicants to Admin role
+                    </p>
+                </div>
+                <div className="p-4">
+                    {pendingAdmins.length === 0 ? (
+                        <EmptyState icon="✅" message="No admin / faculty accounts pending verification." />
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b text-left text-xs text-muted-foreground uppercase tracking-wider">
+                                        <th className="pb-3 pr-4 font-medium">Name</th>
+                                        <th className="pb-3 pr-4 font-medium">Login Email</th>
+                                        <th className="pb-3 pr-4 font-medium">Registered</th>
+                                        <th className="pb-3 font-medium text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {pendingAdmins.map((user) => (
+                                        <tr key={user.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-3 pr-4 font-medium">{user.full_name}</td>
+                                            <td className="py-3 pr-4 text-muted-foreground text-xs">{user.email}</td>
+                                            <td className="py-3 pr-4 text-xs text-muted-foreground">
+                                                {new Date(user.created_at).toLocaleDateString()}
+                                            </td>
+                                            <td className="py-3 text-right">
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={() => handleVerify(user.id, true)}
+                                                        disabled={isPending && actioningId === user.id}
+                                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#C9A227] text-[#2B2B2B] hover:bg-[#b8911f] transition-colors disabled:opacity-50"
+                                                    >
+                                                        {isPending && actioningId === user.id ? "..." : "✓ Verify & Promote"}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReject(user.id)}
+                                                        disabled={isPending && actioningId === user.id}
+                                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                                    >
+                                                        {isPending && actioningId === user.id ? "..." : "✗ Reject"}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </section>
         </div>
     );
 }
+
 
 /* ---------- Shared ---------- */
 function EmptyState({ icon, message }: { icon: string; message: string }) {
@@ -1143,9 +1219,6 @@ function EmptyState({ icon, message }: { icon: string; message: string }) {
     );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Tab 6: User Management (Task 17)
-───────────────────────────────────────────────────────────────*/
 function ConfirmDeleteModal({
     isOpen,
     count,
@@ -1190,174 +1263,102 @@ function ConfirmDeleteModal({
     );
 }
 
-function UserManagementTab({
-    users: initialUsers,
-    totalCount,
+/* ── Shared inner table for UserManagementTab ── */
+function UserTable({
+    tableUsers,
+    onDelete,
+    onRoleChange,
+    isPending,
+    isAdmin = false,
 }: {
-    users: ManagementUser[];
-    totalCount: number;
+    tableUsers: ManagementUser[];
+    onDelete: (id: string) => void;
+    onRoleChange: (id: string, role: "student" | "admin") => void;
+    isPending: boolean;
+    isAdmin?: boolean;
 }) {
-    const [users, setUsers] = useState<ManagementUser[]>(initialUsers);
-    const [loaded, setLoaded] = useState(initialUsers.length);
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState("");
-    const [filterRole, setFilterRole] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterYear, setFilterYear] = useState("all");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-    const [isPending, startTransition] = useTransition();
-    const [loadingMore, setLoadingMore] = useState(false);
+    const [innerPending, startInnerTransition] = useTransition();
 
-    // Derive available year batches from student_numbers (prefix like "2023-...")
+    const isLoading = isPending || innerPending;
+
     const yearBatches = Array.from(
-        new Set(
-            users
-                .map((u) => u.students?.student_number?.split("-")[0])
-                .filter(Boolean)
-        )
+        new Set(tableUsers.map((u) => u.students?.student_number?.split("-")[0]).filter(Boolean))
     ).sort().reverse() as string[];
 
-    const filtered = users.filter((u) => {
+    const filtered = tableUsers.filter((u) => {
         const matchSearch =
             !search ||
             u.full_name.toLowerCase().includes(search.toLowerCase()) ||
             u.email.toLowerCase().includes(search.toLowerCase()) ||
-            u.students?.student_number?.toLowerCase().includes(search.toLowerCase());
-        const matchRole = filterRole === "all" || u.role === filterRole;
+            (u.students?.student_number?.toLowerCase() ?? "").includes(search.toLowerCase());
         const matchStatus = filterStatus === "all" || u.account_status === filterStatus;
-        const matchYear =
-            filterYear === "all" ||
-            u.students?.student_number?.startsWith(filterYear);
-        return matchSearch && matchRole && matchStatus && matchYear;
+        const matchYear = filterYear === "all" || u.students?.student_number?.startsWith(filterYear);
+        return matchSearch && matchStatus && matchYear;
     });
 
     const allOnPageSelected = filtered.length > 0 && filtered.every((u) => selected.has(u.id));
 
     function toggleAll() {
         if (allOnPageSelected) {
-            setSelected((prev) => {
-                const next = new Set(prev);
-                filtered.forEach((u) => next.delete(u.id));
-                return next;
-            });
+            setSelected(prev => { const n = new Set(prev); filtered.forEach(u => n.delete(u.id)); return n; });
         } else {
-            setSelected((prev) => {
-                const next = new Set(prev);
-                filtered.forEach((u) => next.add(u.id));
-                return next;
-            });
+            setSelected(prev => { const n = new Set(prev); filtered.forEach(u => n.add(u.id)); return n; });
         }
     }
 
     function toggleOne(id: string) {
-        setSelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
+        setSelected(prev => { 
+            const n = new Set(prev); 
+            if (n.has(id)) {
+                n.delete(id);
             } else {
-                next.add(id);
+                n.add(id);
             }
-            return next;
+            return n; 
         });
     }
 
-    function clearFeedback() {
-        setActionError(null);
-        setActionSuccess(null);
-    }
-
     function handleBulkVerify() {
-        clearFeedback();
-        startTransition(async () => {
+        setActionError(null);
+        startInnerTransition(async () => {
             try {
-                await bulkVerifyUsers(Array.from(selected));
+                await bulkVerifyUsers(Array.from(selected), isAdmin);
                 setActionSuccess(`Verified ${selected.size} user(s).`);
                 setSelected(new Set());
-            } catch (e) {
-                setActionError(getErrorMessage(e));
-            }
+            } catch (e) { setActionError(getErrorMessage(e)); }
         });
     }
 
     function handleBulkPromote(role: "student" | "admin") {
-        clearFeedback();
-        startTransition(async () => {
+        setActionError(null);
+        startInnerTransition(async () => {
             try {
                 await bulkPromoteUsers(Array.from(selected), role);
-                setActionSuccess(`${selected.size} user(s) promoted to ${role}.`);
+                setActionSuccess(`${selected.size} user(s) set to ${role}.`);
                 setSelected(new Set());
-            } catch (e) {
-                setActionError(getErrorMessage(e));
-            }
+            } catch (e) { setActionError(getErrorMessage(e)); }
         });
     }
 
     function handleBulkDeleteConfirmed() {
         setShowDeleteModal(false);
-        clearFeedback();
+        setActionError(null);
         const ids = Array.from(selected);
-        startTransition(async () => {
+        startInnerTransition(async () => {
             try {
                 await bulkDeleteUsers(ids);
-                setUsers((prev) => prev.filter((u) => !ids.includes(u.id)));
-                setLoaded((prev) => prev - ids.length);
                 setActionSuccess(`Deleted ${ids.length} user(s).`);
                 setSelected(new Set());
-            } catch (e) {
-                setActionError(getErrorMessage(e));
-            }
+                ids.forEach(id => onDelete(id));
+            } catch (e) { setActionError(getErrorMessage(e)); }
         });
-    }
-
-    function handleSingleDelete(userId: string) {
-        clearFeedback();
-        startTransition(async () => {
-            try {
-                await deleteUser(userId);
-                setUsers((prev) => prev.filter((u) => u.id !== userId));
-                setLoaded((prev) => prev - 1);
-                setActionSuccess("User deleted.");
-                setSelected((prev) => { const n = new Set(prev); n.delete(userId); return n; });
-            } catch (e) {
-                setActionError(getErrorMessage(e));
-            }
-        });
-    }
-
-    function handleRoleChange(userId: string, role: "student" | "admin") {
-        clearFeedback();
-        startTransition(async () => {
-            try {
-                await updateUserRole(userId, role);
-                setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role } : u));
-                setActionSuccess("Role updated.");
-            } catch (e) {
-                setActionError(getErrorMessage(e));
-            }
-        });
-    }
-
-    async function handleLoadMore() {
-        setLoadingMore(true);
-        try {
-            const { fetchAllUsers } = await import("@/lib/actions/admin");
-            const { users: more } = await fetchAllUsers(loaded, 200);
-            const normalized = (more as unknown[]).map((u) => {
-                const item = u as ManagementUser & { students: ManagementUser["students"] | ManagementUser["students"][] };
-                return {
-                    ...item,
-                    students: Array.isArray(item.students) ? item.students[0] : item.students,
-                };
-            }) as ManagementUser[];
-            setUsers((prev) => [...prev, ...normalized]);
-            setLoaded((prev) => prev + normalized.length);
-        } catch (e) {
-            setActionError(getErrorMessage(e));
-        } finally {
-            setLoadingMore(false);
-        }
     }
 
     const roleBadge = (role: string) => {
@@ -1379,7 +1380,7 @@ function UserManagementTab({
     };
 
     return (
-        <div className="space-y-4">
+        <>
             <ConfirmDeleteModal
                 isOpen={showDeleteModal}
                 count={selected.size}
@@ -1387,7 +1388,230 @@ function UserManagementTab({
                 onCancel={() => setShowDeleteModal(false)}
             />
 
+            {/* Filters */}
+            <div className="px-6 py-4 border-b flex flex-wrap gap-3">
+                <input
+                    type="search"
+                    placeholder={isAdmin ? "Search by name or email..." : "Search by name, email, or student number..."}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="flex-1 min-w-[180px] h-9 rounded-lg border px-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="h-9 rounded-lg border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                    <option value="all">All Statuses</option>
+                    <option value="verified">Verified</option>
+                    <option value="pending_verification">Pending</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                {!isAdmin && yearBatches.length > 0 && (
+                    <select
+                        value={filterYear}
+                        onChange={(e) => setFilterYear(e.target.value)}
+                        className="h-9 rounded-lg border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                        <option value="all">All Year Batches</option>
+                        {yearBatches.map((y) => (
+                            <option key={y} value={y}>{y} Batch</option>
+                        ))}
+                    </select>
+                )}
+            </div>
+
+            {/* Bulk Actions */}
+            {selected.size > 0 && (
+                <div className="px-6 py-3 border-b bg-primary/5 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium text-primary">{selected.size} selected</span>
+                    <button
+                        onClick={handleBulkVerify}
+                        disabled={isLoading}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:opacity-80 transition-opacity disabled:opacity-50"
+                    >
+                        ✓ Verify All
+                    </button>
+                    <select
+                        onChange={(e) => { if (e.target.value) handleBulkPromote(e.target.value as "student" | "admin"); e.target.value = ""; }}
+                        disabled={isLoading}
+                        className="h-7 rounded-lg border px-2 text-xs bg-background focus:outline-none"
+                    >
+                        <option value="">Set Role...</option>
+                        <option value="student">→ Student</option>
+                        <option value="admin">→ Admin</option>
+                    </select>
+                    <button
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={isLoading}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                    >
+                        🗑 Delete Selected
+                    </button>
+                    <button
+                        onClick={() => setSelected(new Set())}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                    >
+                        Clear selection
+                    </button>
+                </div>
+            )}
+
+            {/* Feedback */}
+            {actionError && <div className="px-6 py-2 text-sm text-destructive bg-destructive/5 border-b">{actionError}</div>}
+            {actionSuccess && <div className="px-6 py-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-b">{actionSuccess}</div>}
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+                {filtered.length === 0 ? (
+                    <EmptyState icon="👤" message="No users match your filters." />
+                ) : (
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b text-xs text-muted-foreground uppercase tracking-wider">
+                                <th className="py-3 pl-6 pr-2 text-left w-10">
+                                    <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} className="rounded" />
+                                </th>
+                                <th className="py-3 px-3 text-left">User</th>
+                                {!isAdmin && <th className="py-3 px-3 text-left hidden md:table-cell">Student No.</th>}
+                                {!isAdmin && <th className="py-3 px-3 text-left hidden lg:table-cell">Program Info</th>}
+                                <th className="py-3 px-3 text-left">Role</th>
+                                <th className="py-3 px-3 text-left">Status</th>
+                                <th className="py-3 px-3 text-left hidden lg:table-cell">Joined</th>
+                                <th className="py-3 pr-6 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                            {filtered.map((u) => (
+                                <tr key={u.id} className={`hover:bg-accent/30 transition-colors ${selected.has(u.id) ? "bg-primary/5" : ""}`}>
+                                    <td className="py-3 pl-6 pr-2">
+                                        <input type="checkbox" checked={selected.has(u.id)} onChange={() => toggleOne(u.id)} className="rounded" />
+                                    </td>
+                                    <td className="py-3 px-3">
+                                        <p className="font-medium text-foreground truncate max-w-[160px]">{u.full_name}</p>
+                                        <p className="text-xs text-muted-foreground truncate max-w-[160px]">{u.email}</p>
+                                    </td>
+                                    {!isAdmin && (
+                                        <td className="py-3 px-3 hidden md:table-cell">
+                                            <p className="text-xs text-muted-foreground font-mono">{u.students?.student_number || "—"}</p>
+                                        </td>
+                                    )}
+                                    {!isAdmin && (
+                                        <td className="py-3 px-3 hidden lg:table-cell">
+                                            {u.students ? (
+                                                <div className="text-xs">
+                                                    <span className="font-semibold">{u.students.course || "—"}</span>
+                                                    <span className="text-muted-foreground ml-1">
+                                                        ({u.students.year_level ? `${u.students.year_level}${u.students.year_level === 1 ? "st" : u.students.year_level === 2 ? "nd" : u.students.year_level === 3 ? "rd" : "th"} Yr` : "—"} - {u.students.section || "—"})
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground">—</p>
+                                            )}
+                                        </td>
+                                    )}
+                                    <td className="py-3 px-3">
+                                        <select
+                                            value={u.role}
+                                            onChange={(e) => onRoleChange(u.id, e.target.value as "student" | "admin")}
+                                            disabled={isLoading}
+                                            className={`text-xs font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary ${roleBadge(u.role)}`}
+                                        >
+                                            <option value="student">student</option>
+                                            <option value="admin">admin</option>
+                                        </select>
+                                    </td>
+                                    <td className="py-3 px-3">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${statusBadge(u.account_status)}`}>
+                                            {u.account_status === "pending_verification" ? "Pending" : u.account_status === "verified" ? "Verified" : "Rejected"}
+                                        </span>
+                                    </td>
+                                    <td className="py-3 px-3 hidden lg:table-cell">
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                        </p>
+                                    </td>
+                                    <td className="py-3 pr-6 text-right">
+                                        <button
+                                            onClick={() => onDelete(u.id)}
+                                            disabled={isLoading}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-destructive bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-50"
+                                        >
+                                            🗑 Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+        </>
+    );
+}
+
+function UserManagementTab({
+    users: initialUsers,
+    totalCount,
+}: {
+    users: ManagementUser[];
+    totalCount: number;
+}) {
+    const [users, setUsers] = useState<ManagementUser[]>(initialUsers);
+    const [loaded, setLoaded] = useState(initialUsers.length);
+    const [subTab, setSubTab] = useState<"students" | "admins">("students");
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+    const [isPending, startTransition] = useTransition();
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    // Derive tab lists dynamically based on role
+    const currentStudentUsers = users.filter(u => u.role !== "admin");
+    const currentAdminUsers = users.filter(u => u.role === "admin");
+
+    function handleDelete(userId: string) {
+        startTransition(async () => {
+            try {
+                await deleteUser(userId);
+                setUsers(prev => prev.filter(u => u.id !== userId));
+                setLoaded(prev => prev - 1);
+                setActionSuccess("User deleted.");
+            } catch (e) { setActionError(getErrorMessage(e)); }
+        });
+    }
+
+    function handleRoleChange(userId: string, role: "student" | "admin") {
+        startTransition(async () => {
+            try {
+                await updateUserRole(userId, role);
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
+                setActionSuccess("Role updated.");
+            } catch (e) { setActionError(getErrorMessage(e)); }
+        });
+    }
+
+    async function handleLoadMore() {
+        setLoadingMore(true);
+        try {
+            const { fetchAllUsers } = await import("@/lib/actions/admin");
+            const { users: more } = await fetchAllUsers(loaded, 200);
+            const normalized = (more as unknown[]).map((u) => {
+                const item = u as ManagementUser & { students: ManagementUser["students"] | ManagementUser["students"][] };
+                return { ...item, students: Array.isArray(item.students) ? item.students[0] : item.students };
+            }) as ManagementUser[];
+            setUsers(prev => [...prev, ...normalized]);
+            setLoaded(prev => prev + normalized.length);
+        } catch (e) {
+            setActionError(getErrorMessage(e));
+        } finally {
+            setLoadingMore(false);
+        }
+    }
+
+    return (
+        <div className="space-y-4">
             <section className="rounded-xl border bg-card overflow-hidden">
+                {/* Header */}
                 <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent flex items-center justify-between flex-wrap gap-2">
                     <div>
                         <h3 className="font-semibold text-foreground">👤 User Management</h3>
@@ -1397,187 +1621,53 @@ function UserManagementTab({
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="px-6 py-4 border-b flex flex-wrap gap-3">
-                    <input
-                        type="search"
-                        placeholder="Search by name, email, or student number..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="flex-1 min-w-[180px] h-9 rounded-lg border px-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                {/* Sub-tab switcher */}
+                <div className="px-6 pt-4 border-b flex gap-1">
+                    <button
+                        onClick={() => setSubTab("students")}
+                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${subTab === "students"
+                            ? "border border-b-0 border-border bg-card text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                        🎓 Students
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-muted text-xs">{currentStudentUsers.length}</span>
+                    </button>
+                    <button
+                        onClick={() => setSubTab("admins")}
+                        className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${subTab === "admins"
+                            ? "border border-b-0 border-border bg-card text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                        🛡️ Admin / Faculty
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-muted text-xs">{currentAdminUsers.length}</span>
+                    </button>
+                </div>
+
+                {/* Shared feedback */}
+                {actionError && <div className="px-6 py-2 text-sm text-destructive bg-destructive/5 border-b">{actionError}</div>}
+                {actionSuccess && <div className="px-6 py-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-b">{actionSuccess}</div>}
+
+                {/* Sub-tab content */}
+                {subTab === "students" && (
+                    <UserTable
+                        tableUsers={currentStudentUsers}
+                        onDelete={handleDelete}
+                        onRoleChange={handleRoleChange}
+                        isPending={isPending}
+                        isAdmin={false}
                     />
-                    <select
-                        value={filterRole}
-                        onChange={(e) => setFilterRole(e.target.value)}
-                        className="h-9 rounded-lg border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                        <option value="all">All Roles</option>
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="h-9 rounded-lg border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="verified">Verified</option>
-                        <option value="pending_verification">Pending</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                    {yearBatches.length > 0 && (
-                        <select
-                            value={filterYear}
-                            onChange={(e) => setFilterYear(e.target.value)}
-                            className="h-9 rounded-lg border px-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="all">All Year Batches</option>
-                            {yearBatches.map((y) => (
-                                <option key={y} value={y}>{y} Batch</option>
-                            ))}
-                        </select>
-                    )}
-                </div>
-
-                {/* Bulk Actions */}
-                {selected.size > 0 && (
-                    <div className="px-6 py-3 border-b bg-primary/5 flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-medium text-primary">{selected.size} selected</span>
-                        <button
-                            onClick={handleBulkVerify}
-                            disabled={isPending}
-                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:opacity-80 transition-opacity disabled:opacity-50"
-                        >
-                            ✓ Verify All
-                        </button>
-                        <select
-                            onChange={(e) => { if (e.target.value) handleBulkPromote(e.target.value as "student" | "admin"); e.target.value = ""; }}
-                            disabled={isPending}
-                            className="h-7 rounded-lg border px-2 text-xs bg-background focus:outline-none"
-                        >
-                            <option value="">Set Role...</option>
-                            <option value="student">→ Student</option>
-                            <option value="admin">→ Admin</option>
-                        </select>
-                        <button
-                            onClick={() => setShowDeleteModal(true)}
-                            disabled={isPending}
-                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
-                        >
-                            🗑 Delete Selected
-                        </button>
-                        <button
-                            onClick={() => setSelected(new Set())}
-                            className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto"
-                        >
-                            Clear selection
-                        </button>
-                    </div>
                 )}
-
-                {/* Feedback */}
-                {actionError && (
-                    <div className="px-6 py-2 text-sm text-destructive bg-destructive/5 border-b">{actionError}</div>
+                {subTab === "admins" && (
+                    <UserTable
+                        tableUsers={currentAdminUsers}
+                        onDelete={handleDelete}
+                        onRoleChange={handleRoleChange}
+                        isPending={isPending}
+                        isAdmin={true}
+                    />
                 )}
-                {actionSuccess && (
-                    <div className="px-6 py-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-b">{actionSuccess}</div>
-                )}
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    {filtered.length === 0 ? (
-                        <EmptyState icon="👤" message="No users match your filters." />
-                    ) : (
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b text-xs text-muted-foreground uppercase tracking-wider">
-                                    <th className="py-3 pl-6 pr-2 text-left w-10">
-                                        <input
-                                            type="checkbox"
-                                            checked={allOnPageSelected}
-                                            onChange={toggleAll}
-                                            className="rounded"
-                                        />
-                                    </th>
-                                    <th className="py-3 px-3 text-left">User</th>
-                                    <th className="py-3 px-3 text-left hidden md:table-cell">Student No.</th>
-                                    <th className="py-3 px-3 text-left hidden lg:table-cell">Program Info</th>
-                                    <th className="py-3 px-3 text-left">Role</th>
-                                    <th className="py-3 px-3 text-left">Status</th>
-                                    <th className="py-3 px-3 text-left hidden lg:table-cell">Joined</th>
-                                    <th className="py-3 pr-6 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {filtered.map((u) => (
-                                    <tr key={u.id} className={`hover:bg-accent/30 transition-colors ${selected.has(u.id) ? "bg-primary/5" : ""}`}>
-                                        <td className="py-3 pl-6 pr-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={selected.has(u.id)}
-                                                onChange={() => toggleOne(u.id)}
-                                                className="rounded"
-                                            />
-                                        </td>
-                                        <td className="py-3 px-3">
-                                            <p className="font-medium text-foreground truncate max-w-[160px]">{u.full_name}</p>
-                                            <p className="text-xs text-muted-foreground truncate max-w-[160px]">{u.email}</p>
-                                        </td>
-                                        <td className="py-3 px-3 hidden md:table-cell">
-                                            <p className="text-xs text-muted-foreground font-mono">
-                                                {u.students?.student_number || "—"}
-                                            </p>
-                                        </td>
-                                        <td className="py-3 px-3 hidden lg:table-cell">
-                                            {u.students ? (
-                                                <div className="text-xs">
-                                                    <span className="font-semibold">{u.students.course || "—"}</span>
-                                                    <span className="text-muted-foreground ml-1">
-                                                        ({u.students.year_level ? `${u.students.year_level}${u.students.year_level === 1 ? 'st' : u.students.year_level === 2 ? 'nd' : u.students.year_level === 3 ? 'rd' : 'th'} Yr` : "—"} - {u.students.section || "—"})
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <p className="text-xs text-muted-foreground">—</p>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-3">
-                                            <select
-                                                value={u.role}
-                                                onChange={(e) => handleRoleChange(u.id, e.target.value as "student" | "admin")}
-                                                disabled={isPending}
-                                                className={`text-xs font-semibold px-2 py-0.5 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary ${roleBadge(u.role)}`}
-                                            >
-                                                <option value="student">student</option>
-                                                <option value="admin">admin</option>
-                                            </select>
-                                        </td>
-                                        <td className="py-3 px-3">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${statusBadge(u.account_status)}`}>
-                                                {u.account_status === "pending_verification" ? "Pending" :
-                                                    u.account_status === "verified" ? "Verified" : "Rejected"}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 px-3 hidden lg:table-cell">
-                                            <p className="text-xs text-muted-foreground">
-                                                {new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                            </p>
-                                        </td>
-                                        <td className="py-3 pr-6 text-right">
-                                            <button
-                                                onClick={() => handleSingleDelete(u.id)}
-                                                disabled={isPending}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-destructive bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-50"
-                                                title="Delete user"
-                                            >
-                                                🗑 Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
 
                 {/* Load More */}
                 {loaded < totalCount && (

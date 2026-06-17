@@ -1,6 +1,6 @@
 "use server";
 
-export async function sendSchoolEmail(schoolEmail: string, fullName: string) {
+export async function sendSchoolEmail(schoolEmail: string, fullName: string, role: string = "student") {
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL;
 
@@ -8,6 +8,15 @@ export async function sendSchoolEmail(schoolEmail: string, fullName: string) {
         console.warn("[Resend] API Key or From Email is not configured in environment variables.");
         return { success: false, error: "Email configuration missing" };
     }
+
+    const isStudent = role === "student";
+    const linkedText = isStudent 
+        ? `Your school email (<strong>${schoolEmail}</strong>) has been successfully linked to your ITECHEngage account.`
+        : `Your email address (<strong>${schoolEmail}</strong>) has been successfully verified and linked to your ITECHEngage administrator account.`;
+        
+    const permissionsText = isStudent
+        ? `You can now participate in student organizations, attend events, and be up to date with the school current affairs.`
+        : `You now have administrative access to manage platform users, oversee events, and handle verification requests.`;
 
     try {
         const res = await fetch("https://api.resend.com/emails", {
@@ -27,8 +36,8 @@ export async function sendSchoolEmail(schoolEmail: string, fullName: string) {
                         </div>
                         <div style="padding: 24px; color: #333333; line-height: 1.6;">
                             <h2 style="color: #800000; margin-top: 0; font-size: 18px;">Hi ${fullName},</h2>
-                            <p>Thank you for registering! Your school email (<strong>${schoolEmail}</strong>) has been successfully linked to your ITECHEngage account.</p>
-                            <p>You can now participate in student organizations, attend events, and be up to date with the school current affairs.</p>
+                            <p>Thank you for registering! ${linkedText}</p>
+                            <p>${permissionsText}</p>
                             <div style="text-align: center; margin: 30px 0;">
                                 <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login" 
                                    style="background-color: #C9A227; color: #2B2B2B; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">

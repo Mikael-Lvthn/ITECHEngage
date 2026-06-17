@@ -122,11 +122,15 @@ export default async function AdminPage({ searchParams }: Props) {
 
     const pendingEventsCount = pendingEventsResult.data?.length ?? 0;
     const pendingLeaveCount = pendingLeaveResult.data?.length ?? 0;
-    const pendingVerificationUsers = (pendingVerificationResult.data || []).map(item => ({
+    const allPendingVerificationUsers = (pendingVerificationResult.data || []).map(item => ({
         ...item,
         students: Array.isArray(item.students) ? item.students[0] : item.students
     })) as PendingVerificationUser[];
-    const pendingVerificationCount = pendingVerificationUsers.length;
+    
+    const pendingStudents = allPendingVerificationUsers.filter(u => u.students !== null);
+    const pendingAdmins = allPendingVerificationUsers.filter(u => u.students === null);
+    
+    const pendingVerificationCount = pendingStudents.length + pendingAdmins.length;
 
     const allUsers = (allUsersResult.data || []).map(item => ({
         ...item,
@@ -178,7 +182,8 @@ export default async function AdminPage({ searchParams }: Props) {
                 organizations={(organizationsListResult.data as Organization[]) || []}
                 pendingLeaveRequests={(pendingLeaveResult.data || []).map(normalizeLeaveRequest) as LeaveRequest[]}
                 leaveHistory={(leaveHistoryResult.data || []).map(normalizeLeaveRequest) as LeaveRequest[]}
-                pendingVerificationUsers={pendingVerificationUsers}
+                pendingStudents={pendingStudents}
+                pendingAdmins={pendingAdmins}
                 allUsers={allUsers}
                 totalUsersCount={totalUsersCount}
                 stats={{
