@@ -907,21 +907,6 @@ function CommsTab({ organizations }: { organizations: Organization[] }) {
                 </div>
             </section>
 
-            <section className="rounded-xl border bg-card overflow-hidden">
-                <div className="px-6 py-4 border-b bg-gradient-to-r from-purple-500/5 to-transparent">
-                    <h3 className="font-semibold text-foreground">🔗 Resource Coordination</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Shared resources and document management</p>
-                </div>
-                <div className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4">
-                        <span className="text-3xl">📁</span>
-                    </div>
-                    <p className="font-semibold text-foreground mb-1">Coming Soon</p>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                        Centralized resource sharing and document coordination across organizations will be available in a future update.
-                    </p>
-                </div>
-            </section>
         </div>
     );
 }
