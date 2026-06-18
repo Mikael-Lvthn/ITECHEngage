@@ -11,6 +11,8 @@ export async function customSignUpAndSendEmail(
     try {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
             console.error("Missing Supabase environment variables!");
+            console.error("NEXT_PUBLIC_SUPABASE_URL is:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "missing");
+            console.error("SUPABASE_SERVICE_ROLE_KEY is:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "missing");
             return { success: false, error: "Server misconfiguration. Please contact support." };
         }
 
