@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingButton } from "@/components/loading/LoadingButton";
 import { Eye, EyeOff } from "lucide-react";
+import { customSignUpAndSendEmail } from "@/lib/actions/signup";
 
 type RegistrationType = "student" | "faculty";
 
@@ -130,34 +131,39 @@ export default function SignupPage() {
             }
         }
 
-        const { customSignUpAndSendEmail } = await import("@/lib/actions/signup");
-        
-        const { success, error } = await customSignUpAndSendEmail(
-            email,
-            password,
-            location.origin,
-            {
-                full_name: fullName,
-                registration_type: registrationType,
-                ...(registrationType === "student" && {
-                    school_email: schoolEmail,
-                    personal_email: personalEmail,
-                    contact_number: contactNumber,
-                    student_number: studentNumber,
-                    course: course,
-                    section: section,
-                    year_level: yearLevel,
-                }),
+
+        try {
+            const { success, error } = await customSignUpAndSendEmail(
+                email,
+                password,
+                location.origin,
+                {
+                    full_name: fullName,
+                    registration_type: registrationType,
+                    ...(registrationType === "student" && {
+                        school_email: schoolEmail,
+                        personal_email: personalEmail,
+                        contact_number: contactNumber,
+                        student_number: studentNumber,
+                        course: course,
+                        section: section,
+                        year_level: yearLevel,
+                    }),
+                }
+            );
+
+            if (!success) {
+                setError(error || "An unexpected error occurred.");
+                setLoading(false);
+                return;
             }
-        );
 
-        if (!success) {
-            setError(error || "An unexpected error occurred.");
+            router.push("/login?message=Registration successful! Please wait for an administrator to review and verify your account. We will notify you via email once approved.");
+        } catch (err: any) {
+            console.error("Signup error:", err);
+            setError(err?.message || "An unexpected error occurred during signup.");
             setLoading(false);
-            return;
         }
-
-        router.push("/login?message=Registration successful! Please wait for an administrator to review and verify your account. We will notify you via email once approved.");
     };
 
     const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
