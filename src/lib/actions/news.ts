@@ -132,3 +132,40 @@ export async function deleteNews(news_id: string) {
     revalidatePath("/dashboard/news");
     revalidatePath("/dashboard/news-and-events");
 }
+
+export async function updateNews(news_id: string, formData: FormData) {
+    const supabase = await createClient();
+
+    const { data: newsItem, error: fetchError } = await supabase
+        .from("news")
+        .select("organization_id")
+        .eq("id", news_id)
+        .single();
+
+    if (fetchError || !newsItem) throw new Error("News not found");
+
+    const { supabase: verifiedClient } = await requireOfficerOrAdmin(newsItem.organization_id);
+
+    const title = formData.get("title") as string;
+    const content = formData.get("content") as string;
+    const image_url = formData.get("image_url") as string;
+
+    const updateData: {
+        title?: string;
+        content?: string;
+        image_url?: string | null;
+    } = {};
+    if (title !== null) updateData.title = title.trim();
+    if (content !== null) updateData.content = content.trim();
+    if (image_url !== null) updateData.image_url = image_url || null;
+
+    const { error } = await verifiedClient
+        .from("news")
+        .update(updateData)
+        .eq("id", news_id);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/news");
+    revalidatePath("/dashboard/news-and-events");
+}

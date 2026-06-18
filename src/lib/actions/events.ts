@@ -253,3 +253,75 @@ export async function updateParticipationStatus(
     revalidatePath("/dashboard/events");
     revalidatePath("/dashboard/news-and-events");
 }
+
+export async function updateEvent(
+    eventId: string,
+    formData: {
+        title?: string;
+        description?: string;
+        location?: string;
+        startDatetime?: string;
+        endDatetime?: string;
+    }
+) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    const { data: event } = await supabase
+        .from("events")
+        .select("organization_id, created_by")
+        .eq("id", eventId)
+        .single();
+
+    if (!event) throw new Error("Event not found");
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+    let isAuthorized = false;
+
+    if (profile?.role === "admin" || event.created_by === user.id) {
+        isAuthorized = true;
+    } else {
+        const { data: structuralRole } = await supabase
+            .from("organization_roles")
+            .select("id")
+            .eq("assigned_user_id", user.id)
+            .eq("organization_id", event.organization_id)
+            .limit(1)
+            .maybeSingle();
+
+        if (structuralRole) isAuthorized = true;
+    }
+
+    if (!isAuthorized) throw new Error("Not authorized to update this event");
+
+    const updateData: {
+        title?: string;
+        description?: string;
+        location?: string;
+        start_datetime?: string;
+        end_datetime?: string;
+    } = {};
+    if (formData.title !== undefined) updateData.title = formData.title;
+    if (formData.description !== undefined) updateData.description = formData.description;
+    if (formData.location !== undefined) updateData.location = formData.location;
+    if (formData.startDatetime !== undefined) updateData.start_datetime = formData.startDatetime;
+    if (formData.endDatetime !== undefined) updateData.end_datetime = formData.endDatetime;
+
+    const { error } = await supabase
+        .from("events")
+        .update(updateData)
+        .eq("id", eventId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard/events");
+    revalidatePath("/dashboard/news-and-events");
+    revalidatePath("/");
+}

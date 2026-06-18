@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types";
 import CreateEventDialog from "./CreateEventDialog";
+import EditEventDialog from "./EditEventDialog";
 import { ApproveEventButton, RejectEventButton } from "./EventActions";
 
 export default async function EventsPage() {
@@ -239,6 +240,18 @@ export default async function EventsPage() {
                                                     <span>🕐 {formatDate(ev.start_datetime)}</span>
                                                     <span>📍 {ev.location}</span>
                                                 </div>
+                                                {(isAdmin || (isOfficer && org && userOrgs.some(o => o.id === org.id))) && (
+                                                    <div className="mt-3">
+                                                        <EditEventDialog event={{
+                                                            id: ev.id,
+                                                            title: ev.title,
+                                                            description: ev.description,
+                                                            location: ev.location,
+                                                            start_datetime: ev.start_datetime,
+                                                            end_datetime: ev.end_datetime
+                                                        }} />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
