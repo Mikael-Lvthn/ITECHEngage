@@ -159,9 +159,9 @@ export default function SignupPage() {
             }
 
             router.push("/login?message=Registration successful! Please wait for an administrator to review and verify your account. We will notify you via email once approved.");
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Signup error:", err);
-            setError(err?.message || "An unexpected error occurred during signup.");
+            setError(err instanceof Error ? err.message : "An unexpected error occurred during signup.");
             setLoading(false);
         }
     };
