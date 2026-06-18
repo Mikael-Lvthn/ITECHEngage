@@ -224,9 +224,9 @@ export default async function HomePage({
                     },
                     {
                         icon: <BarChart3 className="w-8 h-8" />,
-                        title: "Track My Involvement",
-                        desc: "View your memberships and history",
-                        href: user ? "/dashboard/memberships" : "/login",
+                        title: profile?.role === "admin" ? "Manage Platform" : "Track My Involvement",
+                        desc: profile?.role === "admin" ? "Access the administrator console" : "View your memberships and history",
+                        href: user ? (profile?.role === "admin" ? "/dashboard/admin" : "/dashboard/memberships") : "/login",
                     },
                 ].map((card) => (
                     <Link
