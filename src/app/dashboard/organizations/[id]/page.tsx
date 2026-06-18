@@ -320,17 +320,17 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                 {events && events.length > 0 ? (
                                     <div className="space-y-3">
                                         {events.map(ev => (
-                                            <div key={ev.id} className="flex gap-4 p-4 rounded-lg border hover:shadow-sm transition-shadow">
-                                                <div className="w-12 h-12 bg-red-50 text-red-700 rounded-lg flex flex-col items-center justify-center shrink-0">
+                                            <Link href={`/dashboard/events/${ev.id}`} key={ev.id} className="flex gap-4 p-4 rounded-lg border hover:shadow-sm transition-all hover:border-[#800000]/30 group bg-card cursor-pointer">
+                                                <div className="w-12 h-12 bg-red-50 text-red-700 rounded-lg flex flex-col items-center justify-center shrink-0 group-hover:bg-[#800000] group-hover:text-white transition-colors">
                                                     <span className="text-xs font-bold uppercase">{new Date(ev.start_datetime).toLocaleString('default', { month: 'short' })}</span>
                                                     <span className="text-lg font-bold leading-none">{new Date(ev.start_datetime).getDate()}</span>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold">{ev.title}</h3>
+                                                    <h3 className="font-semibold group-hover:text-[#800000] transition-colors">{ev.title}</h3>
                                                     <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{ev.description}</p>
                                                     <p className="text-xs text-gray-400 mt-1">📍 {ev.location}</p>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         ))}
                                     </div>
                                 ) : (
@@ -348,21 +348,21 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                 {news && news.length > 0 ? (
                                     <div className="space-y-4">
                                         {news.map(item => (
-                                            <div key={item.id} className="p-4 rounded-lg border hover:shadow-sm transition-shadow">
+                                            <Link href={`/dashboard/news/${item.id}`} key={item.id} className="block p-4 rounded-lg border hover:shadow-sm transition-all hover:border-[#800000]/30 group bg-card cursor-pointer">
                                                 <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
                                                     <span className="font-medium text-[#C9A227]">News</span>
                                                     <span>•</span>
                                                     <span>{new Date(item.published_at || item.created_at).toLocaleDateString()}</span>
                                                 </div>
-                                                <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                                                <h3 className="font-bold text-lg mb-2 group-hover:text-[#800000] transition-colors">{item.title}</h3>
                                                 <p className="text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{item.content}</p>
 
                                                 {item.image_url && (
-                                                    <div className="relative mt-3 w-full h-48 overflow-hidden rounded-lg border">
-                                                        <Image src={item.image_url} alt={item.title} fill className="object-cover" />
+                                                    <div className="relative mt-4 w-full h-64 md:h-80 overflow-hidden rounded-lg border bg-muted/10">
+                                                        <Image src={item.image_url} alt={item.title} fill className="object-contain" />
                                                     </div>
                                                 )}
-                                            </div>
+                                            </Link>
                                         ))}
                                     </div>
                                 ) : (
