@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import AdminPanelClient, { 
-    MembershipRequest, 
-    PendingEvent, 
-    PendingAccreditation, 
-    Category, 
-    Organization, 
+import AdminPanelClient, {
+    MembershipRequest,
+    PendingEvent,
+    PendingNews,
+    PendingAccreditation,
+    Category,
+    Organization,
     LeaveRequest,
     PendingVerificationUser,
     ManagementUser,
@@ -65,6 +66,7 @@ export default async function AdminPage({ searchParams }: Props) {
         pendingMembershipsResult,
         membershipRequestsResult,
         pendingEventsResult,
+        pendingNewsResult,
         pendingAccreditationsResult,
         categoriesResult,
         organizationsListResult,
@@ -86,6 +88,12 @@ export default async function AdminPage({ searchParams }: Props) {
             .from("events")
             .select("id, title, description, start_datetime, location, status, organizations(name)")
             .eq("status", "draft")
+            .order("created_at", { ascending: false })
+            .limit(50),
+        supabase
+            .from("news")
+            .select("id, title, content, image_url, status, created_at, organization_id, organizations(name)")
+            .eq("status", "pending")
             .order("created_at", { ascending: false })
             .limit(50),
         supabase
@@ -121,6 +129,7 @@ export default async function AdminPage({ searchParams }: Props) {
     ]);
 
     const pendingEventsCount = pendingEventsResult.data?.length ?? 0;
+    const pendingNewsCount = pendingNewsResult.data?.length ?? 0;
     const pendingLeaveCount = pendingLeaveResult.data?.length ?? 0;
     const allPendingVerificationUsers = (pendingVerificationResult.data || []).map(item => ({
         ...item,
@@ -174,6 +183,10 @@ export default async function AdminPage({ searchParams }: Props) {
                     ...item,
                     organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
                 })) as PendingEvent[]}
+                pendingNews={(pendingNewsResult.data || []).map(item => ({
+                    ...item,
+                    organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
+                })) as PendingNews[]}
                 pendingAccreditations={(pendingAccreditationsResult.data || []).map(item => ({
                     ...item,
                     organizations: Array.isArray(item.organizations) ? item.organizations[0] : item.organizations
@@ -191,6 +204,7 @@ export default async function AdminPage({ searchParams }: Props) {
                     totalOrgs: orgsResult.count ?? 0,
                     pendingMemberships: pendingMembershipsResult.count ?? 0,
                     pendingEventsCount,
+                    pendingNewsCount,
                     pendingLeaveCount,
                     pendingVerificationCount,
                 }}

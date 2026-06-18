@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { approveLeaveRequest, rejectLeaveRequest } from "@/lib/actions/organizations";
-import { approveEvent, rejectEvent } from "@/lib/actions/events";
+import { approveEvent, rejectEvent, updateEvent } from "@/lib/actions/events";
+import { updateNewsStatus, updateNews } from "@/lib/actions/news";
 import { sendAnnouncement, createCategory, deleteCategory, verifyUserAccount, rejectUserAccount, createBulletinPost, bulkDeleteUsers, bulkVerifyUsers, bulkPromoteUsers, updateUserRole, deleteUser } from "@/lib/actions/admin";
 import { getErrorMessage } from "@/lib/utils/error";
 
@@ -25,6 +26,17 @@ export interface PendingEvent {
     start_datetime: string;
     location: string;
     status: string;
+    organizations: { name: string } | null;
+}
+
+export interface PendingNews {
+    id: string;
+    title: string;
+    content: string;
+    image_url: string | null;
+    status: string;
+    created_at: string;
+    organization_id: string;
     organizations: { name: string } | null;
 }
 
@@ -95,6 +107,7 @@ export interface ManagementUser {
 interface AdminPanelClientProps {
     membershipRequests: MembershipRequest[];
     pendingEvents: PendingEvent[];
+    pendingNews: PendingNews[];
     pendingAccreditations: PendingAccreditation[];
     categories: Category[];
     organizations: Organization[];
@@ -109,6 +122,7 @@ interface AdminPanelClientProps {
         totalOrgs: number;
         pendingMemberships: number;
         pendingEventsCount: number;
+        pendingNewsCount: number;
         pendingLeaveCount: number;
         pendingVerificationCount: number;
     };
@@ -120,7 +134,7 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
     { key: "verification", label: "Verification", icon: "🆕" },
     { key: "users", label: "User Management", icon: "👤" },
     { key: "roster", label: "Organization & Roster", icon: "👥" },
-    { key: "events", label: "Event Oversight", icon: "📅" },
+    { key: "events", label: "News & Events Oversight", icon: "📰" },
     { key: "comms", label: "Communication", icon: "📢" },
     { key: "config", label: "Configuration", icon: "⚙️" },
 ];
@@ -128,6 +142,7 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
 export default function AdminPanelClient({
     membershipRequests,
     pendingEvents,
+    pendingNews,
     pendingAccreditations,
     categories,
     organizations,
@@ -171,7 +186,7 @@ export default function AdminPanelClient({
                         let badgeCount = 0;
                         if (tab.key === "verification") badgeCount = stats.pendingVerificationCount;
                         if (tab.key === "roster") badgeCount = stats.pendingMemberships + pendingAccreditations.length;
-                        if (tab.key === "events") badgeCount = stats.pendingEventsCount;
+                        if (tab.key === "events") badgeCount = stats.pendingEventsCount + stats.pendingNewsCount;
                         // For User Management, maybe leave requests?
                         if (tab.key === "users") badgeCount = stats.pendingLeaveCount;
 
@@ -219,7 +234,7 @@ export default function AdminPanelClient({
                     />
                 )}
                 {activeTab === "events" && (
-                    <EventsTab pendingEvents={pendingEvents} />
+                    <EventsTab pendingEvents={pendingEvents} pendingNews={pendingNews} />
                 )}
                 {activeTab === "comms" && <CommsTab organizations={organizations} />}
                 {activeTab === "config" && (
@@ -653,13 +668,15 @@ function LeaveRequestsSection({
     );
 }
 
-/* ---------- Tab 2: Event Oversight ---------- */
-function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
+/* ---------- Tab 2: News & Events Oversight ---------- */
+function EventsTab({ pendingEvents, pendingNews }: { pendingEvents: PendingEvent[]; pendingNews: PendingNews[] }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [actioningId, setActioningId] = useState<string | null>(null);
+    const [editingNews, setEditingNews] = useState<PendingNews | null>(null);
+    const [editingEvent, setEditingEvent] = useState<PendingEvent | null>(null);
 
-    function handleApprove(eventId: string) {
+    function handleApproveEvent(eventId: string) {
         setActioningId(eventId);
         startTransition(async () => {
             try {
@@ -673,7 +690,7 @@ function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
         });
     }
 
-    function handleReject(eventId: string) {
+    function handleRejectEvent(eventId: string) {
         setActioningId(eventId);
         startTransition(async () => {
             try {
@@ -687,12 +704,202 @@ function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
         });
     }
 
+    function handleApproveNews(newsId: string) {
+        setActioningId(newsId);
+        startTransition(async () => {
+            try {
+                await updateNewsStatus(newsId, "published");
+                router.refresh();
+            } catch (err) {
+                console.error("Approve news failed:", getErrorMessage(err));
+            } finally {
+                setActioningId(null);
+            }
+        });
+    }
+
+    function handleRejectNews(newsId: string) {
+        setActioningId(newsId);
+        startTransition(async () => {
+            try {
+                await updateNewsStatus(newsId, "rejected");
+                router.refresh();
+            } catch (err) {
+                console.error("Reject news failed:", getErrorMessage(err));
+            } finally {
+                setActioningId(null);
+            }
+        });
+    }
+
+    function handleEditNewsSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (!editingNews) return;
+        const formData = new FormData(e.currentTarget);
+        startTransition(async () => {
+            try {
+                await updateNews(editingNews.id, formData);
+                setEditingNews(null);
+                router.refresh();
+            } catch (err) {
+                console.error("Edit news failed:", getErrorMessage(err));
+            }
+        });
+    }
+
+    function handleEditEventSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (!editingEvent) return;
+        const formData = new FormData(e.currentTarget);
+        startTransition(async () => {
+            try {
+                await updateEvent(editingEvent.id, {
+                    title: formData.get("title") as string,
+                    description: formData.get("description") as string,
+                    location: formData.get("location") as string,
+                    startDatetime: formData.get("start_datetime") as string,
+                    endDatetime: formData.get("end_datetime") as string,
+                });
+                setEditingEvent(null);
+                router.refresh();
+            } catch (err) {
+                console.error("Edit event failed:", getErrorMessage(err));
+            }
+        });
+    }
+
     return (
         <div className="space-y-6">
+            {/* Edit News Modal */}
+            {editingNews && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setEditingNews(null)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold mb-4">Edit News Article</h2>
+                                <form onSubmit={handleEditNewsSubmit} className="space-y-4">
+                                    <input type="hidden" name="organization_id" value={editingNews.organization_id} />
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Title</label>
+                                        <input name="title" defaultValue={editingNews.title} required className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Content</label>
+                                        <textarea name="content" defaultValue={editingNews.content} required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button type="button" onClick={() => setEditingNews(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-accent transition-colors">Cancel</button>
+                                        <button type="submit" disabled={isPending} className="px-5 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50">
+                                            {isPending ? "Saving..." : "Save Changes"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Edit Event Modal */}
+            {editingEvent && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setEditingEvent(null)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold mb-4">Edit Event</h2>
+                                <form onSubmit={handleEditEventSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Event Title</label>
+                                        <input name="title" defaultValue={editingEvent.title} required className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Location</label>
+                                        <input name="location" defaultValue={editingEvent.location} required className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Start</label>
+                                            <input type="datetime-local" name="start_datetime" defaultValue={editingEvent.start_datetime?.slice(0, 16)} required className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">End</label>
+                                            <input type="datetime-local" name="end_datetime" className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Description</label>
+                                        <textarea name="description" defaultValue={editingEvent.description} required rows={4} className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:ring-primary focus:border-primary" />
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button type="button" onClick={() => setEditingEvent(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-accent transition-colors">Cancel</button>
+                                        <button type="submit" disabled={isPending} className="px-5 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50">
+                                            {isPending ? "Saving..." : "Save Changes"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Pending News */}
+            <section className="rounded-xl border bg-card overflow-hidden">
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent">
+                    <h3 className="font-semibold text-foreground">📰 News Moderation</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Approve, reject, or edit pending news submissions</p>
+                </div>
+                <div className="p-4">
+                    {pendingNews.length === 0 ? (
+                        <EmptyState icon="📰" message="No pending news to review." />
+                    ) : (
+                        <div className="space-y-2">
+                            {pendingNews.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{item.title}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {item.organizations?.name}
+                                            {" · "}{new Date(item.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 shrink-0 ml-3">
+                                        <button
+                                            onClick={() => setEditingNews(item)}
+                                            disabled={isPending}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleApproveNews(item.id)}
+                                            disabled={isPending && actioningId === item.id}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {isPending && actioningId === item.id ? "..." : "Approve"}
+                                        </button>
+                                        <button
+                                            onClick={() => handleRejectNews(item.id)}
+                                            disabled={isPending && actioningId === item.id}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                        >
+                                            Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* Pending Events */}
             <section className="rounded-xl border bg-card overflow-hidden">
                 <div className="px-6 py-4 border-b bg-gradient-to-r from-[#2B6CB0]/5 to-transparent">
                     <h3 className="font-semibold text-foreground">📅 Event Moderation</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Approve or reject pending event submissions</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Approve, reject, or edit pending event submissions</p>
                 </div>
                 <div className="p-4">
                     {pendingEvents.length === 0 ? (
@@ -710,14 +917,21 @@ function EventsTab({ pendingEvents }: { pendingEvents: PendingEvent[] }) {
                                     </div>
                                     <div className="flex gap-2 shrink-0 ml-3">
                                         <button
-                                            onClick={() => handleApprove(ev.id)}
+                                            onClick={() => setEditingEvent(ev)}
+                                            disabled={isPending}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleApproveEvent(ev.id)}
                                             disabled={isPending && actioningId === ev.id}
                                             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
                                         >
                                             {isPending && actioningId === ev.id ? "..." : "Approve"}
                                         </button>
                                         <button
-                                            onClick={() => handleReject(ev.id)}
+                                            onClick={() => handleRejectEvent(ev.id)}
                                             disabled={isPending && actioningId === ev.id}
                                             className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
                                         >

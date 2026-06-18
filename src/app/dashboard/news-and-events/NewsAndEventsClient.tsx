@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { createNews, deleteNews, updateNewsStatus } from "@/lib/actions/news";
+import { createNews, deleteNews, updateNewsStatus, updateNews } from "@/lib/actions/news";
 import { createClient } from "@/lib/supabase/client";
-import { createEvent, deleteEvent, approveEvent, rejectEvent } from "@/lib/actions/events";
+import { createEvent, deleteEvent, approveEvent, rejectEvent, updateEvent } from "@/lib/actions/events";
 import LikeShareButtons from "@/components/LikeShareButtons";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
@@ -55,6 +55,10 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
+
+    const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
+    const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+    const [editImageUrl, setEditImageUrl] = useState("");
 
     const isAdmin = userRole === "admin";
     const supabase = createClient();
@@ -198,6 +202,79 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
         }
     };
 
+    const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        setUploading(true);
+        try {
+            const file = e.target.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `news_${Math.random()}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage.from('news-images').upload(fileName, file);
+            if (uploadError) throw uploadError;
+            const { data } = supabase.storage.from('news-images').getPublicUrl(fileName);
+            setEditImageUrl(data.publicUrl);
+        } catch (error) {
+            console.error(error);
+            showToast("Error uploading image", "error");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleEditNewsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!editingNews) return;
+        setLoading(true);
+        try {
+            const formData = new FormData(e.currentTarget);
+            formData.append("image_url", editImageUrl);
+            await updateNews(editingNews.id, formData);
+            setNews(news.map(n => n.id === editingNews.id ? {
+                ...n,
+                title: formData.get("title") as string || n.title,
+                content: formData.get("content") as string || n.content,
+                image_url: editImageUrl || n.image_url,
+            } : n));
+            showToast("News updated successfully!", "success");
+            setEditingNews(null);
+            setEditImageUrl("");
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEditEventSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!editingEvent) return;
+        setLoading(true);
+        try {
+            const formData = new FormData(e.currentTarget);
+            await updateEvent(editingEvent.id, {
+                title: formData.get("title") as string,
+                description: formData.get("description") as string,
+                location: formData.get("location") as string,
+                startDatetime: formData.get("start_datetime") as string,
+                endDatetime: formData.get("end_datetime") as string,
+            });
+            setEvents(events.map(ev => ev.id === editingEvent.id ? {
+                ...ev,
+                title: formData.get("title") as string || ev.title,
+                description: formData.get("description") as string || ev.description,
+                location: formData.get("location") as string || ev.location,
+                start_datetime: formData.get("start_datetime") as string || ev.start_datetime,
+                end_datetime: formData.get("end_datetime") as string || ev.end_datetime,
+            } : ev));
+            showToast("Event updated successfully!", "success");
+            setEditingEvent(null);
+        } catch (error) {
+            showToast("Failed: " + getErrorMessage(error), "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const colors: Record<string, string> = {
             draft: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
@@ -212,6 +289,91 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
 
     return (
         <div className="bg-card rounded-2xl shadow-sm border overflow-hidden">
+            {/* Edit News Modal */}
+            {editingNews && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/50" onClick={() => { setEditingNews(null); setEditImageUrl(""); }} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold mb-4">Edit News Article</h2>
+                                <form onSubmit={handleEditNewsSubmit} className="space-y-4">
+                                    <input type="hidden" name="organization_id" value={editingNews.organizations?.name || ""} />
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Title</label>
+                                        <input name="title" defaultValue={editingNews.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Cover Image</label>
+                                        <input type="file" accept="image/*" onChange={handleEditImageUpload} className="w-full text-sm mb-2" />
+                                        {uploading && <p className="text-xs text-[#C9A227]">Uploading...</p>}
+                                        {(editImageUrl || editingNews.image_url) && (
+                                            <div className="relative h-32 rounded-lg overflow-hidden border bg-gray-50 mt-2">
+                                                <Image src={editImageUrl || editingNews.image_url} alt="Preview" fill className="object-cover" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Content</label>
+                                        <textarea name="content" defaultValue={editingNews.content} required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button type="button" onClick={() => { setEditingNews(null); setEditImageUrl(""); }} className="px-5 py-2 border rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-accent">Cancel</button>
+                                        <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-[#800000] text-white rounded-lg font-medium hover:bg-[#600000] disabled:opacity-50">
+                                            {loading ? "Saving..." : "Save Changes"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Edit Event Modal */}
+            {editingEvent && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setEditingEvent(null)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold mb-4">Edit Event</h2>
+                                <form onSubmit={handleEditEventSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Event Title</label>
+                                        <input name="title" defaultValue={editingEvent.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Location</label>
+                                        <input name="location" defaultValue={editingEvent.location} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Start</label>
+                                            <input type="datetime-local" name="start_datetime" defaultValue={editingEvent.start_datetime?.slice(0, 16)} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">End</label>
+                                            <input type="datetime-local" name="end_datetime" defaultValue={editingEvent.end_datetime?.slice(0, 16)} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Description</label>
+                                        <textarea name="description" defaultValue={editingEvent.description} required rows={4} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button type="button" onClick={() => setEditingEvent(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-accent">Cancel</button>
+                                        <button type="submit" disabled={loading} className="px-5 py-2 bg-[#800000] text-white rounded-lg font-medium hover:bg-[#600000] disabled:opacity-50">
+                                            {loading ? "Saving..." : "Save Changes"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             {/* Header Navigation */}
             <div className="flex border-b">
                 <button
@@ -394,6 +556,9 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                                         </button>
                                                     </>
                                                 )}
+                                                {(isAdmin || canCreate) && (
+                                                    <button onClick={() => { setEditingNews(item); setEditImageUrl(""); }} disabled={loading} className="px-3 py-1.5 border border-blue-200 text-blue-600 text-xs font-semibold rounded-lg hover:bg-blue-50 transition-colors">Edit</button>
+                                                )}
                                                 {canCreate && (
                                                     <button onClick={() => handleDeleteNews(item.id)} disabled={loading} className="px-3 py-1.5 border border-red-200 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors">Delete</button>
                                                 )}
@@ -464,6 +629,9 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                                             ✕ Reject
                                                         </button>
                                                     </>
+                                                )}
+                                                {(isAdmin || canCreate) && (
+                                                    <button onClick={() => setEditingEvent(ev)} disabled={loading} className="px-3 py-1.5 border border-blue-200 text-blue-600 text-xs font-semibold rounded-lg hover:bg-blue-50 transition-colors">Edit</button>
                                                 )}
                                                 {canCreate && (
                                                     <button onClick={() => handleDeleteEvent(ev.id)} disabled={loading} className="px-3 py-1.5 border border-red-200 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors">Delete</button>
