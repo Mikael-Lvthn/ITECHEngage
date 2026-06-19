@@ -309,7 +309,7 @@ export default function SignupPage() {
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder={
                                                 registrationType === "student"
-                                                    ? "student@iskolar.pup.edu.ph"
+                                                    ? "student@iskolarngbayan.pup.edu.ph"
                                                     : "faculty@pup.edu.ph"
                                             }
                                             required
@@ -352,7 +352,7 @@ export default function SignupPage() {
                                                             type="email"
                                                             value={schoolEmail}
                                                             onChange={(e) => setSchoolEmail(e.target.value)}
-                                                            placeholder="student@iskolar.pup.edu.ph"
+                                                            placeholder="student@iskolarngbayan.pup.edu.ph"
                                                             required
                                                             className={inputClasses}
                                                         />

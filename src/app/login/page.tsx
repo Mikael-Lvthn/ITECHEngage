@@ -79,7 +79,7 @@ function LoginForm() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
+                        placeholder="student@iskolarngbayan.pup.edu.ph"
                         required
                         className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
                     />
