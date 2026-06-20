@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { sendSchoolEmail } from "@/lib/actions/send-school-email";
 
 export async function customSignUpAndSendEmail(
     email: string,
@@ -45,7 +46,8 @@ export async function customSignUpAndSendEmail(
         }
 
         // TEMPORARY auto-approve feature: auto-verify new student registrations
-        // while the owner has the toggle enabled.
+        // while the owner has the toggle enabled. Mirrors verifyUserAccount:
+        // flips to verified, notifies the user, and sends the welcome email.
         if (created?.user?.id && metaData.registration_type === "student") {
             const { data: settings } = await supabaseAdmin
                 .from("app_settings")
@@ -57,6 +59,22 @@ export async function customSignUpAndSendEmail(
                     .from("profiles")
                     .update({ account_status: "verified" })
                     .eq("id", created.user.id);
+
+                await supabaseAdmin.from("notifications").insert({
+                    user_id: created.user.id,
+                    type: "account_verified",
+                    title: "Account Verified",
+                    message: "Your account has been verified. You now have full access to the platform.",
+                    status: "unread",
+                });
+
+                const fullName = (metaData.full_name as string) || "";
+                const emailToSend = (metaData.school_email as string) || email;
+                if (emailToSend) {
+                    sendSchoolEmail(emailToSend, fullName, "student").catch((err) => {
+                        console.error("Failed to send welcome email for auto-verified user:", created.user!.id, err);
+                    });
+                }
             }
         }
 
