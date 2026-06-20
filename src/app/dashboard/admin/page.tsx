@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+// TEMPORARY auto-approve feature — owner-only toggle card.
+import AutoApproveToggle from "./AutoApproveToggle";
+import { getAppSettings } from "@/lib/actions/app-settings";
+import { OWNER_UID } from "@/lib/app-config";
 import AdminPanelClient, {
     MembershipRequest,
     PendingEvent,
@@ -34,6 +38,10 @@ export default async function AdminPage({ searchParams }: Props) {
     if (!profile || profile.role !== "admin") {
         redirect("/dashboard");
     }
+
+    // TEMPORARY auto-approve feature: only the owner account sees the toggle card.
+    const isOwner = user.id === OWNER_UID;
+    const appSettings = isOwner ? await getAppSettings() : null;
 
     // Read org filter from search params
     const params = await searchParams;
@@ -172,6 +180,8 @@ export default async function AdminPage({ searchParams }: Props) {
                     </p>
                 </div>
             </div>
+
+            {isOwner && appSettings && <AutoApproveToggle settings={appSettings} />}
 
             <AdminPanelClient
                 membershipRequests={(membershipRequestsResult.data || []).map(item => ({

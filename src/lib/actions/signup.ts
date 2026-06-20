@@ -32,7 +32,7 @@ export async function customSignUpAndSendEmail(
         // 1. Create the user using the admin API
         // We set email_confirm: true so Supabase knows they are active,
         // but our database trigger still sets them to 'pending_verification' for the Admin to approve.
-        const { error: userError } = await supabaseAdmin.auth.admin.createUser({
+        const { data: created, error: userError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
             email_confirm: true,
@@ -42,6 +42,22 @@ export async function customSignUpAndSendEmail(
         if (userError) {
             console.error("[Custom Auth] Error creating user:", userError);
             return { success: false, error: userError.message };
+        }
+
+        // TEMPORARY auto-approve feature: auto-verify new student registrations
+        // while the owner has the toggle enabled.
+        if (created?.user?.id && metaData.registration_type === "student") {
+            const { data: settings } = await supabaseAdmin
+                .from("app_settings")
+                .select("auto_verify_students")
+                .eq("id", "global")
+                .maybeSingle();
+            if (settings?.auto_verify_students) {
+                await supabaseAdmin
+                    .from("profiles")
+                    .update({ account_status: "verified" })
+                    .eq("id", created.user.id);
+            }
         }
 
         // We successfully created the user. No email is sent.

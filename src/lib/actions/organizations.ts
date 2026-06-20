@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getAppSettings } from "@/lib/actions/app-settings";
+import { recordMembershipEngagement } from "@/lib/actions/engagement-internal";
 
 export async function joinOrganization(organizationId: string) {
     const supabase = await createClient();
@@ -20,14 +22,33 @@ export async function joinOrganization(organizationId: string) {
 
     if (existing) throw new Error("Already a member or request pending");
 
-    const { error } = await supabase.from("memberships").insert({
-        user_id: user.id,
-        organization_id: organizationId,
-        role: "member",
-        status: "pending",
-    });
+    // TEMPORARY auto-approve feature: when the owner enables it, joins are
+    // approved immediately instead of waiting for an officer.
+    const { auto_approve_memberships } = await getAppSettings();
+    const status = auto_approve_memberships ? "approved" : "pending";
+
+    const { data: membership, error } = await supabase
+        .from("memberships")
+        .insert({
+            user_id: user.id,
+            organization_id: organizationId,
+            role: "member",
+            status,
+        })
+        .select("id")
+        .single();
 
     if (error) throw new Error(error.message);
+
+    // Mirror the normal approval side-effect so the résumé record is created.
+    if (auto_approve_memberships && membership) {
+        try {
+            await recordMembershipEngagement(membership.id);
+        } catch (err) {
+            console.error("Failed to record membership engagement:", err);
+        }
+        revalidatePath("/dashboard/officer-panel");
+    }
 
     revalidatePath("/dashboard/organizations");
     revalidatePath(`/dashboard/organizations/${organizationId}`);
