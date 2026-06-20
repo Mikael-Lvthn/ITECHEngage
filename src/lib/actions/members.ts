@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { recordMembershipEngagement } from "@/lib/actions/engagement-internal";
 
 async function requireOfficerOrAdmin(orgId: string) {
     const supabase = await createClient();
@@ -52,6 +53,14 @@ export async function approveMember(membershipId: string, orgId: string) {
         .eq("id", membershipId);
 
     if (error) throw new Error(error.message);
+
+    // Record the membership on the student's resume (idempotent).
+    try {
+        await recordMembershipEngagement(membershipId);
+    } catch (err) {
+        console.error("Failed to record membership engagement:", err);
+    }
+
     revalidatePath(`/dashboard/organizations/${orgId}/members`);
     revalidatePath(`/dashboard/officer-panel`);
     revalidatePath(`/dashboard/requests`);

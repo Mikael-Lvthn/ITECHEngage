@@ -207,6 +207,7 @@ export interface EngagementRecord {
     verified: boolean;
     verified_by: string | null;
     verified_at: string | null;
+    is_public: boolean;
     created_at: string;
 }
 

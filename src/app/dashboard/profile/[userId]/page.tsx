@@ -35,7 +35,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
     if (!profile) notFound();
 
-    // Fetch in parallel: memberships, org roles, co-curricular records (verified only)
+    // Fetch in parallel: memberships, org roles, public engagement records
     const [membershipsResult, orgRolesResult, recordsResult] = await Promise.all([
         supabase
             .from("memberships")
@@ -47,10 +47,10 @@ export default async function PublicProfilePage({ params }: Props) {
             .select("title, hierarchy_level, organization_id, organizations:organization_id(name)")
             .eq("assigned_user_id", userId),
         supabase
-            .from("co_curricular_records")
-            .select("id, record_type, title, description, date_earned, hours_credit, organization_name, verified")
+            .from("engagement_records")
+            .select("id, record_type, title, description, date_earned, hours_credit, organization_name, is_public")
             .eq("user_id", userId)
-            .eq("verified", true)
+            .eq("is_public", true)
             .order("date_earned", { ascending: false })
             .limit(50),
     ]);
@@ -163,17 +163,17 @@ export default async function PublicProfilePage({ params }: Props) {
                 </div>
             )}
 
-            {/* Co-Curricular Records (verified only, public) */}
+            {/* Co-Curricular Records (records the student marked public) */}
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent">
                     <h2 className="text-lg font-bold">🎓 Co-Curricular Record</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">Verified activities and engagements</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Activities and engagements</p>
                 </div>
 
                 {records.length === 0 ? (
                     <div className="p-8 text-center">
                         <p className="text-3xl mb-2">📋</p>
-                        <p className="text-sm text-muted-foreground">No verified records yet.</p>
+                        <p className="text-sm text-muted-foreground">No public records yet.</p>
                     </div>
                 ) : (
                     <div className="p-4 space-y-4">

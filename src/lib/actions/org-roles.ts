@@ -1,8 +1,21 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+function getAdminClient(): SupabaseClient | null {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.error("Missing Supabase environment variables for organization update.");
+        return null;
+    }
+    return createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+}
 
 async function getAuthUser() {
     const supabase = await createClient();
@@ -167,4 +180,80 @@ export async function assignUserToRole(roleId: string, userId: string | null, or
     if (error) throw new Error(error.message);
 
     revalidatePath(`/dashboard/organizations/${organizationId}`);
+}
+
+/**
+ * Lets an officer with a `can_manage_roles` role (or an admin) edit their
+ * organization's profile. The organizations table and the organization-assets
+ * bucket are admin-only at the RLS layer, so after authorizing the caller we
+ * perform the upload and update with the service-role client. Visibility is
+ * intentionally NOT editable here — it stays admin-only.
+ */
+export async function updateOrganizationProfile(formData: FormData) {
+    const { supabase, user } = await getAuthUser();
+
+    const organizationId = formData.get("organization_id") as string;
+    const name = formData.get("name") as string;
+
+    if (!organizationId) throw new Error("Organization ID is required.");
+    if (!name || name.trim().length === 0) throw new Error("Organization name is required.");
+
+    const authorized = await canManageOrgRoles(supabase, user.id, organizationId);
+    if (!authorized) {
+        throw new Error("You are not authorized to edit this organization.");
+    }
+
+    const admin = getAdminClient();
+    if (!admin) throw new Error("Server misconfiguration. Please contact support.");
+
+    // Start from the current image URLs; replace only if a new file was picked.
+    let logoUrl = (formData.get("logo_url") as string) || null;
+    let coverUrl = (formData.get("cover_photo_url") as string) || null;
+
+    const uploadImage = async (file: File, kind: "logo" | "cover") => {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${kind}_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const { error: uploadError } = await admin.storage
+            .from("organization-assets")
+            .upload(fileName, file, { contentType: file.type, upsert: false });
+        if (uploadError) {
+            console.error(`Failed to upload ${kind}:`, uploadError.message);
+            throw new Error(`Failed to upload ${kind} image.`);
+        }
+        return admin.storage.from("organization-assets").getPublicUrl(fileName).data.publicUrl;
+    };
+
+    const logoFile = formData.get("logoFile") as File | null;
+    if (logoFile && logoFile.size > 0) logoUrl = await uploadImage(logoFile, "logo");
+
+    const coverFile = formData.get("coverFile") as File | null;
+    if (coverFile && coverFile.size > 0) coverUrl = await uploadImage(coverFile, "cover");
+
+    const description = formData.get("description") as string | null;
+    const mission = formData.get("mission") as string | null;
+    const vision = formData.get("vision") as string | null;
+    const core_values = formData.get("core_values") as string | null;
+    const category_id = formData.get("category_id") as string | null;
+
+    // Note: `visibility` is deliberately omitted — admin-only.
+    const updateData: Record<string, unknown> = {
+        name: name.trim(),
+        description: description?.trim() || null,
+        category_id: category_id ? category_id.trim() || null : null,
+    };
+    if (mission !== null) updateData.mission = mission.trim();
+    if (vision !== null) updateData.vision = vision.trim();
+    if (core_values !== null) updateData.core_values = core_values.trim();
+    if (logoUrl) updateData.logo_url = logoUrl;
+    if (coverUrl) updateData.cover_photo_url = coverUrl;
+
+    const { error } = await admin
+        .from("organizations")
+        .update(updateData)
+        .eq("id", organizationId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/dashboard/organizations/${organizationId}`);
+    revalidatePath("/dashboard/organizations");
 }

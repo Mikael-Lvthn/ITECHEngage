@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { generateEngagementRecord } from "@/lib/actions/engagement-internal";
+import { recordMembershipEngagement } from "@/lib/actions/engagement-internal";
 import { checkNotificationPreference } from "@/lib/utils/notifications";
 
 export async function approveMembership(membershipId: string) {
@@ -41,13 +41,7 @@ export async function approveMembership(membershipId: string) {
     if (membershipRow) {
         const org = membershipRow.organizations as unknown as { name: string } | null;
         try {
-            await generateEngagementRecord({
-                userId: membership.user_id,
-                organizationId: membershipRow.organization_id,
-                recordType: "membership",
-                title: `Joined: ${org?.name || "Organization"}`,
-                organizationName: org?.name || null,
-            });
+            await recordMembershipEngagement(membershipId);
         } catch (err) {
             console.error("Failed to generate engagement record:", err);
         }

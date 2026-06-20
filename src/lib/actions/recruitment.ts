@@ -4,6 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+async function requireOrgOfficer(supabase: SupabaseClient, userId: string, organizationId: string) {
+    const { data: role } = await supabase.rpc("get_my_role");
+    if (role === "admin") return;
+
+    const { data: structuralRole } = await supabase
+        .from("organization_roles")
+        .select("id")
+        .eq("assigned_user_id", userId)
+        .eq("organization_id", organizationId)
+        .limit(1)
+        .maybeSingle();
+
+    if (!structuralRole) {
+        throw new Error("Unauthorized: Officer or Admin role required");
+    }
+}
+
 async function requireAccreditedOrg(supabase: SupabaseClient, organizationId: string) {
     const { data: org } = await supabase
         .from("organizations")
@@ -64,6 +81,7 @@ export async function createRecruitment(formData: FormData) {
     if (error) throw new Error(error.message);
 
     revalidatePath(`/dashboard/organizations/${organizationId}`);
+    revalidatePath("/dashboard/officer-panel");
 }
 
 export async function closeRecruitment(recruitmentId: string, organizationId: string) {
@@ -74,22 +92,7 @@ export async function closeRecruitment(recruitmentId: string, organizationId: st
 
     if (!user) throw new Error("Not authenticated");
 
-    const { data: role } = await supabase.rpc("get_my_role");
-    const isAdmin = role === "admin";
-
-    if (!isAdmin) {
-        const { data: structuralRole } = await supabase
-            .from("organization_roles")
-            .select("id")
-            .eq("assigned_user_id", user.id)
-            .eq("organization_id", organizationId)
-            .limit(1)
-            .maybeSingle();
-
-        if (!structuralRole) {
-            throw new Error("Unauthorized: Officer or Admin role required");
-        }
-    }
+    await requireOrgOfficer(supabase, user.id, organizationId);
 
     const { error } = await supabase
         .from("recruitment_requests")
@@ -99,4 +102,77 @@ export async function closeRecruitment(recruitmentId: string, organizationId: st
     if (error) throw new Error(error.message);
 
     revalidatePath(`/dashboard/organizations/${organizationId}`);
+    revalidatePath("/dashboard/officer-panel");
+}
+
+export async function reopenRecruitment(recruitmentId: string, organizationId: string) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    await requireOrgOfficer(supabase, user.id, organizationId);
+
+    const { error } = await supabase
+        .from("recruitment_requests")
+        .update({ is_active: true })
+        .eq("id", recruitmentId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/dashboard/organizations/${organizationId}`);
+    revalidatePath("/dashboard/officer-panel");
+}
+
+export async function updateRecruitment(formData: FormData) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    const recruitmentId = formData.get("recruitment_id") as string;
+    const organizationId = formData.get("organization_id") as string;
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+
+    if (!recruitmentId || !organizationId || !title?.trim()) {
+        throw new Error("Recruitment ID, organization ID, and title are required");
+    }
+
+    await requireOrgOfficer(supabase, user.id, organizationId);
+
+    const { error } = await supabase
+        .from("recruitment_requests")
+        .update({ title: title.trim(), description: description?.trim() || null })
+        .eq("id", recruitmentId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/dashboard/organizations/${organizationId}`);
+    revalidatePath("/dashboard/officer-panel");
+}
+
+export async function deleteRecruitment(recruitmentId: string, organizationId: string) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    await requireOrgOfficer(supabase, user.id, organizationId);
+
+    const { error } = await supabase
+        .from("recruitment_requests")
+        .delete()
+        .eq("id", recruitmentId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/dashboard/organizations/${organizationId}`);
+    revalidatePath("/dashboard/officer-panel");
 }

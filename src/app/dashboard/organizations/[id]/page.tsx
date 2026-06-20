@@ -8,6 +8,7 @@ import OrgChart from "@/components/org-chart/OrgChart";
 import OrgRolesManager from "@/components/org-chart/OrgRolesManager";
 import OrgDetailTabs from "./OrgDetailTabs";
 import FollowButton from "@/components/organizations/FollowButton";
+import OfficerEditOrgDialog from "./OfficerEditOrgDialog";
 import ElectionsTabContent from "./ElectionsTabContent";
 import MemberFollowerPreview from "@/components/organizations/MemberFollowerPreview";
 import AccreditationBanner from "@/components/accreditation/AccreditationBanner";
@@ -223,6 +224,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
 
                         <div className="flex items-center gap-3 shrink-0">
                             {!isAdmin && <FollowButton organizationId={id} isFollowing={isFollowing} isOfficer={isOfficer} />}
+                            {canManageRoles && <OfficerEditOrgDialog org={org} />}
                             {isOfficer && (
                                 <Link
                                     href={`/dashboard/organizations/${id}/members`}

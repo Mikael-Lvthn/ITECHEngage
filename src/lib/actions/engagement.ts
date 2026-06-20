@@ -33,6 +33,21 @@ export async function getUserEngagementSummary(userId: string) {
     return summary;
 }
 
+export async function setRecordVisibility(recordId: string, isPublic: boolean) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    // RLS restricts updates to the record owner; scope explicitly as well.
+    const { error } = await supabase
+        .from("engagement_records")
+        .update({ is_public: isPublic })
+        .eq("id", recordId)
+        .eq("user_id", user.id);
+
+    if (error) throw new Error(error.message);
+}
+
 export async function toggleVerification(recordId: string, verified: boolean) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

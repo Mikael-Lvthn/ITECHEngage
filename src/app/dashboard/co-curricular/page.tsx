@@ -1,46 +1,82 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { getUserEngagementSummary } from "@/lib/actions/engagement";
+import { getUserEngagementSummary, setRecordVisibility } from "@/lib/actions/engagement";
 import { generateCocurricularPDF } from "@/lib/pdf/cocurricular";
 import { createClient } from "@/lib/supabase/client";
 import type { EngagementRecord } from "@/lib/types";
 
-type FilterType = "all" | "membership" | "officer_role" | "event_attended" | "election_winner" | "accreditation";
-
-const typeLabels: Record<string, string> = {
-    membership: "Membership",
-    officer_role: "Officer Role",
-    event_attended: "Event Attended",
-    election_winner: "Election Winner",
-    accreditation: "Accreditation",
+type StudentInfo = {
+    fullName: string;
+    studentNumber: string;
+    program: string;
+    yearLevel: number;
+    avatarUrl: string | null;
 };
 
-const typeEmoji: Record<string, string> = {
-    membership: "👥",
-    officer_role: "🎖️",
-    event_attended: "📅",
-    election_winner: "🏆",
-    accreditation: "📋",
+type ResumeSection = {
+    key: string;
+    heading: string;
+    emoji: string;
+    types: string[];
+    entryHeading: (r: EngagementRecord) => string;
+    entrySubtitle: (r: EngagementRecord) => string | null;
 };
+
+// Resume sections, in the order they appear top-to-bottom (like a CV).
+const SECTIONS: ResumeSection[] = [
+    {
+        key: "leadership",
+        heading: "Leadership & Roles",
+        emoji: "🎖️",
+        types: ["officer_role", "election_winner"],
+        entryHeading: (r) => r.role_title || r.title,
+        entrySubtitle: (r) => r.organization_name,
+    },
+    {
+        key: "memberships",
+        heading: "Organizations & Memberships",
+        emoji: "👥",
+        types: ["membership"],
+        entryHeading: (r) => r.organization_name || r.title,
+        entrySubtitle: (r) => r.role_title || "Member",
+    },
+    {
+        key: "events",
+        heading: "Events Attended",
+        emoji: "📅",
+        types: ["event_attended"],
+        entryHeading: (r) => r.title,
+        entrySubtitle: (r) => r.organization_name,
+    },
+    {
+        key: "recognitions",
+        heading: "Recognitions",
+        emoji: "📋",
+        types: ["accreditation"],
+        entryHeading: (r) => r.title,
+        entrySubtitle: (r) => r.organization_name,
+    },
+];
+
+function formatDate(date: string) {
+    return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatTerm(r: EngagementRecord): string | null {
+    if (r.academic_year && r.semester) return `${r.semester} Sem, AY ${r.academic_year}`;
+    if (r.academic_year) return `AY ${r.academic_year}`;
+    if (r.semester) return `${r.semester} Sem`;
+    return null;
+}
 
 export default function CoCurricularPage() {
-    const [summary, setSummary] = useState<{
-        totalRecords: number;
-        totalHours: number;
-        byType: Record<string, { count: number; hours: number }>;
-        records: EngagementRecord[];
-    } | null>(null);
+    const [records, setRecords] = useState<EngagementRecord[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<FilterType>("all");
     const [exporting, setExporting] = useState(false);
-    const [studentInfo, setStudentInfo] = useState<{
-        fullName: string;
-        studentNumber: string;
-        program: string;
-        yearLevel: number;
-    } | null>(null);
+    const [student, setStudent] = useState<StudentInfo | null>(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -51,16 +87,17 @@ export default function CoCurricularPage() {
 
             const [summaryData, profileRes, studentRes] = await Promise.all([
                 getUserEngagementSummary(user.id),
-                supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+                supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single(),
                 supabase.from("students").select("student_number, program, year_level").eq("id", user.id).maybeSingle(),
             ]);
 
-            setSummary(summaryData);
-            setStudentInfo({
+            setRecords(summaryData.records);
+            setStudent({
                 fullName: profileRes.data?.full_name || "Unknown",
                 studentNumber: studentRes.data?.student_number || "N/A",
                 program: studentRes.data?.program || "N/A",
                 yearLevel: studentRes.data?.year_level || 0,
+                avatarUrl: profileRes.data?.avatar_url || null,
             });
         } catch (error) {
             console.error("Failed to load engagement data:", error);
@@ -73,15 +110,16 @@ export default function CoCurricularPage() {
         loadData();
     }, [loadData]);
 
-    const filteredRecords = summary?.records.filter(
-        (r) => filter === "all" || r.record_type === filter
-    ) || [];
-
     const handleExportPDF = () => {
-        if (!summary || !studentInfo) return;
+        if (!student) return;
         setExporting(true);
         try {
-            generateCocurricularPDF(filteredRecords, studentInfo);
+            generateCocurricularPDF(records, {
+                fullName: student.fullName,
+                studentNumber: student.studentNumber,
+                program: student.program,
+                yearLevel: student.yearLevel,
+            });
         } catch (error) {
             console.error("PDF export failed:", error);
         } finally {
@@ -89,99 +127,107 @@ export default function CoCurricularPage() {
         }
     };
 
+    const handleToggleVisibility = async (record: EngagementRecord) => {
+        const next = !record.is_public;
+        // Optimistic update.
+        setRecords((prev) => prev.map((r) => (r.id === record.id ? { ...r, is_public: next } : r)));
+        try {
+            await setRecordVisibility(record.id, next);
+        } catch (error) {
+            console.error("Failed to update visibility:", error);
+            // Revert on failure.
+            setRecords((prev) => prev.map((r) => (r.id === record.id ? { ...r, is_public: !next } : r)));
+        }
+    };
+
     if (loading) {
         return (
             <div className="space-y-6">
-                <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />
-                    ))}
-                </div>
+                <div className="h-40 bg-gray-200 rounded-xl animate-pulse" />
                 <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
             </div>
         );
     }
 
+    const initials = (student?.fullName || "?")
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+    const orgCount = new Set(
+        records.map((r) => r.organization_name).filter(Boolean)
+    ).size;
+
+    // Build the sections that actually have records.
+    const populatedSections = SECTIONS.map((section) => ({
+        section,
+        items: records.filter((r) => section.types.includes(r.record_type)),
+    })).filter((s) => s.items.length > 0);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">My Co-Curricular Record</h1>
-                    <p className="text-muted-foreground text-sm mt-1">Track your engagement across organizations and events</p>
+                    <h1 className="text-2xl font-bold">My Resume</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Your co-curricular journey across organizations and events</p>
                 </div>
                 <button
                     onClick={handleExportPDF}
-                    disabled={exporting || !summary?.records.length}
+                    disabled={exporting || records.length === 0}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                    {exporting ? "Generating..." : "📄 Export PDF"}
+                    {exporting ? "Generating..." : "📄 Download Resume"}
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="rounded-xl border bg-card p-4 shadow-sm">
-                    <div className="text-3xl font-bold text-[#800000]">{summary?.totalRecords || 0}</div>
-                    <p className="text-sm text-muted-foreground mt-1">Total Records</p>
-                </div>
-                <div className="rounded-xl border bg-card p-4 shadow-sm">
-                    <div className="text-3xl font-bold text-[#C9A227]">{(summary?.totalHours || 0).toFixed(1)}</div>
-                    <p className="text-sm text-muted-foreground mt-1">Total Engagement</p>
-                </div>
-                <div className="rounded-xl border bg-card p-4 shadow-sm">
-                    <div className="text-3xl font-bold text-green-600">{summary?.records.filter((r) => r.verified).length || 0}</div>
-                    <p className="text-sm text-muted-foreground mt-1">Verified</p>
-                </div>
-                <div className="rounded-xl border bg-card p-4 shadow-sm">
-                    <div className="text-3xl font-bold text-blue-600">{Object.keys(summary?.byType || {}).length}</div>
-                    <p className="text-sm text-muted-foreground mt-1">Activity Types</p>
-                </div>
-            </div>
-
-            {Object.keys(summary?.byType || {}).length > 0 && (
-                <div className="rounded-xl border bg-card p-5 shadow-sm">
-                    <h2 className="font-semibold mb-3">By Category</h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                        {Object.entries(summary?.byType || {}).map(([type, data]) => (
-                            <button
-                                key={type}
-                                onClick={() => setFilter(filter === type ? "all" : type as FilterType)}
-                                className={`rounded-lg border p-3 text-left transition-all hover:shadow-sm ${filter === type ? "border-[#800000] bg-[#800000]/5" : "hover:bg-accent"}`}
-                            >
-                                <span className="text-lg">{typeEmoji[type] || "📌"}</span>
-                                <p className="text-xs font-medium mt-1">{typeLabels[type] || type}</p>
-                                <p className="text-lg font-bold text-[#800000]">{data.count}</p>
-                                <p className="text-[10px] text-muted-foreground">{data.hours.toFixed(1)} hrs</p>
-                            </button>
-                        ))}
+            {/* Profile header */}
+            <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <div className="h-28 bg-gradient-to-r from-[#800000] to-[#C9A227] opacity-80" />
+                <div className="px-6 pb-6 relative">
+                    <div className="flex items-end -mt-12 mb-4">
+                        <div className="relative w-24 h-24 rounded-full border-4 border-card bg-card shrink-0 overflow-hidden shadow-lg z-10">
+                            {student?.avatarUrl ? (
+                                <Image src={student.avatarUrl} alt={student.fullName} fill className="object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-[#800000]/10 flex items-center justify-center text-2xl font-bold text-[#800000]">
+                                    {initials}
+                                </div>
+                            )}
+                        </div>
                     </div>
+                    <h2 className="text-2xl font-bold text-foreground">{student?.fullName}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {[
+                            student?.program && student.program !== "N/A" ? student.program : null,
+                            student?.yearLevel ? `${student.yearLevel}${["th", "st", "nd", "rd"][student.yearLevel % 10] || "th"} Year` : null,
+                            student?.studentNumber && student.studentNumber !== "N/A" ? student.studentNumber : null,
+                        ].filter(Boolean).join("  ·  ")}
+                    </p>
+                    {records.length > 0 && (
+                        <>
+                            <p className="text-xs text-muted-foreground mt-3">
+                                {records.length} {records.length === 1 ? "activity" : "activities"}
+                                {orgCount > 0 && ` across ${orgCount} ${orgCount === 1 ? "organization" : "organizations"}`}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-2">
+                                Tip: use the 👁 / 🙈 toggle on each item to control what appears on your public profile. Hidden items stay visible only to you.
+                            </p>
+                        </>
+                    )}
                 </div>
-            )}
-
-            <div className="flex items-center gap-2">
-                <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value as FilterType)}
-                    className="px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                    <option value="all">All Types</option>
-                    {Object.entries(typeLabels).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                    ))}
-                </select>
-                <span className="text-sm text-muted-foreground">
-                    {filteredRecords.length} record{filteredRecords.length !== 1 ? "s" : ""}
-                </span>
             </div>
 
-            {filteredRecords.length === 0 ? (
+            {/* Resume sections */}
+            {records.length === 0 ? (
                 <div className="rounded-xl border bg-card p-8 text-center shadow-sm">
                     <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
                         <span className="text-3xl">📋</span>
                     </div>
                     <h3 className="font-semibold mb-1">No records yet</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Start participating in organizations and events to build your co-curricular record.
+                        Start participating in organizations and events to build your resume.
                     </p>
                     <Link
                         href="/dashboard/organizations"
@@ -191,55 +237,48 @@ export default function CoCurricularPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50">
-                                <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
-                                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
-                                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Activity</th>
-                                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Organization</th>
-                                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Hours</th>
-                                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {filteredRecords.map((record) => (
-                                    <tr key={record.id} className="hover:bg-accent/50 transition-colors">
-                                        <td className="px-4 py-3 whitespace-nowrap text-xs">
-                                            {new Date(record.date_earned).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted">
-                                                {typeEmoji[record.record_type]} {typeLabels[record.record_type]}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <p className="font-medium text-sm">{record.title}</p>
+                populatedSections.map(({ section, items }) => (
+                    <section key={section.key} className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 border-b bg-gradient-to-r from-[#800000]/5 to-transparent flex items-center justify-between">
+                            <h2 className="text-lg font-bold flex items-center gap-2">
+                                <span>{section.emoji}</span> {section.heading}
+                            </h2>
+                            <span className="text-xs text-muted-foreground">{items.length}</span>
+                        </div>
+                        <div className="divide-y">
+                            {items.map((record) => {
+                                const subtitle = section.entrySubtitle(record);
+                                const term = formatTerm(record);
+                                return (
+                                    <div key={record.id} className="px-6 py-4 flex items-start justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-sm">{section.entryHeading(record)}</p>
+                                            {subtitle && (
+                                                <p className="text-xs text-[#800000] font-medium mt-0.5">{subtitle}</p>
+                                            )}
                                             {record.description && (
-                                                <p className="text-xs text-muted-foreground mt-0.5">{record.description}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{record.description}</p>
                                             )}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm">{record.organization_name || "—"}</td>
-                                        <td className="px-4 py-3 text-center font-semibold">{record.hours_credit}</td>
-                                        <td className="px-4 py-3 text-center">
-                                            {record.verified ? (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
-                                                    ✓ Verified
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700">
-                                                    Pending
-                                                </span>
+                                        </div>
+                                        <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
+                                            <p className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(record.date_earned)}</p>
+                                            {term && (
+                                                <p className="text-[10px] text-muted-foreground whitespace-nowrap">{term}</p>
                                             )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                            <button
+                                                onClick={() => handleToggleVisibility(record)}
+                                                title={record.is_public ? "Visible on your public profile — click to hide" : "Hidden from your public profile — click to show"}
+                                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${record.is_public ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+                                            >
+                                                {record.is_public ? "👁 Public" : "🙈 Hidden"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+                ))
             )}
         </div>
     );

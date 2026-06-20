@@ -37,6 +37,7 @@ export default async function OfficerPanelPage() {
         pendingLeaveResult,
         pendingEventsResult,
         pendingNewsResult,
+        recruitmentsResult,
     ] = await Promise.all([
         // Pending membership requests
         supabase
@@ -66,7 +67,19 @@ export default async function OfficerPanelPage() {
             .in("organization_id", orgIds)
             .in("status", ["draft", "pending"])
             .order("created_at", { ascending: false }),
+        // Recruitment posts (active + closed)
+        supabase
+            .from("recruitment_requests")
+            .select("id, organization_id, title, description, is_active, created_at, organizations(name)")
+            .in("organization_id", orgIds)
+            .order("created_at", { ascending: false }),
     ]);
+
+    // Count pending membership applicants per organization (reuses data above).
+    const pendingApplicantsByOrg = (pendingMembershipsResult.data || []).reduce((acc, m) => {
+        acc[m.organization_id] = (acc[m.organization_id] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
 
     // Fetch approved members separately for better control/debugging
     const rosterResults = await Promise.all(
@@ -114,6 +127,8 @@ export default async function OfficerPanelPage() {
                 pendingEvents={(pendingEventsResult.data || []).map(normalize) as any}
                 pendingNews={(pendingNewsResult.data || []).map(normalize) as any}
                 approvedMembers={normalizedApprovedMembers as any}
+                recruitments={(recruitmentsResult.data || []).map(normalize) as any}
+                pendingApplicantsByOrg={pendingApplicantsByOrg}
                 organizations={orgIds.map((id) => ({ id, name: orgNames[id] || "Unknown" }))}
             />
         </div>

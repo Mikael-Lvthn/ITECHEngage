@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { approveMember, rejectMember } from "@/lib/actions/members";
 import { approveLeaveRequest, rejectLeaveRequest } from "@/lib/actions/organizations";
+import { createRecruitment, closeRecruitment, reopenRecruitment, updateRecruitment, deleteRecruitment } from "@/lib/actions/recruitment";
 import { getErrorMessage } from "@/lib/utils/error";
 
 interface MembershipRequest {
@@ -64,22 +65,35 @@ interface Organization {
     name: string;
 }
 
+interface RecruitmentPost {
+    id: string;
+    organization_id: string;
+    title: string;
+    description: string | null;
+    is_active: boolean;
+    created_at: string;
+    organizations: { name: string } | null;
+}
+
 interface OfficerPanelClientProps {
     pendingMemberships: MembershipRequest[];
     pendingLeaveRequests: LeaveRequest[];
     pendingEvents: PendingEvent[];
     pendingNews: PendingNews[];
     approvedMembers: ApprovedMember[];
+    recruitments: RecruitmentPost[];
+    pendingApplicantsByOrg: Record<string, number>;
     organizations: Organization[];
 }
 
-type Tab = "members" | "leave" | "content" | "roster";
+type Tab = "members" | "leave" | "content" | "roster" | "recruitment";
 
 const tabs: { key: Tab; label: string; icon: string }[] = [
     { key: "members", label: "Pending Members", icon: "📋" },
     { key: "leave", label: "Leave Requests", icon: "🚪" },
     { key: "content", label: "News & Events", icon: "📰" },
     { key: "roster", label: "Member Overview", icon: "👥" },
+    { key: "recruitment", label: "Recruitment", icon: "📢" },
 ];
 
 export default function OfficerPanelClient({
@@ -88,9 +102,12 @@ export default function OfficerPanelClient({
     pendingEvents,
     pendingNews,
     approvedMembers,
+    recruitments,
+    pendingApplicantsByOrg,
     organizations,
 }: OfficerPanelClientProps) {
     const [activeTab, setActiveTab] = useState<Tab>("members");
+    const openRecruitments = recruitments.filter((r) => r.is_active).length;
 
     return (
         <div className="space-y-6">
@@ -132,6 +149,11 @@ export default function OfficerPanelClient({
                                     {(pendingEvents.length + pendingNews.length) > 99 ? "99+" : (pendingEvents.length + pendingNews.length)}
                                 </span>
                             )}
+                            {tab.key === "recruitment" && openRecruitments > 0 && (
+                                <span className="ml-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                                    {openRecruitments > 99 ? "99+" : openRecruitments}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -143,6 +165,14 @@ export default function OfficerPanelClient({
                 {activeTab === "leave" && <LeaveRequestsTab requests={pendingLeaveRequests} />}
                 {activeTab === "content" && <ContentTab events={pendingEvents} news={pendingNews} />}
                 {activeTab === "roster" && <MemberRosterTab members={approvedMembers} organizations={organizations} />}
+                {activeTab === "recruitment" && (
+                    <RecruitmentTab
+                        recruitments={recruitments}
+                        organizations={organizations}
+                        pendingApplicantsByOrg={pendingApplicantsByOrg}
+                        onViewApplicants={() => setActiveTab("members")}
+                    />
+                )}
             </div>
         </div>
     );
@@ -494,5 +524,225 @@ function MemberRosterTab({ members, organizations }: { members: ApprovedMember[]
                 )}
             </div>
         </section>
+    );
+}
+
+/* ---------- Tab 5: Recruitment ---------- */
+function RecruitmentTab({
+    recruitments,
+    organizations,
+    pendingApplicantsByOrg,
+    onViewApplicants,
+}: {
+    recruitments: RecruitmentPost[];
+    organizations: Organization[];
+    pendingApplicantsByOrg: Record<string, number>;
+    onViewApplicants: () => void;
+}) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [actioningId, setActioningId] = useState<string | null>(null);
+    const [showForm, setShowForm] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [error, setError] = useState("");
+
+    const openCount = recruitments.filter((r) => r.is_active).length;
+    const totalApplicants = Object.values(pendingApplicantsByOrg).reduce((a, b) => a + b, 0);
+
+    const runAction = (id: string, fn: () => Promise<void>) => {
+        setActioningId(id);
+        startTransition(async () => {
+            try {
+                await fn();
+                router.refresh();
+            } catch (err) {
+                console.error("Recruitment action failed:", getErrorMessage(err));
+            } finally {
+                setActioningId(null);
+            }
+        });
+    };
+
+    const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setCreating(true);
+        setError("");
+        try {
+            const formData = new FormData(e.currentTarget);
+            await createRecruitment(formData);
+            setShowForm(false);
+            router.refresh();
+        } catch (err) {
+            setError(getErrorMessage(err));
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const handleEdit = async (e: React.FormEvent<HTMLFormElement>, post: RecruitmentPost) => {
+        e.preventDefault();
+        setActioningId(post.id);
+        setError("");
+        try {
+            const formData = new FormData(e.currentTarget);
+            formData.set("recruitment_id", post.id);
+            formData.set("organization_id", post.organization_id);
+            await updateRecruitment(formData);
+            setEditingId(null);
+            router.refresh();
+        } catch (err) {
+            setError(getErrorMessage(err));
+        } finally {
+            setActioningId(null);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-4">
+                <StatCard icon="📢" label="Open Posts" value={openCount} color="bg-green-500/10" />
+                <StatCard icon="🗂️" label="Total Posts" value={recruitments.length} color="bg-blue-500/10" />
+                <StatCard icon="🙋" label="Pending Applicants" value={totalApplicants} color="bg-yellow-500/10" />
+            </div>
+
+            <section className="rounded-xl border bg-card overflow-hidden">
+                <div className="px-6 py-4 border-b bg-gradient-to-r from-[#C9A227]/5 to-transparent flex items-center justify-between">
+                    <div>
+                        <h3 className="font-semibold text-foreground">📢 Recruitment Posts</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Post and manage recruitment across your organizations</p>
+                    </div>
+                    <button
+                        onClick={() => { setShowForm((v) => !v); setError(""); }}
+                        className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                    >
+                        {showForm ? "Cancel" : "+ Post Recruitment"}
+                    </button>
+                </div>
+
+                <div className="p-4 space-y-4">
+                    {totalApplicants > 0 && (
+                        <button
+                            onClick={onViewApplicants}
+                            className="w-full text-left text-xs px-3 py-2 rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-800 hover:bg-yellow-100 transition-colors"
+                        >
+                            🙋 {totalApplicants} pending applicant{totalApplicants !== 1 ? "s" : ""} across your organizations — view in Pending Members →
+                        </button>
+                    )}
+
+                    {/* Create form */}
+                    {showForm && (
+                        <form onSubmit={handleCreate} className="p-4 rounded-lg border bg-background space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Organization <span className="text-destructive">*</span></label>
+                                <select
+                                    name="organization_id"
+                                    required
+                                    defaultValue={organizations.length === 1 ? organizations[0].id : ""}
+                                    className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                >
+                                    <option value="" disabled>Select organization…</option>
+                                    {organizations.map((o) => (
+                                        <option key={o.id} value={o.id}>{o.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Title <span className="text-destructive">*</span></label>
+                                <input
+                                    name="title"
+                                    required
+                                    placeholder="e.g. Looking for Event Committee Members"
+                                    className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium mb-1">Description</label>
+                                <textarea
+                                    name="description"
+                                    rows={2}
+                                    placeholder="Brief description of what you're looking for…"
+                                    className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                                />
+                            </div>
+                            {error && <div className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</div>}
+                            <button
+                                type="submit"
+                                disabled={creating}
+                                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            >
+                                {creating ? "Posting…" : "Post Request"}
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Posts list */}
+                    {recruitments.length === 0 ? (
+                        <EmptyState icon="📢" message="No recruitment posts yet." />
+                    ) : (
+                        <div className="space-y-2">
+                            {recruitments.map((post) => (
+                                <div key={post.id} className="rounded-lg border p-4">
+                                    {editingId === post.id ? (
+                                        <form onSubmit={(e) => handleEdit(e, post)} className="space-y-3">
+                                            <input
+                                                name="title"
+                                                required
+                                                defaultValue={post.title}
+                                                className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                            />
+                                            <textarea
+                                                name="description"
+                                                rows={2}
+                                                defaultValue={post.description || ""}
+                                                className="w-full px-3 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                                            />
+                                            {error && <div className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</div>}
+                                            <div className="flex gap-2">
+                                                <button type="submit" disabled={isPending && actioningId === post.id} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
+                                                    {isPending && actioningId === post.id ? "Saving…" : "Save"}
+                                                </button>
+                                                <button type="button" onClick={() => { setEditingId(null); setError(""); }} className="px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-accent transition-colors">Cancel</button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h4 className="font-medium text-sm">{post.title}</h4>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${post.is_active ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                                                        {post.is_active ? "Open" : "Closed"}
+                                                    </span>
+                                                </div>
+                                                {post.description && <p className="text-xs text-muted-foreground mt-1">{post.description}</p>}
+                                                <p className="text-[10px] text-muted-foreground mt-2">
+                                                    {post.organizations?.name} · Posted {new Date(post.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-1.5 shrink-0">
+                                                <button onClick={() => { setEditingId(post.id); setError(""); }} className="px-2.5 py-1.5 rounded-lg border text-xs font-medium hover:bg-accent transition-colors">Edit</button>
+                                                {post.is_active ? (
+                                                    <button onClick={() => runAction(post.id, () => closeRecruitment(post.id, post.organization_id))} disabled={isPending && actioningId === post.id} className="px-2.5 py-1.5 rounded-lg border border-destructive/30 text-destructive text-xs font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50">Close</button>
+                                                ) : (
+                                                    <button onClick={() => runAction(post.id, () => reopenRecruitment(post.id, post.organization_id))} disabled={isPending && actioningId === post.id} className="px-2.5 py-1.5 rounded-lg border border-green-300 text-green-700 text-xs font-medium hover:bg-green-50 transition-colors disabled:opacity-50">Reopen</button>
+                                                )}
+                                                <button
+                                                    onClick={() => { if (confirm("Delete this recruitment post?")) runAction(post.id, () => deleteRecruitment(post.id, post.organization_id)); }}
+                                                    disabled={isPending && actioningId === post.id}
+                                                    className="px-2.5 py-1.5 rounded-lg border border-destructive/30 text-destructive text-xs font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
+        </div>
     );
 }

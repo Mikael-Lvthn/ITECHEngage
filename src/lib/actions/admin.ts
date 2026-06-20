@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendSchoolEmail } from "@/lib/actions/send-school-email";
+import { recordMembershipEngagement } from "@/lib/actions/engagement-internal";
 
 async function requireAdmin() {
     const supabase = await createClient();
@@ -60,16 +61,23 @@ export async function createOrganization(formData: FormData) {
 
     // Only create membership + President role if an initial student was selected
     if (initial_student_id) {
-        const { error: membershipError } = await supabase.from("memberships").insert({
+        const { data: newMembership, error: membershipError } = await supabase.from("memberships").insert({
             user_id: initial_student_id,
             organization_id: orgData.id,
             role: "officer",
             status: "approved"
-        });
+        }).select("id").single();
 
         if (membershipError) {
             await supabase.from("organizations").delete().eq("id", orgData.id);
             throw new Error("Failed to assign initial student. Organization creation rolled back.");
+        }
+
+        // Record the membership on the initial student's resume.
+        try {
+            await recordMembershipEngagement(newMembership.id);
+        } catch (err) {
+            console.error("Failed to record membership engagement:", err);
         }
 
         // Create initial President role and assign to initial student
