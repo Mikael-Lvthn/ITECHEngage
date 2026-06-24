@@ -47,7 +47,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#800000] text-white text-sm font-semibold hover:bg-[#600000] transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
                 <span>＋</span> Create Event
             </button>
@@ -79,7 +79,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                     <select
                                         name="organizationId"
                                         required
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     >
                                         {organizations.map((org) => (
                                             <option key={org.id} value={org.id}>
@@ -96,7 +96,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                         required
                                         maxLength={200}
                                         placeholder="e.g. Annual General Assembly"
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     />
                                 </div>
 
@@ -106,7 +106,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                         name="description"
                                         rows={3}
                                         placeholder="Describe the event..."
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 resize-none"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                     />
                                 </div>
 
@@ -116,7 +116,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                         name="location"
                                         required
                                         placeholder="e.g. Auditorium, Room 301"
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     />
                                 </div>
 
@@ -127,7 +127,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                             name="startDatetime"
                                             type="datetime-local"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                         />
                                     </div>
                                     <div>
@@ -135,7 +135,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                         <input
                                             name="endDatetime"
                                             type="datetime-local"
-                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                         />
                                     </div>
                                 </div>
@@ -151,7 +151,7 @@ export default function CreateEventDialog({ organizations }: CreateEventDialogPr
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="px-4 py-2 rounded-lg bg-[#800000] text-white text-sm font-semibold hover:bg-[#600000] transition-colors disabled:opacity-50"
+                                        className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                                     >
                                         {loading ? "Submitting..." : "Submit for Approval"}
                                     </button>

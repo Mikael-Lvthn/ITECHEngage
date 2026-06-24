@@ -23,21 +23,18 @@ export default async function FollowedPage() {
         return org;
     }).filter(Boolean);
 
-    // Get member counts for each followed org
+    // Get member counts for each followed org.
+    // Use the RLS-safe count_org_members RPC (same as the org detail page):
+    // a direct memberships query is blocked by RLS for orgs the user only
+    // follows (not a member/officer of), which silently yields 0.
     const memberCounts: Record<string, number> = {};
     if (followedOrgs.length > 0) {
-        const orgIds = followedOrgs.map((o) => o!.id);
-        const { data: memberships } = await supabase
-            .from("memberships")
-            .select("organization_id")
-            .in("organization_id", orgIds)
-            .eq("status", "approved");
-
-        if (memberships) {
-            memberships.forEach((m) => {
-                memberCounts[m.organization_id] = (memberCounts[m.organization_id] || 0) + 1;
-            });
-        }
+        const counts = await Promise.all(
+            followedOrgs.map((o) => supabase.rpc("count_org_members", { org_id: o!.id }))
+        );
+        followedOrgs.forEach((o, idx) => {
+            memberCounts[o!.id] = counts[idx].data ?? 0;
+        });
     }
 
     return (
@@ -61,7 +58,7 @@ export default async function FollowedPage() {
                 <div className="rounded-2xl border bg-card overflow-hidden">
                     <div className="h-2 bg-gradient-to-r from-[#800000] to-[#C9A227]" />
                     <div className="text-center py-16 px-6">
-                        <div className="w-16 h-16 mx-auto rounded-2xl bg-[#800000]/10 flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                             <span className="text-3xl animate-float">⭐</span>
                         </div>
                         <p className="font-semibold">No followed organizations</p>
@@ -85,7 +82,7 @@ export default async function FollowedPage() {
                             <div className="h-1.5 bg-gradient-to-r from-[#800000] to-[#C9A227]" />
                             <div className="p-5">
                                 <div className="flex items-start gap-3">
-                                    <div className="relative w-12 h-12 rounded-xl bg-[#800000]/10 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                                    <div className="relative w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
                                         {org!.logo_url ? (
                                             <Image src={org!.logo_url} alt={org!.name} fill className="object-cover" />
                                         ) : (
@@ -112,7 +109,7 @@ export default async function FollowedPage() {
                                     }`}>
                                         {org!.accreditation_status}
                                     </span>
-                                    <div className="ml-auto flex items-center gap-1 text-xs text-[#C9A227] font-medium">
+                                    <div className="ml-auto flex items-center gap-1 text-xs text-gold font-medium">
                                         <span>★</span> Following
                                     </div>
                                 </div>

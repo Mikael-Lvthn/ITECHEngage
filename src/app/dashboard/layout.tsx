@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
+import { SiteFooterLinks } from "@/components/SiteFooterLinks";
 import type { UserRole } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +134,11 @@ export default async function DashboardLayout({
 
             <main className="lg:pl-64">
                 <div className="max-w-6xl mx-auto p-6 lg:p-8">{children}</div>
+                <footer className="border-t border-border">
+                    <div className="max-w-6xl mx-auto px-6 lg:px-8 py-5">
+                        <SiteFooterLinks className="text-xs text-muted-foreground" />
+                    </div>
+                </footer>
             </main>
         </div>
     );

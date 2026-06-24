@@ -9,9 +9,9 @@ const TYPE_CONFIG: Record<string, { label: string; bg: string; text: string; acc
     event:       { label: "Event",       bg: "bg-violet-500",     text: "text-white",   accent: "bg-violet-50 border-violet-200 text-violet-800" },
     recruitment: { label: "Recruitment", bg: "bg-emerald-500",    text: "text-white",   accent: "bg-emerald-50 border-emerald-200 text-emerald-800" },
     election:    { label: "Election",    bg: "bg-indigo-500",     text: "text-white",   accent: "bg-indigo-50 border-indigo-200 text-indigo-800" },
-    system:      { label: "System",      bg: "bg-[#800000]",      text: "text-white",   accent: "bg-red-50 border-red-200 text-[#800000]" },
+    system:      { label: "System",      bg: "bg-primary",      text: "text-white",   accent: "bg-red-50 border-red-200 text-primary" },
     urgent:      { label: "Urgent",      bg: "bg-orange-500",     text: "text-white",   accent: "bg-orange-50 border-orange-200 text-orange-800" },
-    special:     { label: "Special",     bg: "bg-[#C9A227]",      text: "text-[#2B2B2B]", accent: "bg-yellow-50 border-yellow-200 text-yellow-800" },
+    special:     { label: "Special",     bg: "bg-gold",      text: "text-[#2B2B2B]", accent: "bg-yellow-50 border-yellow-200 text-yellow-800" },
 };
 
 /* Soft card background per type */
@@ -30,7 +30,7 @@ function getConfig(type: string) {
 }
 function getCardBg(type: string, pinned: boolean) {
     if (pinned) return "bg-amber-50 border-amber-300";
-    return CARD_BG[type] ?? "bg-white border-gray-200";
+    return CARD_BG[type] ?? "bg-card border-border";
 }
 
 /* ─── Post type ────────────────────────────────────────────────────── */
@@ -365,13 +365,13 @@ function PostCard({ post, isAdmin }: { post: Post; isAdmin: boolean }) {
                 </div>
 
                 {/* Title */}
-                <h3 className="font-bold text-gray-900 text-sm leading-snug mb-2">
+                <h3 className="font-bold text-foreground text-sm leading-snug mb-2">
                     {post.title}
                 </h3>
 
                 {/* Body */}
                 {post.body && (
-                    <p className="text-xs text-gray-700 leading-relaxed line-clamp-4 mb-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 mb-3">
                         {post.body}
                     </p>
                 )}
@@ -380,11 +380,11 @@ function PostCard({ post, isAdmin }: { post: Post; isAdmin: boolean }) {
                 <div className="flex items-center justify-between pt-1 border-t border-black/10">
                     <div className="flex items-center gap-1 min-w-0">
                         <span className="text-[9px]">🏢</span>
-                        <span className="text-[10px] text-gray-500 truncate max-w-[80px]">
+                        <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
                             {orgName || "ITECHEngage"}
                         </span>
                     </div>
-                    <span className="text-[10px] text-gray-400 shrink-0 ml-1">{dateStr}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0 ml-1">{dateStr}</span>
                 </div>
             </div>
         </div>

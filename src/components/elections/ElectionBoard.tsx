@@ -199,7 +199,7 @@ export default function ElectionBoard({
                 key={role.id}
                 className={`p-4 rounded-xl border ${
                     hasWinner
-                        ? "bg-gradient-to-r from-[#C9A227]/10 to-transparent border-[#C9A227]/30"
+                        ? "bg-gradient-to-r from-[#C9A227]/10 to-transparent border-gold/30"
                         : "bg-card border-border"
                 }`}
             >

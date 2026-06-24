@@ -104,7 +104,7 @@ export default async function RequestsPage() {
                                     <div className="h-1 bg-gradient-to-r from-yellow-400 to-yellow-500" />
                                     <div className="p-4 flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-full bg-[#800000]/10 flex items-center justify-center text-sm font-bold text-[#800000] shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                                                 {memberProfile?.full_name
                                                     ?.split(" ")
                                                     .map((n) => n[0])

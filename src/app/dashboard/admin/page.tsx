@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { MessageSquare, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 // TEMPORARY auto-approve feature — owner-only toggle card.
 import AutoApproveToggle from "./AutoApproveToggle";
@@ -42,6 +44,12 @@ export default async function AdminPage({ searchParams }: Props) {
     // TEMPORARY auto-approve feature: only the owner account sees the toggle card.
     const isOwner = user.id === OWNER_UID;
     const appSettings = isOwner ? await getAppSettings() : null;
+
+    // Count of unreviewed feedback (safe if the table does not exist yet).
+    const { count: newFeedbackCount } = await supabase
+        .from("feedback")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "new");
 
     // Read org filter from search params
     const params = await searchParams;
@@ -124,7 +132,7 @@ export default async function AdminPage({ searchParams }: Props) {
         leaveHistoryQuery,
         supabase
             .from("profiles")
-            .select("id, email, full_name, account_status, created_at, students(student_number, course, section, year_level)")
+            .select("id, email, full_name, account_status, created_at, students(student_number, course, section, year_level, cor_url)")
             .eq("account_status", "pending_verification")
             .order("created_at", { ascending: false })
             .limit(50),
@@ -179,6 +187,41 @@ export default async function AdminPage({ searchParams }: Props) {
                         Manage organizations, events, members, and system configuration.
                     </p>
                 </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link
+                    href="/dashboard/admin/feedback"
+                    className="group rounded-xl border border-border bg-card p-5 card-hover flex items-center gap-4"
+                >
+                    <div className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <MessageSquare className="w-5 h-5 text-primary" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-semibold group-hover:text-primary transition-colors">Feedback &amp; Suggestions</h3>
+                            {(newFeedbackCount ?? 0) > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                                    {newFeedbackCount}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Review submissions from users and visitors.</p>
+                    </div>
+                </Link>
+
+                <Link
+                    href="/dashboard/admin/legal"
+                    className="group rounded-xl border border-border bg-card p-5 card-hover flex items-center gap-4"
+                >
+                    <div className="w-11 h-11 rounded-lg bg-gold/15 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5 text-gold" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold group-hover:text-primary transition-colors">Legal Pages</h3>
+                        <p className="text-sm text-muted-foreground">Edit the Terms &amp; Agreement and Privacy Policy.</p>
+                    </div>
+                </Link>
             </div>
 
             {isOwner && appSettings && <AutoApproveToggle settings={appSettings} />}

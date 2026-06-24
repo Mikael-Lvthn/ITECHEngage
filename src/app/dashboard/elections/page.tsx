@@ -151,7 +151,7 @@ export default async function ElectionsPage() {
                 </div>
                 <div className="rounded-xl border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#C9A227]/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
                             <span className="text-lg">📋</span>
                         </div>
                         <div>

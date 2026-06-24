@@ -59,9 +59,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     };
 
     const bgColors = {
-        success: "bg-green-50 border-green-200 text-green-900",
-        error: "bg-red-50 border-red-200 text-red-900",
-        info: "bg-white border-gray-200 text-gray-900",
+        success: "bg-green-50 border-green-200 text-green-900 dark:bg-green-500/10 dark:border-green-500/30 dark:text-green-200",
+        error: "bg-red-50 border-red-200 text-red-900 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-200",
+        info: "bg-card border-border text-foreground",
     };
 
     return (
@@ -78,7 +78,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                         <p className="text-sm font-medium flex-1 leading-snug">{toast.message}</p>
                         <button
                             onClick={() => dismiss(toast.id)}
-                            className="text-gray-400 hover:text-gray-600 shrink-0 -mt-0.5"
+                            className="text-muted-foreground hover:text-foreground shrink-0 -mt-0.5 cursor-pointer"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

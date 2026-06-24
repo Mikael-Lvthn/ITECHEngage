@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingButton } from "@/components/loading/LoadingButton";
+import { Mail, Info, ArrowLeft } from "lucide-react";
+import { SiteFooterLinks } from "@/components/SiteFooterLinks";
 
 type Step = "email" | "otp" | "done";
 
@@ -58,19 +60,19 @@ export default function ForgotPasswordPage() {
         router.push("/reset-password");
     };
 
-    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
+    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
-            <div className="bg-[#800000] px-6 py-2 text-center">
-                <p className="text-xs text-white/80">
+        <div className="min-h-screen flex flex-col bg-background">
+            <div className="bg-primary px-6 py-2 text-center">
+                <p className="text-xs text-primary-foreground/80">
                     Polytechnic University of the Philippines — Institute of Technology
                 </p>
             </div>
 
             <div className="flex-1 flex items-center justify-center px-4">
                 <div className="w-full max-w-md animate-slide-up">
-                    <div className="bg-white rounded-2xl shadow-xl border border-border/50 p-8 space-y-6">
+                    <div className="bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6">
                         <div className="text-center">
                             <Image
                                 src="/logo.png"
@@ -79,7 +81,7 @@ export default function ForgotPasswordPage() {
                                 height={72}
                                 className="mx-auto rounded-full shadow-lg"
                             />
-                            <h1 className="mt-4 text-2xl font-bold tracking-tight text-[#2B2B2B]">
+                            <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">
                                 {step === "email" ? "Forgot your password?" : "Enter verification code"}
                             </h1>
                             <p className="text-muted-foreground mt-1 text-sm">
@@ -115,15 +117,13 @@ export default function ForgotPasswordPage() {
                                     </p>
                                 </div>
 
-                                <div className="rounded-xl border border-[#800000]/15 bg-[#800000]/5 p-4">
+                                <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center shrink-0">
-                                            <svg className="w-5 h-5 text-[#800000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                            <Mail className="w-5 h-5 text-primary" aria-hidden="true" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-[#800000]">Get code via email</p>
+                                            <p className="text-sm font-medium text-primary">Get code via email</p>
                                             <p className="text-xs text-muted-foreground">We&apos;ll send a 6-digit verification code to your email</p>
                                         </div>
                                     </div>
@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
                                     type="submit"
                                     isLoading={loading}
                                     loadingText="Sending code…"
-                                    className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-[#800000] text-white font-semibold text-sm hover:bg-[#700000] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none"
+                                    className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                 >
                                     Continue
                                 </LoadingButton>
@@ -142,14 +142,12 @@ export default function ForgotPasswordPage() {
 
                         {step === "otp" && (
                             <form onSubmit={handleVerifyOtp} className="space-y-5 animate-fade-in">
-                                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-4">
+                                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-4 dark:border-blue-500/30 dark:bg-blue-500/10">
                                     <div className="flex gap-3">
-                                        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                                            <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
+                                        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5 dark:bg-blue-500/20">
+                                            <Info className="w-3 h-3 text-blue-600 dark:text-blue-300" aria-hidden="true" />
                                         </div>
-                                        <p className="text-sm text-blue-800">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200">
                                             We&apos;ve sent a <strong>reset link</strong> to your email. You can click that link to reset your password directly, or enter the 6-digit code below.
                                         </p>
                                     </div>
@@ -181,7 +179,7 @@ export default function ForgotPasswordPage() {
                                     isLoading={loading}
                                     loadingText="Verifying…"
                                     disabled={loading || otp.length !== 6}
-                                    className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-[#800000] text-white font-semibold text-sm hover:bg-[#700000] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none"
+                                    className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                 >
                                     Verify &amp; Reset Password
                                 </LoadingButton>
@@ -191,7 +189,7 @@ export default function ForgotPasswordPage() {
                                     <button
                                         type="button"
                                         onClick={() => { setStep("email"); setOtp(""); setError(null); }}
-                                        className="text-[#800000] font-semibold hover:underline"
+                                        className="text-primary font-semibold hover:underline cursor-pointer"
                                     >
                                         Try again
                                     </button>
@@ -204,12 +202,12 @@ export default function ForgotPasswordPage() {
                                 <div className="w-full border-t border-border" />
                             </div>
                             <div className="relative flex justify-center text-xs">
-                                <span className="bg-white px-3 text-muted-foreground">Remember your password?</span>
+                                <span className="bg-card px-3 text-muted-foreground">Remember your password?</span>
                             </div>
                         </div>
 
                         <p className="text-center text-sm text-muted-foreground">
-                            <Link href="/login" className="text-[#800000] font-semibold hover:underline">
+                            <Link href="/login" className="text-primary font-semibold hover:underline">
                                 ← Back to Sign In
                             </Link>
                         </p>
@@ -217,12 +215,12 @@ export default function ForgotPasswordPage() {
 
                     <div className="text-center mt-6">
                         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
+                            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                             Back to Homepage
                         </Link>
                     </div>
+
+                    <SiteFooterLinks className="justify-center mt-4 text-xs text-muted-foreground" />
                 </div>
             </div>
         </div>

@@ -31,7 +31,7 @@ export default function OrgDetailTabs({ aboutContent, structureContent, election
                             "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap",
                             activeTab === tab.key
                                 ? "border-primary text-primary"
-                                : "border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300"
+                                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                         )}
                     >
                         {tab.label}
@@ -41,7 +41,7 @@ export default function OrgDetailTabs({ aboutContent, structureContent, election
                 {/* Calendar — external link to dedicated page */}
                 <Link
                     href={calendarHref}
-                    className="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300 transition-colors -mb-px whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-border transition-colors -mb-px whitespace-nowrap"
                 >
                     Calendar
                 </Link>

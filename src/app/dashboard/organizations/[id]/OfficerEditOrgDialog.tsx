@@ -101,11 +101,11 @@ export default function OfficerEditOrgDialog({ org }: OfficerEditOrgDialogProps)
             {open && mounted && createPortal(
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-                    <div className="relative bg-white border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
+                    <div className="relative bg-card border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
                         <div className="h-2 bg-gradient-to-r from-[#C9A227] to-[#800000] rounded-t-2xl" />
                         <div className="p-6 sm:p-8">
-                            <h2 className="text-2xl font-bold mb-1 text-gray-900">Edit Organization</h2>
-                            <p className="text-sm text-gray-500 mb-8 pb-4 border-b">
+                            <h2 className="text-2xl font-bold mb-1 text-foreground">Edit Organization</h2>
+                            <p className="text-sm text-muted-foreground mb-8 pb-4 border-b">
                                 Update your organization&apos;s details, images, and core statements.
                             </p>
 
@@ -118,31 +118,31 @@ export default function OfficerEditOrgDialog({ org }: OfficerEditOrgDialogProps)
                                     {/* Left Column */}
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Organization Name <span className="text-[#800000]">*</span>
+                                            <label className="block text-sm font-semibold text-muted-foreground mb-2">
+                                                Organization Name <span className="text-primary">*</span>
                                             </label>
                                             <input
                                                 name="name"
                                                 required
                                                 defaultValue={org.name}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                                            <label className="block text-sm font-semibold text-muted-foreground mb-2">Description</label>
                                             <textarea
                                                 name="description"
                                                 rows={3}
                                                 defaultValue={org.description || ""}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors resize-none"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors resize-none"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Organization Category</label>
+                                            <label className="block text-sm font-semibold text-muted-foreground mb-2">Organization Category</label>
                                             <select
                                                 name="category_id"
                                                 defaultValue={org.category_id || ""}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                                             >
                                                 <option value="">No Category</option>
                                                 {categories.map((cat) => (
@@ -157,14 +157,14 @@ export default function OfficerEditOrgDialog({ org }: OfficerEditOrgDialogProps)
                                     {/* Right Column - Images */}
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Logo</label>
+                                            <label className="block text-sm font-semibold text-muted-foreground mb-2">Logo</label>
                                             <div className="flex items-center gap-4">
-                                                <div className="relative w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                                                <div className="relative w-16 h-16 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center overflow-hidden shrink-0">
                                                     {logoPreview ? (
                                                         // eslint-disable-next-line @next/next/no-img-element
                                                         <img src={logoPreview} alt="Logo" className="absolute inset-0 w-full h-full object-cover" />
                                                     ) : (
-                                                        <span className="text-[#C9A227] text-2xl">🏢</span>
+                                                        <span className="text-gold text-2xl">🏢</span>
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
@@ -172,20 +172,20 @@ export default function OfficerEditOrgDialog({ org }: OfficerEditOrgDialogProps)
                                                         type="file"
                                                         accept="image/*"
                                                         onChange={(e) => handleFileSelect(e, "logo")}
-                                                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#C9A227]/10 file:text-[#800000] hover:file:bg-[#C9A227]/20 transition-all cursor-pointer"
+                                                        className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/10 file:text-primary hover:file:bg-gold/20 transition-all cursor-pointer"
                                                     />
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Banner</label>
-                                            <div className="w-full h-24 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden mb-3 relative group">
+                                            <label className="block text-sm font-semibold text-muted-foreground mb-2">Cover Banner</label>
+                                            <div className="w-full h-24 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center overflow-hidden mb-3 relative group">
                                                 {coverPreview ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img src={coverPreview} alt="Cover" className="absolute inset-0 w-full h-full object-cover group-hover:brightness-90 transition-all" />
                                                 ) : (
-                                                    <span className="text-gray-400 text-sm">Upload a cover image</span>
+                                                    <span className="text-muted-foreground text-sm">Upload a cover image</span>
                                                 )}
                                                 <input
                                                     type="file"
@@ -201,16 +201,16 @@ export default function OfficerEditOrgDialog({ org }: OfficerEditOrgDialogProps)
                                 {/* Full width text areas */}
                                 <div className="space-y-5 pt-4 border-t">
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Mission</label>
-                                        <textarea name="mission" defaultValue={org.mission || ""} rows={2} className="w-full px-4 py-3 text-sm border border-gray-300 bg-gray-50 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors" />
+                                        <label className="block text-sm font-semibold text-muted-foreground mb-2">Mission</label>
+                                        <textarea name="mission" defaultValue={org.mission || ""} rows={2} className="w-full px-4 py-3 text-sm border border-border bg-muted rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Vision</label>
-                                        <textarea name="vision" defaultValue={org.vision || ""} rows={2} className="w-full px-4 py-3 text-sm border border-gray-300 bg-gray-50 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors" />
+                                        <label className="block text-sm font-semibold text-muted-foreground mb-2">Vision</label>
+                                        <textarea name="vision" defaultValue={org.vision || ""} rows={2} className="w-full px-4 py-3 text-sm border border-border bg-muted rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Core Values</label>
-                                        <textarea name="core_values" defaultValue={org.core_values || ""} rows={2} className="w-full px-4 py-3 text-sm border border-gray-300 bg-gray-50 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors" />
+                                        <label className="block text-sm font-semibold text-muted-foreground mb-2">Core Values</label>
+                                        <textarea name="core_values" defaultValue={org.core_values || ""} rows={2} className="w-full px-4 py-3 text-sm border border-border bg-muted rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" />
                                     </div>
                                 </div>
 
@@ -224,14 +224,14 @@ export default function OfficerEditOrgDialog({ org }: OfficerEditOrgDialogProps)
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="flex-1 px-4 py-3 rounded-xl bg-[#800000] text-white text-sm font-bold shadow-md hover:bg-[#600000] focus:ring-4 focus:ring-[#800000]/20 transition-all disabled:opacity-50"
+                                        className="flex-1 px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold shadow-md hover:bg-primary/90 focus:ring-4 focus:ring-primary/20 transition-all disabled:opacity-50"
                                     >
                                         {loading ? "Saving..." : "Save Changes"}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setOpen(false)}
-                                        className="px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                        className="px-6 py-3 rounded-xl border-2 border-border text-muted-foreground text-sm font-bold hover:bg-muted hover:border-border transition-all"
                                     >
                                         Cancel
                                     </button>

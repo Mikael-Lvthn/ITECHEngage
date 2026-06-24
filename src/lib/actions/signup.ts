@@ -3,11 +3,19 @@
 import { createClient } from "@supabase/supabase-js";
 import { sendSchoolEmail } from "@/lib/actions/send-school-email";
 
+const COR_BUCKET = "student-cors";
+const COR_EXT_BY_TYPE: Record<string, string> = {
+    "application/pdf": "pdf",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+};
+
 export async function customSignUpAndSendEmail(
     email: string,
     password: string,
     origin: string,
-    metaData: Record<string, unknown>
+    metaData: Record<string, unknown>,
+    corFile?: File
 ) {
     try {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -43,6 +51,43 @@ export async function customSignUpAndSendEmail(
         if (userError) {
             console.error("[Custom Auth] Error creating user:", userError);
             return { success: false, error: userError.message };
+        }
+
+        // Upload the Certificate of Registration (required for students).
+        // The handle_new_user trigger has already created the students row with
+        // cor_url=''; here we store the actual file and update the path.
+        if (created?.user?.id && metaData.registration_type === "student") {
+            if (!corFile || corFile.size === 0) {
+                // Roll back the half-created account so a student never exists
+                // without a COR on file.
+                await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+                return { success: false, error: "A Certificate of Registration is required." };
+            }
+
+            const ext = COR_EXT_BY_TYPE[corFile.type] ?? "pdf";
+            const corPath = `${created.user.id}/cor_${Date.now()}.${ext}`;
+
+            const { error: uploadError } = await supabaseAdmin.storage
+                .from(COR_BUCKET)
+                .upload(corPath, corFile, { upsert: true, contentType: corFile.type });
+
+            if (uploadError) {
+                await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+                console.error("[Custom Auth] COR upload failed:", uploadError);
+                return { success: false, error: "Failed to upload your Certificate of Registration. Please try again." };
+            }
+
+            const { error: corUpdateError } = await supabaseAdmin
+                .from("students")
+                .update({ cor_url: corPath })
+                .eq("id", created.user.id);
+
+            if (corUpdateError) {
+                await supabaseAdmin.storage.from(COR_BUCKET).remove([corPath]);
+                await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+                console.error("[Custom Auth] COR record update failed:", corUpdateError);
+                return { success: false, error: "Failed to save your Certificate of Registration. Please try again." };
+            }
         }
 
         // TEMPORARY auto-approve feature: auto-verify new student registrations

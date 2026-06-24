@@ -8,6 +8,8 @@ import { approveEvent, rejectEvent, updateEvent } from "@/lib/actions/events";
 import { updateNewsStatus, updateNews } from "@/lib/actions/news";
 import { sendAnnouncement, createCategory, deleteCategory, verifyUserAccount, rejectUserAccount, createBulletinPost, bulkDeleteUsers, bulkVerifyUsers, bulkPromoteUsers, updateUserRole, deleteUser } from "@/lib/actions/admin";
 import { getErrorMessage } from "@/lib/utils/error";
+import { getCorSignedUrl } from "@/lib/actions/cor";
+import DocumentViewerModal from "@/components/accreditation/DocumentViewerModal";
 
 export interface MembershipRequest {
     id: string;
@@ -86,6 +88,7 @@ export interface PendingVerificationUser {
         course: string | null;
         section: string | null;
         year_level: number;
+        cor_url: string | null;
     } | null;
 }
 
@@ -171,8 +174,8 @@ export default function AdminPanelClient({
         <div className="space-y-6">
             {/* Stat Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <StatCard icon="👤" label="Total Users" value={stats.totalUsers} color="bg-[#800000]/10" />
-                <StatCard icon="🏢" label="Organizations" value={stats.totalOrgs} color="bg-[#C9A227]/10" />
+                <StatCard icon="👤" label="Total Users" value={stats.totalUsers} color="bg-primary/10" />
+                <StatCard icon="🏢" label="Organizations" value={stats.totalOrgs} color="bg-gold/10" />
                 <StatCard icon="⏳" label="Pending Members" value={stats.pendingMemberships} color="bg-yellow-500/10" />
                 <StatCard icon="📅" label="Pending Events" value={stats.pendingEventsCount} color="bg-blue-500/10" />
                 <StatCard icon="🚪" label="Leave Requests" value={stats.pendingLeaveCount} color="bg-orange-500/10" />
@@ -398,7 +401,7 @@ function MembershipRequestsSection({
 
                 {activeOrg !== "all" && (
                     <div className="flex items-center gap-2 text-xs">
-                        <span className="px-2 py-1 rounded-full bg-[#800000]/10 text-[#800000] font-medium">
+                        <span className="px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
                             Filtering: {activeOrgName}
                         </span>
                         <button
@@ -1048,7 +1051,7 @@ function CommsTab({ organizations }: { organizations: Organization[] }) {
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="px-6 py-2.5 rounded-lg bg-[#C9A227] text-[#2B2B2B] text-sm font-semibold hover:bg-[#C9A227]/90 transition-colors disabled:opacity-50"
+                            className="px-6 py-2.5 rounded-lg bg-gold text-[#2B2B2B] text-sm font-semibold hover:bg-gold/90 transition-colors disabled:opacity-50"
                         >
                             {isPending ? "Sending..." : "📢 Send Announcement"}
                         </button>
@@ -1118,7 +1121,7 @@ function CommsTab({ organizations }: { organizations: Organization[] }) {
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="px-6 py-2.5 rounded-lg bg-[#800000] text-white text-sm font-semibold hover:bg-[#600000] transition-colors disabled:opacity-50"
+                            className="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                         >
                             {isPending ? "Posting..." : "📌 Post to Bulletin Board"}
                         </button>
@@ -1262,6 +1265,21 @@ function VerificationTab({
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [actioningId, setActioningId] = useState<string | null>(null);
+    const [corViewing, setCorViewing] = useState<{ url: string; name: string } | null>(null);
+    const [corLoadingId, setCorLoadingId] = useState<string | null>(null);
+
+    async function handleViewCor(userId: string, name: string) {
+        setCorLoadingId(userId);
+        try {
+            const url = await getCorSignedUrl(userId);
+            setCorViewing({ url, name: `${name} — COR.pdf` });
+        } catch (err) {
+            console.error("View COR failed:", getErrorMessage(err));
+            alert("Could not load this student's Certificate of Registration.");
+        } finally {
+            setCorLoadingId(null);
+        }
+    }
 
     function handleVerify(userId: string, promoteToAdmin = false) {
         setActioningId(userId);
@@ -1337,6 +1355,17 @@ function VerificationTab({
                                             </td>
                                             <td className="py-3 text-right">
                                                 <div className="flex gap-2 justify-end">
+                                                    {user.students?.cor_url ? (
+                                                        <button
+                                                            onClick={() => handleViewCor(user.id, user.full_name)}
+                                                            disabled={corLoadingId === user.id}
+                                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {corLoadingId === user.id ? "..." : "📄 View COR"}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="px-3 py-1.5 text-xs text-muted-foreground italic self-center">No COR on file</span>
+                                                    )}
                                                     <button
                                                         onClick={() => handleVerify(user.id, false)}
                                                         disabled={isPending && actioningId === user.id}
@@ -1397,7 +1426,7 @@ function VerificationTab({
                                                     <button
                                                         onClick={() => handleVerify(user.id, true)}
                                                         disabled={isPending && actioningId === user.id}
-                                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#C9A227] text-[#2B2B2B] hover:bg-[#b8911f] transition-colors disabled:opacity-50"
+                                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-gold text-[#2B2B2B] hover:bg-gold/90 transition-colors disabled:opacity-50"
                                                     >
                                                         {isPending && actioningId === user.id ? "..." : "✓ Verify & Promote"}
                                                     </button>
@@ -1418,6 +1447,14 @@ function VerificationTab({
                     )}
                 </div>
             </section>
+
+            {corViewing && (
+                <DocumentViewerModal
+                    fileUrl={corViewing.url}
+                    fileName={corViewing.name}
+                    onClose={() => setCorViewing(null)}
+                />
+            )}
         </div>
     );
 }
@@ -1577,8 +1614,8 @@ function UserTable({
 
     const roleBadge = (role: string) => {
         const map: Record<string, string> = {
-            admin: "bg-[#800000]/10 text-[#800000] dark:bg-[#800000]/20",
-            officer: "bg-[#C9A227]/10 text-[#C9A227] dark:bg-[#C9A227]/20",
+            admin: "bg-primary/10 text-primary dark:bg-primary/20",
+            officer: "bg-gold/10 text-gold dark:bg-gold/20",
             student: "bg-muted text-muted-foreground",
         };
         return map[role] || "bg-muted text-muted-foreground";

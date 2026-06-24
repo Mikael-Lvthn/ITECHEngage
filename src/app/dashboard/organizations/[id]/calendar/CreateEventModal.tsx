@@ -197,7 +197,7 @@ export default function CreateEventModal({
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="Event title"
                                     required
-                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 focus:border-[#800000]/50 transition-all"
+                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
                                 />
                             </div>
 
@@ -212,7 +212,7 @@ export default function CreateEventModal({
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={3}
                                     placeholder="Event details..."
-                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all resize-none"
+                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all resize-none"
                                 />
                             </div>
 
@@ -240,9 +240,9 @@ export default function CreateEventModal({
                                     role="switch"
                                     aria-checked={isAllDay}
                                     onClick={() => setIsAllDay(!isAllDay)}
-                                    className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#800000]/40 ${isAllDay ? "bg-[#800000]" : "bg-muted-foreground/30"}`}
+                                    className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 ${isAllDay ? "bg-primary" : "bg-muted-foreground/30"}`}
                                 >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isAllDay ? "translate-x-5" : "translate-x-0"}`} />
+                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-card rounded-full shadow transition-transform ${isAllDay ? "translate-x-5" : "translate-x-0"}`} />
                                 </button>
                                 <label className="text-sm font-medium cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                     All-day event
@@ -261,7 +261,7 @@ export default function CreateEventModal({
                                         value={isAllDay ? startDatetime.slice(0, 10) : startDatetime}
                                         onChange={(e) => setStartDatetime(isAllDay ? `${e.target.value}T00:00` : e.target.value)}
                                         required
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                                     />
                                 </div>
                                 <div>
@@ -273,7 +273,7 @@ export default function CreateEventModal({
                                         type={isAllDay ? "date" : "datetime-local"}
                                         value={isAllDay ? endDatetime.slice(0, 10) : endDatetime}
                                         onChange={(e) => setEndDatetime(isAllDay ? `${e.target.value}T23:59` : e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                                     />
                                 </div>
                             </div>
@@ -289,7 +289,7 @@ export default function CreateEventModal({
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
                                     placeholder="Event location or link"
-                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all"
+                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                                 />
                             </div>
 
@@ -302,7 +302,7 @@ export default function CreateEventModal({
                                     id="cal-status"
                                     value={status}
                                     onChange={(e) => setStatus(e.target.value as "draft" | "published" | "cancelled")}
-                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer"
                                 >
                                     <option value="draft">Draft (only officers see it)</option>
                                     <option value="published">Published (visible to all members)</option>
@@ -319,7 +319,7 @@ export default function CreateEventModal({
                                     id="cal-recurrence"
                                     value={recurrence}
                                     onChange={(e) => setRecurrence(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer"
                                 >
                                     <option value="none">Does not repeat</option>
                                     <option value="daily">Daily</option>
@@ -341,7 +341,7 @@ export default function CreateEventModal({
                                         value={recurrenceEndDate}
                                         onChange={(e) => setRecurrenceEndDate(e.target.value)}
                                         required={recurrence !== "none"}
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                                     />
                                 </div>
                             )}
@@ -373,7 +373,7 @@ export default function CreateEventModal({
                             <button
                                 type="submit"
                                 disabled={isPending || success}
-                                className="px-6 py-2 rounded-lg bg-[#800000] text-white text-sm font-semibold hover:bg-[#600000] transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-2 min-h-[44px]"
+                                className="px-6 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-60 flex items-center gap-2 min-h-[44px]"
                             >
                                 {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                                 {isEdit ? "Save Changes" : "Create Event"}

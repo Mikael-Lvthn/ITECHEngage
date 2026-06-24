@@ -241,13 +241,13 @@ export default function AttendanceScanPanel({ eventId: _eventId, eventTitle }: A
                     <div className="flex border-b text-sm">
                         <button
                             onClick={() => setActiveTab("camera")}
-                            className={`flex-1 py-3 font-medium border-b-2 transition-colors ${activeTab === "camera" ? "border-[#800000] text-[#800000]" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                            className={`flex-1 py-3 font-medium border-b-2 transition-colors ${activeTab === "camera" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                         >
                             📷 Use Camera
                         </button>
                         <button
                             onClick={() => setActiveTab("upload")}
-                            className={`flex-1 py-3 font-medium border-b-2 transition-colors ${activeTab === "upload" ? "border-[#800000] text-[#800000]" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                            className={`flex-1 py-3 font-medium border-b-2 transition-colors ${activeTab === "upload" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                         >
                             📤 Upload Image
                         </button>
@@ -258,7 +258,7 @@ export default function AttendanceScanPanel({ eventId: _eventId, eventTitle }: A
                 <div className="p-6">
                     {submitting && (
                         <div className="py-12 text-center space-y-4">
-                            <div className="w-12 h-12 border-4 border-[#800000] border-t-transparent rounded-full animate-spin mx-auto" />
+                            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                             <p className="text-sm font-medium text-muted-foreground">Verifying attendance token...</p>
                         </div>
                     )}
@@ -295,7 +295,7 @@ export default function AttendanceScanPanel({ eventId: _eventId, eventTitle }: A
                                 </button>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="flex-1 py-2 rounded-xl bg-[#800000] text-white text-sm font-semibold hover:opacity-95 transition-opacity"
+                                    className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-95 transition-opacity"
                                 >
                                     Got it
                                 </button>
@@ -348,13 +348,13 @@ export default function AttendanceScanPanel({ eventId: _eventId, eventTitle }: A
 
                             {/* Laser scan line */}
                             {cameraState === "scanning" && (
-                                <div className="absolute left-0 right-0 h-0.5 bg-[#C9A227] shadow-[0_0_8px_#C9A227] z-10 animate-scan-laser" />
+                                <div className="absolute left-0 right-0 h-0.5 bg-gold shadow-[0_0_8px_#C9A227] z-10 animate-scan-laser" />
                             )}
 
                             {/* Loading overlay — no backdrop-blur to avoid compositing conflicts with video */}
                             {cameraState === "starting" && (
                                 <div className="absolute inset-0 bg-[#0c0a09]/95 flex flex-col items-center justify-center text-sm text-zinc-300 z-20 gap-3">
-                                    <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
                                     <span className="font-medium tracking-wide">Initializing camera...</span>
                                 </div>
                             )}

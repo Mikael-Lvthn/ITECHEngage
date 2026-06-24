@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock } from "lucide-react";
 
 export function PendingVerificationBanner() {
     return (
@@ -8,7 +9,7 @@ export function PendingVerificationBanner() {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse" />
             <div className="relative max-w-7xl mx-auto px-4 py-3 flex items-center justify-center gap-3">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-400/20 border border-amber-400/40 shrink-0">
-                    <span className="text-base">⏳</span>
+                    <Clock className="w-4 h-4 text-amber-700 dark:text-amber-300" aria-hidden="true" />
                 </div>
                 <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
                     <span className="font-bold">Account Pending Approval</span>
@@ -40,7 +41,7 @@ export function PendingVerificationModal({ isOpen, onClose }: { isOpen: boolean;
 
                 <div className="p-6 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-4">
-                        <span className="text-3xl">⏳</span>
+                        <Clock className="w-7 h-7 text-amber-500" aria-hidden="true" />
                     </div>
                     <h3 className="text-lg font-bold text-foreground">Account Pending Approval</h3>
                     <p className="text-sm text-muted-foreground mt-2 leading-relaxed">

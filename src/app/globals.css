@@ -59,34 +59,37 @@
     --animate-scan-laser: scan-laser 2s linear infinite;
 }
 
-/* Dark-mode overrides */
+/* ─── Pitch-black (OLED) dark mode ──────────────────────────
+   True-black base with subtly lifted surfaces and hairline
+   borders for depth. Maroon brightened for contrast on black;
+   gold accent unchanged. */
 .dark {
-    --color-background: #1A1A1A;
+    --color-background: #000000;
     --color-foreground: #F5F5F5;
-    --color-card: #262626;
+    --color-card: #0D0D0D;
     --color-card-foreground: #F5F5F5;
-    --color-popover: #262626;
+    --color-popover: #161616;
     --color-popover-foreground: #F5F5F5;
-    --color-primary: #A00000;
+    --color-primary: #A52A2A;
     --color-primary-foreground: #FFFFFF;
-    --color-secondary: #333333;
+    --color-secondary: #161616;
     --color-secondary-foreground: #F5F5F5;
-    --color-muted: #333333;
-    --color-muted-foreground: #A3A3A3;
-    --color-accent: #333333;
+    --color-muted: #161616;
+    --color-muted-foreground: #A1A1A1;
+    --color-accent: #1A1A1A;
     --color-accent-foreground: #F5F5F5;
     --color-destructive: #EF4444;
     --color-destructive-foreground: #FFFFFF;
-    --color-border: #404040;
-    --color-input: #404040;
-    --color-ring: #A00000;
-    --color-sidebar: #600000;
-    --color-sidebar-foreground: #FFFFFF;
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-input: rgba(255, 255, 255, 0.08);
+    --color-ring: #C9A227;
+    --color-sidebar: #0A0A0A;
+    --color-sidebar-foreground: #F5F5F5;
     --color-sidebar-primary: #C9A227;
     --color-sidebar-primary-foreground: #2B2B2B;
-    --color-sidebar-accent: rgba(255, 255, 255, 0.1);
+    --color-sidebar-accent: rgba(255, 255, 255, 0.08);
     --color-sidebar-accent-foreground: #FFFFFF;
-    --color-sidebar-border: rgba(255, 255, 255, 0.1);
+    --color-sidebar-border: rgba(255, 255, 255, 0.08);
     --color-sidebar-ring: #C9A227;
 }
 
@@ -181,6 +184,19 @@
         @apply bg-background text-foreground antialiased;
         overflow-x: hidden;
         min-height: 100%;
+        line-height: 1.6;
+    }
+
+    /* Type-scale defaults — low specificity, so Tailwind utilities still win.
+       Tightens headline tracking and keeps body line-length comfortable. */
+    h1, h2, h3, h4 {
+        line-height: 1.2;
+        letter-spacing: -0.015em;
+        text-wrap: balance;
+    }
+
+    p {
+        text-wrap: pretty;
     }
 }
 
@@ -192,7 +208,7 @@
     }
 
     .dark .loading-skeleton {
-        background: linear-gradient(110deg, #333333 8%, #404040 18%, #333333 33%);
+        background: linear-gradient(110deg, #161616 8%, #242424 18%, #161616 33%);
         background-size: 200% 100%;
         animation: shimmer 1.5s linear infinite;
     }
@@ -242,19 +258,44 @@
         animation-delay: 0.5s;
     }
 
+    /* Glass: legible in light mode (per a11y contrast guidance),
+       softly translucent over the pitch-black surface in dark mode. */
     .glass {
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid var(--color-border);
+    }
+
+    .dark .glass {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Lifted surfaces for the layered OLED look. */
+    .surface {
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+    }
+
+    .surface-2 {
+        background: var(--color-popover);
+        border: 1px solid var(--color-border);
     }
 
     .card-hover {
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+            border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .card-hover:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .dark .card-hover:hover {
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+        border-color: rgba(255, 255, 255, 0.14);
     }
 
     .gradient-maroon {
@@ -330,6 +371,51 @@ input[type="password"]::-ms-clear {
     to   { width: 100%; opacity: 0; }
 }
 
+/* ─── Branded loader (BrandedLoader.tsx) ────────────────── */
+@keyframes itc-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes itc-spin-rev {
+    to { transform: rotate(-360deg); }
+}
+
+@keyframes itc-breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.045); }
+}
+
+@keyframes itc-orbit {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes itc-bar {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(280%); }
+}
+
+@keyframes itc-dot {
+    0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+    40%           { opacity: 1; transform: translateY(-4px); }
+}
+
+@keyframes itc-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .itc-ring,
+    .itc-ring2,
+    .itc-orbit {
+        animation: none !important;
+    }
+
+    .itc-logo {
+        animation: itc-breathe 3.6s ease-in-out infinite !important;
+    }
+}
+
 /* ─── Dark Mode: form controls ──────────────────────────── */
 .dark input,
 .dark textarea,
@@ -354,36 +440,13 @@ input[type="password"]::-ms-clear {
     border-color: var(--color-border);
 }
 
-/* ─── Dark Mode: white-background overrides ─────────────── */
-.dark .bg-white {
-    background-color: var(--color-card) !important;
-}
-
-.dark .text-gray-900,
+/* ─── Dark Mode: legacy maroon body-text safety net ────────
+   The bulk of the app now uses semantic tokens. A handful of
+   components still render the literal text-[#2B2B2B]; this keeps
+   them legible on the pitch-black surface. */
 .dark .text-\[\#2B2B2B\],
 .dark .text-\[\#2b2b2b\] {
     color: var(--color-foreground) !important;
-}
-
-.dark .text-\[\#6E6E6E\],
-.dark .text-\[\#6e6e6e\],
-.dark .text-gray-600 {
-    color: var(--color-muted-foreground) !important;
-}
-
-.dark .border-\[\#D9D9D9\],
-.dark .border-\[\#d9d9d9\],
-.dark .border-gray-100,
-.dark .border-gray-200 {
-    border-color: var(--color-border) !important;
-}
-
-.dark .bg-gray-50 {
-    background-color: var(--color-muted) !important;
-}
-
-.dark .hover\:bg-gray-50:hover {
-    background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

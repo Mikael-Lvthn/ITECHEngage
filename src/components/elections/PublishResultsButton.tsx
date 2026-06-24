@@ -29,7 +29,7 @@ export default function PublishResultsButton({ electionId }: PublishResultsButto
             {!showConfirm ? (
                 <button
                     onClick={() => setShowConfirm(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#C9A227] text-[#2B2B2B] text-sm font-semibold hover:bg-[#B8911E] transition-colors shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gold text-[#2B2B2B] text-sm font-semibold hover:bg-[#B8911E] transition-colors shadow-sm"
                 >
                     <span>📊</span> Publish Results & Assign Winners
                 </button>

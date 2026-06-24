@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingButton } from "@/components/loading/LoadingButton";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, ChevronRight, GraduationCap, ShieldCheck, User } from "lucide-react";
+import { SiteFooterLinks } from "@/components/SiteFooterLinks";
 import { customSignUpAndSendEmail } from "@/lib/actions/signup";
 
 type RegistrationType = "student" | "faculty";
@@ -24,6 +25,7 @@ export default function SignupPage() {
     const [course, setCourse] = useState("");
     const [section, setSection] = useState("");
     const [yearLevel, setYearLevel] = useState("");
+    const [corFile, setCorFile] = useState<File | null>(null);
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -72,6 +74,19 @@ export default function SignupPage() {
             }
             if (!section.trim()) {
                 setError("Section is required");
+                return;
+            }
+            if (!corFile) {
+                setError("Your Certificate of Registration (COR) is required");
+                return;
+            }
+            const allowedCorTypes = ["application/pdf", "image/jpeg", "image/png"];
+            if (!allowedCorTypes.includes(corFile.type)) {
+                setError("Your COR must be a PDF, JPG, or PNG file");
+                return;
+            }
+            if (corFile.size > 5 * 1024 * 1024) {
+                setError("Your COR must be 5MB or smaller");
                 return;
             }
         }
@@ -149,7 +164,8 @@ export default function SignupPage() {
                         section: section,
                         year_level: yearLevel,
                     }),
-                }
+                },
+                registrationType === "student" ? corFile ?? undefined : undefined
             );
 
             if (!success) {
@@ -166,19 +182,19 @@ export default function SignupPage() {
         }
     };
 
-    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
+    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
-            <div className="bg-[#800000] px-6 py-2 text-center">
-                <p className="text-xs text-white/80">
+        <div className="min-h-screen flex flex-col bg-background">
+            <div className="bg-primary px-6 py-2 text-center">
+                <p className="text-xs text-primary-foreground/80">
                     Polytechnic University of the Philippines — Institute of Technology
                 </p>
             </div>
 
             <div className="flex-1 flex items-center justify-center px-4 py-8">
                 <div className="w-full max-w-lg animate-slide-up">
-                    <div className="bg-white rounded-2xl shadow-xl border border-border/50 p-8 space-y-6">
+                    <div className="bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6">
                         <div className="text-center">
                             <Image
                                 src="/logo.png"
@@ -187,7 +203,7 @@ export default function SignupPage() {
                                 height={72}
                                 className="mx-auto rounded-full shadow-lg"
                             />
-                            <h1 className="mt-4 text-2xl font-bold tracking-tight text-[#2B2B2B]">Create your account</h1>
+                            <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
                             <p className="text-muted-foreground mt-1 text-sm">
                                 Join the ITECHEngage campus community
                             </p>
@@ -202,41 +218,37 @@ export default function SignupPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <button
                                         onClick={() => setRegistrationType("student")}
-                                        className="group relative rounded-xl border-2 border-border bg-white p-6 text-left transition-all hover:border-[#800000] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                        className="group relative rounded-xl border-2 border-border bg-card p-6 text-left transition-all hover:border-primary hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                                     >
-                                        <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-lg bg-gradient-to-r from-[#800000] to-[#A52A2A] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="w-14 h-14 rounded-xl bg-[#800000]/10 flex items-center justify-center mb-4 group-hover:bg-[#800000]/20 transition-colors">
-                                            <span className="text-3xl">🎓</span>
+                                        <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-lg bg-gradient-to-r from-primary to-[#A52A2A] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                                            <GraduationCap className="w-7 h-7 text-primary" aria-hidden="true" />
                                         </div>
-                                        <h3 className="font-bold text-lg text-[#2B2B2B] group-hover:text-[#800000] transition-colors">Student</h3>
+                                        <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">Student</h3>
                                         <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                                             For PUP-ITECH students to join organizations, attend events, and participate in elections.
                                         </p>
-                                        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-[#800000] opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                                             Select
-                                            <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
+                                            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                                         </div>
                                     </button>
 
                                     <button
                                         onClick={() => setRegistrationType("faculty")}
-                                        className="group relative rounded-xl border-2 border-border bg-white p-6 text-left transition-all hover:border-[#C9A227] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#C9A227]"
+                                        className="group relative rounded-xl border-2 border-border bg-card p-6 text-left transition-all hover:border-gold hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gold cursor-pointer"
                                     >
-                                        <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-lg bg-gradient-to-r from-[#C9A227] to-[#E6C84D] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="w-14 h-14 rounded-xl bg-[#C9A227]/10 flex items-center justify-center mb-4 group-hover:bg-[#C9A227]/20 transition-colors">
-                                            <span className="text-3xl">🛡️</span>
+                                        <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-lg bg-gradient-to-r from-gold to-[#E6C84D] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="w-14 h-14 rounded-xl bg-gold/10 flex items-center justify-center mb-4 group-hover:bg-gold/20 transition-colors">
+                                            <ShieldCheck className="w-7 h-7 text-gold" aria-hidden="true" />
                                         </div>
-                                        <h3 className="font-bold text-lg text-[#2B2B2B] group-hover:text-[#C9A227] transition-colors">Faculty / Admin</h3>
+                                        <h3 className="font-bold text-lg text-foreground group-hover:text-gold transition-colors">Faculty / Admin</h3>
                                         <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                                             For faculty advisors and administrators to manage organizations and oversee activities.
                                         </p>
-                                        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-[#C9A227] opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-gold opacity-0 group-hover:opacity-100 transition-opacity">
                                             Select
-                                            <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
+                                            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                                         </div>
                                     </button>
                                 </div>
@@ -246,12 +258,12 @@ export default function SignupPage() {
                                         <div className="w-full border-t border-border" />
                                     </div>
                                     <div className="relative flex justify-center text-xs">
-                                        <span className="bg-white px-3 text-muted-foreground">Already have an account?</span>
+                                        <span className="bg-card px-3 text-muted-foreground">Already have an account?</span>
                                     </div>
                                 </div>
 
                                 <p className="text-center text-sm">
-                                    <Link href="/login" className="text-[#800000] font-semibold hover:underline">
+                                    <Link href="/login" className="text-primary font-semibold hover:underline">
                                         Sign in instead →
                                     </Link>
                                 </p>
@@ -261,18 +273,20 @@ export default function SignupPage() {
                                 <div className="flex items-center justify-between">
                                     <button
                                         onClick={() => setRegistrationType(null)}
-                                        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                        </svg>
+                                        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                                         Change type
                                     </button>
                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${registrationType === "student"
-                                        ? "bg-[#800000]/10 text-[#800000]"
-                                        : "bg-[#C9A227]/10 text-[#C9A227]"
+                                        ? "bg-primary/10 text-primary"
+                                        : "bg-gold/10 text-gold"
                                         }`}>
-                                        {registrationType === "student" ? "🎓 Student" : "🛡️ Faculty / Admin"}
+                                        {registrationType === "student" ? (
+                                            <><GraduationCap className="w-3.5 h-3.5" aria-hidden="true" /> Student</>
+                                        ) : (
+                                            <><ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" /> Faculty / Admin</>
+                                        )}
                                     </span>
                                 </div>
 
@@ -320,11 +334,9 @@ export default function SignupPage() {
 
                                     {registrationType === "student" && (
                                         <>
-                                            <div className="rounded-xl border border-[#800000]/20 bg-[#800000]/5 p-4 space-y-4">
-                                                <p className="text-xs font-semibold text-[#800000] uppercase tracking-wider flex items-center gap-1.5">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                    </svg>
+                                            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
+                                                <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                                    <User className="w-4 h-4" aria-hidden="true" />
                                                     Student Information
                                                 </p>
 
@@ -446,6 +458,26 @@ export default function SignupPage() {
                                                         />
                                                     </div>
                                                 </div>
+
+                                                <div className="space-y-2">
+                                                    <label htmlFor="corFile" className="text-sm font-medium text-foreground">
+                                                        Certificate of Registration (COR) <span className="text-destructive">*</span>
+                                                    </label>
+                                                    <input
+                                                        id="corFile"
+                                                        type="file"
+                                                        accept=".pdf,.png,.jpg,.jpeg"
+                                                        onChange={(e) => setCorFile(e.target.files?.[0] ?? null)}
+                                                        required
+                                                        className="flex w-full rounded-xl border border-input bg-background text-foreground text-sm ring-offset-background file:mr-4 file:border-0 file:bg-primary file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                                    />
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Upload a PDF, JPG, or PNG (max 5MB). An administrator will review this before approving your account.
+                                                    </p>
+                                                    {corFile && (
+                                                        <p className="text-xs text-primary font-medium">Selected: {corFile.name}</p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </>
                                     )}
@@ -462,12 +494,12 @@ export default function SignupPage() {
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 placeholder="••••••••"
                                                 required
-                                                className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 pl-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                                className="flex h-11 w-full rounded-xl border border-input bg-background text-foreground pl-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword((v) => !v)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
                                                 aria-label={showPassword ? "Hide password" : "Show password"}
                                             >
                                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -486,12 +518,12 @@ export default function SignupPage() {
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 placeholder="••••••••"
                                                 required
-                                                className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 pl-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                                className="flex h-11 w-full rounded-xl border border-input bg-background text-foreground pl-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowConfirm((v) => !v)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none cursor-pointer"
                                                 aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
                                             >
                                                 {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -503,9 +535,9 @@ export default function SignupPage() {
                                         type="submit"
                                         isLoading={loading}
                                         loadingText="Creating account…"
-                                        className={`inline-flex items-center justify-center w-full h-11 rounded-xl text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none ${registrationType === "student"
-                                            ? "bg-[#800000] hover:bg-[#700000]"
-                                            : "bg-[#C9A227] text-[#2B2B2B] hover:bg-[#b8911f]"
+                                        className={`inline-flex items-center justify-center w-full h-11 rounded-xl font-semibold text-sm transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${registrationType === "student"
+                                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                            : "bg-gold text-[#2B2B2B] hover:bg-gold/90"
                                             }`}
                                     >
                                         {`Create ${registrationType === "student" ? "Student" : "Faculty"} Account`}
@@ -514,7 +546,7 @@ export default function SignupPage() {
 
                                 <p className="text-center text-sm text-muted-foreground">
                                     Already have an account?{" "}
-                                    <Link href="/login" className="text-[#800000] font-semibold hover:underline">
+                                    <Link href="/login" className="text-primary font-semibold hover:underline">
                                         Sign in
                                     </Link>
                                 </p>
@@ -524,12 +556,12 @@ export default function SignupPage() {
 
                     <div className="text-center mt-6">
                         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
+                            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                             Back to Homepage
                         </Link>
                     </div>
+
+                    <SiteFooterLinks className="justify-center mt-4 text-xs text-muted-foreground" />
                 </div>
             </div>
         </div>

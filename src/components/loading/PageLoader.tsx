@@ -19,7 +19,7 @@ export function PageLoader({ label = "Loading…", className }: PageLoaderProps)
             aria-live="polite"
             aria-label={label}
         >
-        <LoadingSpinner size="lg" aria-hidden="true" className="text-[#800000]" />
+        <LoadingSpinner size="lg" aria-hidden="true" className="text-primary" />
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
         </div>
     );

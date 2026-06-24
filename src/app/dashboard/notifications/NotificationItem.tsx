@@ -74,19 +74,19 @@ export default function NotificationItem({ notification }: { notification: Notif
                 isDeleting ? "opacity-50 scale-95" : ""
             } ${
                 isUnread
-                    ? "bg-[#C9A227]/5 border-[#C9A227]/30 hover:bg-[#C9A227]/10"
+                    ? "bg-gold/5 border-gold/30 hover:bg-gold/10"
                     : "bg-card border-border hover:bg-accent/50"
             }`}
         >
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg ${
-                isUnread ? "bg-[#C9A227] text-[#2B2B2B]" : "bg-muted text-muted-foreground"
+                isUnread ? "bg-gold text-[#2B2B2B]" : "bg-muted text-muted-foreground"
             }`}>
                 {icon}
             </div>
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className={`text-sm font-semibold truncate ${isUnread ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"}`}>
+                    <h3 className={`text-sm font-semibold truncate ${isUnread ? "text-primary dark:text-gold" : "text-foreground"}`}>
                         {notification.title}
                     </h3>
                     <span className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
@@ -101,7 +101,7 @@ export default function NotificationItem({ notification }: { notification: Notif
                 )}
 
                 {notification.link && (
-                    <p className="text-xs text-[#800000]/70 dark:text-[#C9A227]/70 mt-2 flex items-center gap-1">
+                    <p className="text-xs text-primary/70 dark:text-gold/70 mt-2 flex items-center gap-1">
                         <span>→</span> Click to view
                     </p>
                 )}
@@ -109,7 +109,7 @@ export default function NotificationItem({ notification }: { notification: Notif
 
             <div className="flex items-center gap-1.5 shrink-0">
                 {isUnread && (
-                    <span className="w-2 h-2 rounded-full bg-[#C9A227]" title="Unread" />
+                    <span className="w-2 h-2 rounded-full bg-gold" title="Unread" />
                 )}
                 
                 {notification.status !== "archived" && (

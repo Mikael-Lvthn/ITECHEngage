@@ -48,7 +48,7 @@ export default function HomepageElectionsSection({ elections, isLoggedIn }: Home
                 <div className="flex items-center gap-2 mb-2">
                     {getStatusBadge(election.status)}
                     {election.isFollowed && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#C9A227]/20 text-[#8B6914] dark:text-[#C9A227]">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-gold/20 text-[#8B6914] dark:text-gold">
                             Following
                         </span>
                     )}
@@ -58,7 +58,7 @@ export default function HomepageElectionsSection({ elections, isLoggedIn }: Home
                     {orgName}
                 </p>
 
-                <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-[#800000] transition-colors mb-2">
+                <h3 className="font-bold text-foreground text-lg leading-tight group-hover:text-primary transition-colors mb-2">
                     {election.title}
                 </h3>
 
@@ -81,7 +81,7 @@ export default function HomepageElectionsSection({ elections, isLoggedIn }: Home
                 <h2 className="text-2xl font-bold text-foreground">
                     Ongoing Elections
                 </h2>
-                <span className="flex items-center gap-2 text-sm text-[#800000] dark:text-[#C9A227] font-semibold">
+                <span className="flex items-center gap-2 text-sm text-primary dark:text-gold font-semibold">
                     <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
                     {elections.filter(e => e.status === "voting").length} Active
                 </span>
@@ -91,7 +91,7 @@ export default function HomepageElectionsSection({ elections, isLoggedIn }: Home
             {followedElections.length > 0 && (
                 <div className="mb-6">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                        <span className="text-[#C9A227]">★</span> From Organizations You Follow
+                        <span className="text-gold">★</span> From Organizations You Follow
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {followedElections.map(renderElectionCard)}

@@ -53,7 +53,7 @@ export default function ElectionCard({
             : isPublished
                 ? "bg-blue-100 text-blue-700"
                 : isDraft
-                    ? "bg-gray-100 text-gray-600"
+                    ? "bg-muted text-muted-foreground"
                     : "bg-yellow-100 text-yellow-700";
 
     const gradientClass = isClosed

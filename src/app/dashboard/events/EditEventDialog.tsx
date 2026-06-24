@@ -87,7 +87,7 @@ export default function EditEventDialog({ event }: EditEventDialogProps) {
                                         required
                                         defaultValue={event.title}
                                         maxLength={200}
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     />
                                 </div>
 
@@ -97,7 +97,7 @@ export default function EditEventDialog({ event }: EditEventDialogProps) {
                                         name="description"
                                         rows={3}
                                         defaultValue={event.description || ""}
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30 resize-none"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                     />
                                 </div>
 
@@ -107,7 +107,7 @@ export default function EditEventDialog({ event }: EditEventDialogProps) {
                                         name="location"
                                         required
                                         defaultValue={event.location}
-                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                        className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     />
                                 </div>
 
@@ -119,7 +119,7 @@ export default function EditEventDialog({ event }: EditEventDialogProps) {
                                             type="datetime-local"
                                             required
                                             defaultValue={formatForInput(event.start_datetime)}
-                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                         />
                                     </div>
                                     <div>
@@ -128,7 +128,7 @@ export default function EditEventDialog({ event }: EditEventDialogProps) {
                                             name="endDatetime"
                                             type="datetime-local"
                                             defaultValue={formatForInput(event.end_datetime)}
-                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#800000]/30"
+                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                                         />
                                     </div>
                                 </div>

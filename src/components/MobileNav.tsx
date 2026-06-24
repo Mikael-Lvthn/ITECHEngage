@@ -5,6 +5,27 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import {
+    Home,
+    LayoutDashboard,
+    Building2,
+    Star,
+    Users,
+    Newspaper,
+    ClipboardList,
+    Pin,
+    Vote,
+    Bell,
+    GraduationCap,
+    FileCheck2,
+    Landmark,
+    ShieldCheck,
+    Settings,
+    Menu,
+    X,
+    LogOut,
+    type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types";
@@ -12,27 +33,27 @@ import type { UserRole } from "@/lib/types";
 interface NavItem {
     label: string;
     href: string;
-    icon: string;
+    icon: LucideIcon;
     roles: UserRole[];
     requireOrgRole?: boolean;
 }
 
 const navItems: NavItem[] = [
-    { label: "Home", href: "/", icon: "🏠", roles: ["student", "officer", "admin"] },
-    { label: "Dashboard", href: "/dashboard", icon: "📊", roles: ["student", "officer", "admin"] },
-    { label: "Organizations", href: "/dashboard/organizations", icon: "🏢", roles: ["student", "officer", "admin"] },
-    { label: "Followed", href: "/dashboard/followed", icon: "⭐", roles: ["student", "officer"] },
-    { label: "My Memberships", href: "/dashboard/memberships", icon: "👥", roles: ["officer"] },
-    { label: "News & Events", href: "/dashboard/news-and-events", icon: "📰", roles: ["student", "officer", "admin"] },
-    { label: "Recruitment", href: "/dashboard/recruitment", icon: "📋", roles: ["officer"], requireOrgRole: true },
-    { label: "Bulletin Board", href: "/dashboard/bulletin", icon: "📌", roles: ["student", "officer", "admin"] },
-    { label: "Elections", href: "/dashboard/elections", icon: "🗳️", roles: ["student", "officer", "admin"] },
-    { label: "Notifications", href: "/dashboard/notifications", icon: "🔔", roles: ["student", "officer", "admin"] },
-    { label: "My Record", href: "/dashboard/co-curricular", icon: "🎓", roles: ["student", "officer"] },
-    { label: "Accreditation", href: "/dashboard/accreditation", icon: "📑", roles: ["officer", "admin"] },
-    { label: "Officer Panel", href: "/dashboard/officer-panel", icon: "🏛️", roles: ["officer"], requireOrgRole: true },
-    { label: "Admin Panel", href: "/dashboard/admin", icon: "⚙️", roles: ["admin"] },
-    { label: "Settings", href: "/dashboard/settings", icon: "🎨", roles: ["student", "officer", "admin"] },
+    { label: "Home", href: "/", icon: Home, roles: ["student", "officer", "admin"] },
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["student", "officer", "admin"] },
+    { label: "Organizations", href: "/dashboard/organizations", icon: Building2, roles: ["student", "officer", "admin"] },
+    { label: "Followed", href: "/dashboard/followed", icon: Star, roles: ["student", "officer"] },
+    { label: "My Memberships", href: "/dashboard/memberships", icon: Users, roles: ["officer"] },
+    { label: "News & Events", href: "/dashboard/news-and-events", icon: Newspaper, roles: ["student", "officer", "admin"] },
+    { label: "Recruitment", href: "/dashboard/recruitment", icon: ClipboardList, roles: ["officer"], requireOrgRole: true },
+    { label: "Bulletin Board", href: "/dashboard/bulletin", icon: Pin, roles: ["student", "officer", "admin"] },
+    { label: "Elections", href: "/dashboard/elections", icon: Vote, roles: ["student", "officer", "admin"] },
+    { label: "Notifications", href: "/dashboard/notifications", icon: Bell, roles: ["student", "officer", "admin"] },
+    { label: "My Record", href: "/dashboard/co-curricular", icon: GraduationCap, roles: ["student", "officer"] },
+    { label: "Accreditation", href: "/dashboard/accreditation", icon: FileCheck2, roles: ["officer", "admin"] },
+    { label: "Officer Panel", href: "/dashboard/officer-panel", icon: Landmark, roles: ["officer"], requireOrgRole: true },
+    { label: "Admin Panel", href: "/dashboard/admin", icon: ShieldCheck, roles: ["admin"] },
+    { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["student", "officer", "admin"] },
 ];
 
 interface MobileNavProps {
@@ -78,22 +99,21 @@ export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles =
                 ? "Student Officer"
                 : "Student";
 
+    const badgeFor = (label: string) => {
+        if (label === "Notifications") return unreadCount;
+        if (label === "Admin Panel") return adminBadgeCount;
+        if (label === "Officer Panel") return officerBadgeCount;
+        return 0;
+    };
+
     return (
         <div className="lg:hidden">
             <button
                 onClick={() => setOpen(!open)}
-                className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent transition-colors"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent transition-colors cursor-pointer"
                 aria-label="Toggle menu"
             >
-                {open ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                )}
+                {open ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
             </button>
 
             {open && (
@@ -111,7 +131,7 @@ export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles =
                             />
                             <div>
                                 <h1 className="text-base font-semibold text-sidebar-foreground">ITECHEngage</h1>
-                                <p className="text-[10px] text-white/50">Campus Engagement Platform</p>
+                                <p className="text-[10px] text-sidebar-foreground/50">Campus Engagement Platform</p>
                             </div>
                         </Link>
 
@@ -124,6 +144,8 @@ export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles =
                                         : item.href === "/dashboard"
                                             ? pathname === "/dashboard"
                                             : pathname.startsWith(item.href);
+                                const Icon = item.icon;
+                                const badge = badgeFor(item.label);
                                 return (
                                     <Link
                                         key={item.href}
@@ -136,21 +158,11 @@ export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles =
                                                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
                                         )}
                                     >
-                                        <span className="text-lg">{item.icon}</span>
+                                        <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                                         <span className="flex-1">{item.label}</span>
-                                        {item.label === "Notifications" && unreadCount > 0 && (
-                                            <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                                                {unreadCount > 99 ? "99+" : unreadCount}
-                                            </span>
-                                        )}
-                                        {item.label === "Admin Panel" && adminBadgeCount > 0 && (
-                                            <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                                                {adminBadgeCount > 99 ? "99+" : adminBadgeCount}
-                                            </span>
-                                        )}
-                                        {item.label === "Officer Panel" && officerBadgeCount > 0 && (
-                                            <span className="bg-[#C9A227] text-[#2B2B2B] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                                                {officerBadgeCount > 99 ? "99+" : officerBadgeCount}
+                                        {badge > 0 && (
+                                            <span className="bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                                {badge > 99 ? "99+" : badge}
                                             </span>
                                         )}
                                     </Link>
@@ -163,23 +175,21 @@ export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles =
                         {/* User Profile + Sign Out */}
                         <div className="px-3 py-3 border-t border-sidebar-border">
                             <div className="flex items-center gap-3 px-3 py-2">
-                                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#C9A227] text-[#2B2B2B] text-sm font-bold shrink-0">
+                                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-sm font-bold shrink-0">
                                     {initials}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate text-sidebar-foreground">{userName}</p>
-                                    <p className="text-[10px] text-white/50 truncate">{userEmail}</p>
-                                    <p className="text-[10px] text-[#C9A227] truncate">{roleLabel}</p>
+                                    <p className="text-[10px] text-sidebar-foreground/50 truncate">{userEmail}</p>
+                                    <p className="text-[10px] text-sidebar-primary truncate">{roleLabel}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={handleSignOut}
                                 disabled={signingOut}
-                                className="w-full mt-2 flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-red-300 hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                                className="w-full mt-2 flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-red-300 hover:bg-red-900/30 transition-colors disabled:opacity-50 cursor-pointer"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
+                                <LogOut className="w-4 h-4" aria-hidden="true" />
                                 {signingOut ? "Signing out..." : "Sign Out"}
                             </button>
                         </div>

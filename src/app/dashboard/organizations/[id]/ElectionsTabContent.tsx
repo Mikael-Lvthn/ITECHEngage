@@ -97,7 +97,7 @@ export default function ElectionsTabContent({
 
     const getStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
-            draft: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+            draft: "bg-muted text-muted-foreground dark:bg-gray-800 dark:text-gray-300",
             published: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
             voting: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
             completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
@@ -150,7 +150,7 @@ export default function ElectionsTabContent({
                         🗳️
                     </div>
                     <h3 className="text-lg font-bold text-foreground">No Elections Yet</h3>
-                    <p className="text-gray-500 mt-2 text-sm max-w-sm mx-auto">
+                    <p className="text-muted-foreground mt-2 text-sm max-w-sm mx-auto">
                         {isAdmin
                             ? "Create an election from the Elections page to get started."
                             : "No elections have been created for this organization yet."}
@@ -180,11 +180,11 @@ export default function ElectionsTabContent({
                                         </h3>
                                     </div>
                                     {election.description && (
-                                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                                             {election.description}
                                         </p>
                                     )}
-                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                         <span className="flex items-center gap-1">
                                             📅 {new Date(election.start_date).toLocaleDateString()}
                                             {election.end_date && ` — ${new Date(election.end_date).toLocaleDateString()}`}
@@ -243,7 +243,7 @@ export default function ElectionsTabContent({
                 <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-4">
                     <h4 className="font-semibold text-blue-900 text-sm mb-2">Election Workflow</h4>
                     <div className="flex items-center gap-2 text-xs text-blue-800">
-                        <span className="px-2 py-0.5 rounded bg-gray-200 text-gray-700 font-medium">Draft</span>
+                        <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium">Draft</span>
                         <span>→</span>
                         <span className="px-2 py-0.5 rounded bg-blue-200 text-blue-700 font-medium">Published</span>
                         <span>→</span>

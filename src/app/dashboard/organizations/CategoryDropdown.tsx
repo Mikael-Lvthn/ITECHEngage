@@ -26,7 +26,7 @@ export default function CategoryDropdown({ categories, currentCategory }: Catego
                 id="category-select"
                 value={currentCategory || ""}
                 onChange={handleChange}
-                className="w-full bg-card border border-border text-foreground rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#800000]/30 focus:border-[#800000] transition-all"
+                className="w-full bg-card border border-border text-foreground rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             >
                 <option value="">All Categories</option>
                 {categories.map((cat) => (

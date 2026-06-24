@@ -125,7 +125,7 @@ export default function VotingDialog({
                                 {/* Progress bar background for results */}
                                 {showResults && (
                                     <div
-                                        className="absolute left-0 top-0 bottom-0 bg-[#C9A227]/10 -z-10 transition-all duration-1000 ease-out"
+                                        className="absolute left-0 top-0 bottom-0 bg-gold/10 -z-10 transition-all duration-1000 ease-out"
                                         style={{ width: `${percentage}%` }}
                                     />
                                 )}
@@ -133,10 +133,10 @@ export default function VotingDialog({
                                 <div className="flex items-start gap-4">
                                     {canVote && (
                                         <div className={`mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${isSelf
-                                            ? "border-gray-200 bg-gray-100"
+                                            ? "border-border bg-muted"
                                             : isSelected
                                                 ? "border-primary bg-primary"
-                                                : "border-gray-300 bg-background"
+                                                : "border-border bg-background"
                                             }`}>
                                             {isSelected && (
                                                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -144,14 +144,14 @@ export default function VotingDialog({
                                                 </svg>
                                             )}
                                             {isSelf && (
-                                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                                 </svg>
                                             )}
                                         </div>
                                     )}
 
-                                    <div className="relative w-10 h-10 rounded-full bg-[#C9A227] text-[#2B2B2B] text-sm font-bold flex items-center justify-center shrink-0 z-10 overflow-hidden">
+                                    <div className="relative w-10 h-10 rounded-full bg-gold text-[#2B2B2B] text-sm font-bold flex items-center justify-center shrink-0 z-10 overflow-hidden">
                                         {candidate.avatar_url ? (
                                             <Image src={candidate.avatar_url} alt={candidate.name} fill className="rounded-full object-cover" />
                                         ) : (
@@ -163,7 +163,7 @@ export default function VotingDialog({
                                         <div className="flex items-center gap-2">
                                             <p className="font-semibold text-sm">{candidate.name}</p>
                                             {isSelf && canVote && (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
                                                     You
                                                 </span>
                                             )}

@@ -44,7 +44,7 @@ export default function DocumentChecklist({ requirements, selectedFiles, onFileS
                             <h4 className="text-base font-semibold flex items-center gap-2">
                                 {req.name}
                                 {req.is_required && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#800000]/10 text-[#800000] dark:bg-[#800000]/30 dark:text-red-300">
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary dark:bg-primary/30 dark:text-red-300">
                                         REQUIRED
                                     </span>
                                 )}
@@ -56,7 +56,7 @@ export default function DocumentChecklist({ requirements, selectedFiles, onFileS
                         <div className="shrink-0 w-full sm:w-auto">
                             <label
                                 htmlFor={`file-${req.id}`}
-                                className={`flex items-center justify-center min-w-[140px] min-h-[44px] px-4 py-2 text-sm font-medium rounded-lg border cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-[#800000]/30 ${
+                                className={`flex items-center justify-center min-w-[140px] min-h-[44px] px-4 py-2 text-sm font-medium rounded-lg border cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-primary/30 ${
                                     selectedFiles[req.id]
                                         ? "bg-green-600 text-white hover:bg-green-700 border-transparent"
                                         : "bg-background hover:bg-accent text-foreground"

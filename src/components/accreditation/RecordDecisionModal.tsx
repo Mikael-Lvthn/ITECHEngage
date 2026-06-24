@@ -106,7 +106,7 @@ export default function RecordDecisionModal({
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="px-6 py-2 min-h-[44px] text-sm font-medium rounded-lg bg-[#800000] text-white hover:bg-[#800000]/90 transition-colors disabled:opacity-50"
+                        className="px-6 py-2 min-h-[44px] text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                         {isSaving ? "Saving..." : "Record Decision"}
                     </button>

@@ -55,7 +55,7 @@ export default function NotificationFilters({ currentFilter, counts }: Notificat
                         {filter.count > 0 && (
                             <span className={`ml-1.5 px-1.5 py-0.5 rounded text-xs ${
                                 currentFilter === filter.key
-                                    ? "bg-[#800000]/20 text-[#800000] dark:text-[#C9A227] dark:bg-[#C9A227]/20"
+                                    ? "bg-primary/20 text-primary dark:text-gold dark:bg-gold/20"
                                     : "bg-muted-foreground/10 text-muted-foreground"
                             }`}>
                                 {filter.count}
@@ -71,7 +71,7 @@ export default function NotificationFilters({ currentFilter, counts }: Notificat
                     <button
                         onClick={handleMarkAllAsRead}
                         disabled={isPending}
-                        className="px-3 py-1.5 text-sm font-medium text-[#800000] bg-[#800000]/10 hover:bg-[#800000]/20 rounded-lg transition-colors border border-[#800000]/20 disabled:opacity-50 flex items-center gap-2 dark:text-[#C9A227] dark:bg-[#C9A227]/10 dark:hover:bg-[#C9A227]/20 dark:border-[#C9A227]/20"
+                        className="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors border border-primary/20 disabled:opacity-50 flex items-center gap-2 dark:text-gold dark:bg-gold/10 dark:hover:bg-gold/20 dark:border-gold/20"
                     >
                         {isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                         Mark all as read

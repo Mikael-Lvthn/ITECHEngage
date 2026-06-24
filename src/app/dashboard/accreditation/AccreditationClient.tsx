@@ -404,7 +404,7 @@ export default function AccreditationClient({
                                                                 id: acc.id,
                                                                 orgName: acc.organizations?.name || "Unknown Organization"
                                                             })}
-                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-[#800000] text-white hover:bg-[#800000]/90 transition-colors"
+                                                            className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
                                                         >
                                                             Record Decision
                                                         </button>
@@ -574,7 +574,7 @@ export default function AccreditationClient({
                                 <button
                                     type="submit"
                                     disabled={isPending || !isSubmissionComplete}
-                                    className="px-6 py-2.5 rounded-lg bg-[#800000] text-white text-sm font-medium hover:bg-[#800000]/90 transition-colors disabled:opacity-50"
+                                    className="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                                 >
                                     {isPending ? "Submitting..." : "Submit Application"}
                                 </button>

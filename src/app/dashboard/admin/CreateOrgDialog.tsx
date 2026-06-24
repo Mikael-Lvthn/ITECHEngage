@@ -163,7 +163,7 @@ export default function CreateOrgDialog() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#800000] text-white text-sm font-medium hover:bg-[#600000] transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
             >
                 Create Organization
             </button>
@@ -185,13 +185,13 @@ export default function CreateOrgDialog() {
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-sm font-semibold text-foreground mb-2">
-                                                Organization Name <span className="text-[#800000] dark:text-[#C9A227]">*</span>
+                                                Organization Name <span className="text-primary dark:text-gold">*</span>
                                             </label>
                                             <input
                                                 name="name"
                                                 required
                                                 placeholder="e.g. Society of Computer Engineers"
-                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                                             />
                                         </div>
                                         <div ref={dropdownRef} className="relative">
@@ -223,7 +223,7 @@ export default function CreateOrgDialog() {
                                                     }}
                                                     onFocus={() => setShowStudentDropdown(true)}
                                                     placeholder="Search by name or email..."
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm placeholder:text-muted-foreground focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                                                 />
                                             )}
                                             {showStudentDropdown && !selectedStudent && (
@@ -257,7 +257,7 @@ export default function CreateOrgDialog() {
                                             <select
                                                 name="category_id"
                                                 defaultValue=""
-                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                                             >
                                                 <option value="">No Category</option>
                                                 {categories.map((cat) => (
@@ -272,7 +272,7 @@ export default function CreateOrgDialog() {
                                             <select
                                                 name="visibility"
                                                 defaultValue="public"
-                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                                             >
                                                 <option value="public">Public (Visible to everyone)</option>
                                                 <option value="private">Private (Invite only)</option>
@@ -283,13 +283,13 @@ export default function CreateOrgDialog() {
                                     {/* Right Column - Images */}
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-semibold text-foreground mb-2">Logo <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
+                                            <label className="block text-sm font-semibold text-foreground mb-2">Logo <span className="text-primary dark:text-gold">*</span></label>
                                             <div className="flex items-center gap-4">
                                                 <div className="relative w-16 h-16 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
                                                     {logoUrl ? (
                                                         <Image src={logoUrl} alt="Logo" fill className="object-cover" />
                                                     ) : (
-                                                        <span className="text-[#C9A227] text-2xl">🏢</span>
+                                                        <span className="text-gold text-2xl">🏢</span>
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
@@ -298,15 +298,15 @@ export default function CreateOrgDialog() {
                                                         accept="image/*"
                                                         required={!logoUrl}
                                                         onChange={(e) => handleFileUpload(e, 'logo')}
-                                                        className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#C9A227]/10 file:text-[#800000] dark:file:text-[#C9A227] hover:file:bg-[#C9A227]/20 transition-all cursor-pointer"
+                                                        className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/10 file:text-primary dark:file:text-gold hover:file:bg-gold/20 transition-all cursor-pointer"
                                                     />
-                                                    {uploadingLogo && <p className="text-xs text-[#800000] dark:text-[#C9A227] mt-1">Uploading logo...</p>}
+                                                    {uploadingLogo && <p className="text-xs text-primary dark:text-gold mt-1">Uploading logo...</p>}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-foreground mb-2">Cover Banner <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
+                                            <label className="block text-sm font-semibold text-foreground mb-2">Cover Banner <span className="text-primary dark:text-gold">*</span></label>
                                             <div className="w-full h-24 rounded-xl border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden mb-3 relative group">
                                                 {coverPhotoUrl ? (
                                                     <Image src={coverPhotoUrl} alt="Cover" fill className="object-cover group-hover:brightness-90 transition-all" />
@@ -321,7 +321,7 @@ export default function CreateOrgDialog() {
                                                     className="absolute inset-0 opacity-0 cursor-pointer"
                                                 />
                                             </div>
-                                            {uploadingCover && <p className="text-xs text-[#800000] dark:text-[#C9A227]">Uploading cover photo...</p>}
+                                            {uploadingCover && <p className="text-xs text-primary dark:text-gold">Uploading cover photo...</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -329,16 +329,16 @@ export default function CreateOrgDialog() {
                                 {/* Full width text areas */}
                                 <div className="space-y-5 pt-4 border-t border-border">
                                     <div>
-                                        <label className="block text-sm font-semibold text-foreground mb-2">Mission <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
-                                        <textarea name="mission" required rows={2} placeholder="State the organization's mission..." className="w-full px-4 py-3 text-sm border border-border bg-muted/50 text-foreground placeholder:text-muted-foreground rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors" />
+                                        <label className="block text-sm font-semibold text-foreground mb-2">Mission <span className="text-primary dark:text-gold">*</span></label>
+                                        <textarea name="mission" required rows={2} placeholder="State the organization's mission..." className="w-full px-4 py-3 text-sm border border-border bg-muted/50 text-foreground placeholder:text-muted-foreground rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-foreground mb-2">Vision <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
-                                        <textarea name="vision" required rows={2} placeholder="State the organization's vision..." className="w-full px-4 py-3 text-sm border border-border bg-muted/50 text-foreground placeholder:text-muted-foreground rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors" />
+                                        <label className="block text-sm font-semibold text-foreground mb-2">Vision <span className="text-primary dark:text-gold">*</span></label>
+                                        <textarea name="vision" required rows={2} placeholder="State the organization's vision..." className="w-full px-4 py-3 text-sm border border-border bg-muted/50 text-foreground placeholder:text-muted-foreground rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-foreground mb-2">Core Values <span className="text-[#800000] dark:text-[#C9A227]">*</span></label>
-                                        <textarea name="core_values" required rows={2} placeholder="e.g. Excellence, Integrity, Community" className="w-full px-4 py-3 text-sm border border-border bg-muted/50 text-foreground placeholder:text-muted-foreground rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-[#800000]/50 focus:border-[#800000] transition-colors" />
+                                        <label className="block text-sm font-semibold text-foreground mb-2">Core Values <span className="text-primary dark:text-gold">*</span></label>
+                                        <textarea name="core_values" required rows={2} placeholder="e.g. Excellence, Integrity, Community" className="w-full px-4 py-3 text-sm border border-border bg-muted/50 text-foreground placeholder:text-muted-foreground rounded-xl focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors" />
                                     </div>
                                 </div>
 
@@ -352,7 +352,7 @@ export default function CreateOrgDialog() {
                                     <button
                                         type="submit"
                                         disabled={loading || uploadingLogo || uploadingCover}
-                                        className="flex-1 px-4 py-3 rounded-xl bg-[#800000] text-white text-sm font-bold shadow-md hover:bg-[#600000] focus:ring-4 focus:ring-[#800000]/20 transition-all disabled:opacity-50"
+                                        className="flex-1 px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold shadow-md hover:bg-primary/90 focus:ring-4 focus:ring-primary/20 transition-all disabled:opacity-50"
                                     >
                                         {loading ? "Initializing..." : "Create Organization"}
                                     </button>

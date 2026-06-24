@@ -34,7 +34,7 @@ export default function DocumentViewerModal({ fileUrl, fileName, onClose }: Docu
                     </div>
                     <iframe 
                         src={viewerUrl} 
-                        className="w-full h-full border-0 bg-white"
+                        className="w-full h-full border-0 bg-card"
                         title={fileName || "Document viewer"}
                     />
                 </div>
@@ -50,7 +50,7 @@ export default function DocumentViewerModal({ fileUrl, fileName, onClose }: Docu
                         target="_blank" 
                         rel="noopener noreferrer" 
                         download
-                        className="px-4 py-2 text-sm font-medium bg-[#800000] text-white rounded-lg hover:bg-[#600000] transition-colors shadow-sm"
+                        className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
                     >
                         Download Original
                     </a>

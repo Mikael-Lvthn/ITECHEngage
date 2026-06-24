@@ -78,7 +78,7 @@ export default async function OrganizationsPage({
                 <div className="rounded-2xl border bg-card overflow-hidden">
                     <div className="h-2 bg-gradient-to-r from-[#800000] to-[#A52A2A]" />
                     <div className="text-center py-20 px-6">
-                        <div className="w-20 h-20 mx-auto rounded-2xl bg-[#800000]/10 flex items-center justify-center mb-5">
+                        <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
                             <span className="text-4xl animate-float">🏢</span>
                         </div>
                         <p className="font-bold text-xl">No organizations yet</p>
@@ -122,14 +122,14 @@ export default async function OrganizationsPage({
                                     href={`/dashboard/organizations/${org.id}`}
                                     className="p-6 flex-1 flex flex-col items-center justify-center text-center min-h-[180px]"
                                 >
-                                    <div className="w-24 h-24 rounded-full bg-[#800000]/5 border border-border flex items-center justify-center shrink-0 overflow-hidden mb-4 relative shadow-sm">
+                                    <div className="w-24 h-24 rounded-full bg-primary/5 border border-border flex items-center justify-center shrink-0 overflow-hidden mb-4 relative shadow-sm">
                                         {org.logo_url ? (
                                             <Image src={org.logo_url} alt={org.name} fill className="object-cover" />
                                         ) : (
                                             <span className="text-4xl">🏢</span>
                                         )}
                                     </div>
-                                    <h3 className="font-medium text-foreground hover:text-[#800000] transition-colors text-base line-clamp-2">
+                                    <h3 className="font-medium text-foreground hover:text-primary transition-colors text-base line-clamp-2">
                                         {org.name}
                                     </h3>
                                 </Link>

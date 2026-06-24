@@ -209,7 +209,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                             {org.logo_url ? (
                                 <Image src={org.logo_url} alt="Logo" fill className="object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-[#800000]/10 flex items-center justify-center text-4xl">🏢</div>
+                                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-4xl">🏢</div>
                             )}
                         </div>
                     </div>
@@ -265,7 +265,7 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                 {org.accreditation_status}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-500 capitalize">
+                        <div className="flex items-center gap-1.5 text-muted-foreground capitalize">
                             {org.visibility}
                         </div>
                     </div>
@@ -284,23 +284,23 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                     {org.mission && (
                                         <div>
                                             <h3 className="text-sm font-semibold text-foreground">Mission</h3>
-                                            <p className="text-sm text-gray-600 mt-1">{org.mission}</p>
+                                            <p className="text-sm text-muted-foreground mt-1">{org.mission}</p>
                                         </div>
                                     )}
                                     {org.vision && (
                                         <div>
                                             <h3 className="text-sm font-semibold text-foreground">Vision</h3>
-                                            <p className="text-sm text-gray-600 mt-1">{org.vision}</p>
+                                            <p className="text-sm text-muted-foreground mt-1">{org.vision}</p>
                                         </div>
                                     )}
                                     {org.core_values && (
                                         <div>
                                             <h3 className="text-sm font-semibold text-foreground">Core Values</h3>
-                                            <p className="text-sm text-gray-600 mt-1">{org.core_values}</p>
+                                            <p className="text-sm text-muted-foreground mt-1">{org.core_values}</p>
                                         </div>
                                     )}
                                     {(!org.mission && !org.vision && !org.core_values) && (
-                                        <p className="text-sm text-gray-400 italic">No detailed about information provided.</p>
+                                        <p className="text-sm text-muted-foreground italic">No detailed about information provided.</p>
                                     )}
                                 </div>
                             </div>
@@ -322,22 +322,22 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                 {events && events.length > 0 ? (
                                     <div className="space-y-3">
                                         {events.map(ev => (
-                                            <Link href={`/dashboard/events/${ev.id}`} key={ev.id} className="flex gap-4 p-4 rounded-lg border hover:shadow-sm transition-all hover:border-[#800000]/30 group bg-card cursor-pointer">
-                                                <div className="w-12 h-12 bg-red-50 text-red-700 rounded-lg flex flex-col items-center justify-center shrink-0 group-hover:bg-[#800000] group-hover:text-white transition-colors">
+                                            <Link href={`/dashboard/events/${ev.id}`} key={ev.id} className="flex gap-4 p-4 rounded-lg border hover:shadow-sm transition-all hover:border-primary/30 group bg-card cursor-pointer">
+                                                <div className="w-12 h-12 bg-red-50 text-red-700 rounded-lg flex flex-col items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                                                     <span className="text-xs font-bold uppercase">{new Date(ev.start_datetime).toLocaleString('default', { month: 'short' })}</span>
                                                     <span className="text-lg font-bold leading-none">{new Date(ev.start_datetime).getDate()}</span>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold group-hover:text-[#800000] transition-colors">{ev.title}</h3>
-                                                    <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{ev.description}</p>
-                                                    <p className="text-xs text-gray-400 mt-1">📍 {ev.location}</p>
+                                                    <h3 className="font-semibold group-hover:text-primary transition-colors">{ev.title}</h3>
+                                                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{ev.description}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">📍 {ev.location}</p>
                                                 </div>
                                             </Link>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6 border rounded-lg bg-gray-50">
-                                        <p className="text-sm text-gray-500">No upcoming events.</p>
+                                    <div className="text-center py-6 border rounded-lg bg-muted">
+                                        <p className="text-sm text-muted-foreground">No upcoming events.</p>
                                     </div>
                                 )}
                             </div>
@@ -350,14 +350,14 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                 {news && news.length > 0 ? (
                                     <div className="space-y-4">
                                         {news.map(item => (
-                                            <Link href={`/dashboard/news/${item.id}`} key={item.id} className="block p-4 rounded-lg border hover:shadow-sm transition-all hover:border-[#800000]/30 group bg-card cursor-pointer">
-                                                <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-                                                    <span className="font-medium text-[#C9A227]">News</span>
+                                            <Link href={`/dashboard/news/${item.id}`} key={item.id} className="block p-4 rounded-lg border hover:shadow-sm transition-all hover:border-primary/30 group bg-card cursor-pointer">
+                                                <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                                                    <span className="font-medium text-gold">News</span>
                                                     <span>•</span>
                                                     <span>{new Date(item.published_at || item.created_at).toLocaleDateString()}</span>
                                                 </div>
-                                                <h3 className="font-bold text-lg mb-2 group-hover:text-[#800000] transition-colors">{item.title}</h3>
-                                                <p className="text-sm text-gray-600 line-clamp-3 whitespace-pre-wrap">{item.content}</p>
+                                                <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
+                                                <p className="text-sm text-muted-foreground line-clamp-3 whitespace-pre-wrap">{item.content}</p>
 
                                                 {item.image_url && (
                                                     <div className="relative mt-4 w-full h-64 md:h-80 overflow-hidden rounded-lg border bg-muted/10">
@@ -368,8 +368,8 @@ export default async function OrganizationDetailPage({ params }: Props) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-6 border rounded-lg bg-gray-50">
-                                        <p className="text-sm text-gray-500">No news articles published yet.</p>
+                                    <div className="text-center py-6 border rounded-lg bg-muted">
+                                        <p className="text-sm text-muted-foreground">No news articles published yet.</p>
                                     </div>
                                 )}
                             </div>

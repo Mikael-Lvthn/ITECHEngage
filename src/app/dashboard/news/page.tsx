@@ -30,7 +30,7 @@ export default async function NewsManagementPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">News Accreditation Queue</h1>
-                        <p className="text-gray-500 mt-1">Review and approve news submissions from student organizations.</p>
+                        <p className="text-muted-foreground mt-1">Review and approve news submissions from student organizations.</p>
                     </div>
                 </div>
                 <NewsManagerClient initialNews={flattenedNews} userRole="admin" />
@@ -50,7 +50,7 @@ export default async function NewsManagementPage() {
 
     if (!isOfficer) {
         return (
-            <div className="p-12 text-center text-gray-500 border rounded-xl bg-gray-50">
+            <div className="p-12 text-center text-muted-foreground border rounded-xl bg-muted">
                 You must be an organization officer to create and manage news.
             </div>
         );
@@ -69,7 +69,7 @@ export default async function NewsManagementPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Manage News</h1>
-                    <p className="text-gray-500 mt-1">Create and track announcements for your organizations.</p>
+                    <p className="text-muted-foreground mt-1">Create and track announcements for your organizations.</p>
                 </div>
             </div>
 

@@ -24,7 +24,7 @@ export function DeleteBulletinButton({ postId }: { postId: string }) {
         <button
             onClick={handleDelete}
             disabled={isPending}
-            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors z-20 shadow-sm"
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-red-100 text-muted-foreground hover:text-red-600 transition-colors z-20 shadow-sm"
             title="Delete post"
         >
             {isPending ? "..." : "✕"}

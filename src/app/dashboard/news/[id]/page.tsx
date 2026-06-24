@@ -51,12 +51,12 @@ export default async function NewsDetailPage({ params }: Props) {
         <div className="max-w-3xl mx-auto space-y-6">
             <Link
                 href="/dashboard/news-and-events"
-                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 ← Back to News & Events
             </Link>
 
-            <article className="rounded-xl border bg-white shadow-sm overflow-hidden">
+            <article className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 {newsItem.image_url && (
                     <div className="relative w-full h-64">
                         <Image
@@ -80,15 +80,15 @@ export default async function NewsDetailPage({ params }: Props) {
                                 />
                             </div>
                         ) : (
-                            <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <span className="text-lg">🏢</span>
                             </div>
                         )}
                         <div>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-foreground">
                                 {newsItem.organizations && !Array.isArray(newsItem.organizations) && typeof newsItem.organizations === 'object' && 'name' in newsItem.organizations ? String(newsItem.organizations.name) : "Unknown Organization"}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 {new Date(publishedDate).toLocaleDateString("en-US", {
                                     month: "long",
                                     day: "numeric",
@@ -98,7 +98,7 @@ export default async function NewsDetailPage({ params }: Props) {
                         </div>
                     </div>
 
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
                         {newsItem.title}
                     </h1>
 
@@ -107,13 +107,13 @@ export default async function NewsDetailPage({ params }: Props) {
                             ? "bg-green-100 text-green-800 border border-green-200"
                             : newsItem.status === "pending"
                                 ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                : "bg-gray-100 text-gray-700 border border-gray-200"
+                                : "bg-muted text-muted-foreground border border-border"
                             }`}>
                             {newsItem.status}
                         </span>
                     </div>
 
-                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed">
                         {newsItem.content}
                     </div>
 

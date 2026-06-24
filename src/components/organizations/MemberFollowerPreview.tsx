@@ -50,7 +50,7 @@ export default function MemberFollowerPreview({
                                 {u.avatar_url ? (
                                     <Image src={u.avatar_url} alt="" fill className="object-cover" />
                                 ) : (
-                                    <div className="w-full h-full bg-[#800000]/20 flex items-center justify-center text-[7px] font-bold text-[#800000]">
+                                    <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[7px] font-bold text-primary">
                                         {u.full_name?.[0]?.toUpperCase()}
                                     </div>
                                 )}
@@ -79,7 +79,7 @@ export default function MemberFollowerPreview({
                                 {u.avatar_url ? (
                                     <Image src={u.avatar_url} alt="" fill className="object-cover" />
                                 ) : (
-                                    <div className="w-full h-full bg-[#800000]/20 flex items-center justify-center text-[7px] font-bold text-[#800000]">
+                                    <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[7px] font-bold text-primary">
                                         {u.full_name?.[0]?.toUpperCase()}
                                     </div>
                                 )}

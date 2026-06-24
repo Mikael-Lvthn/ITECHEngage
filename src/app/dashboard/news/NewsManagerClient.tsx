@@ -111,7 +111,7 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
 
     const getStatusBadge = (status: string) => {
         const colors: Record<string, string> = {
-            draft: "bg-gray-100 text-gray-700 border-gray-200",
+            draft: "bg-muted text-muted-foreground border-border",
             pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
             published: "bg-green-100 text-green-800 border-green-200",
             rejected: "bg-red-100 text-red-800 border-red-200"
@@ -125,19 +125,19 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
             {userRole === "officer" && !isCreating && (
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="mb-6 px-4 py-2 bg-[#800000] text-white rounded-lg hover:bg-[#600000] font-medium transition-colors"
+                    className="mb-6 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition-colors"
                 >
                     + Create News Article
                 </button>
             )}
 
             {isCreating && userRole === "officer" && (
-                <div className="mb-8 bg-white border rounded-xl p-6 shadow-sm">
+                <div className="mb-8 bg-card border rounded-xl p-6 shadow-sm">
                     <h2 className="text-xl font-bold mb-4">New Article</h2>
                     <form onSubmit={handleCreateOrUpdate} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">Organization</label>
-                            <select name="organization_id" required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000]">
+                            <select name="organization_id" required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary">
                                 {userOrganizations?.map(org => (
                                     <option key={org.id} value={org.id}>{org.name}</option>
                                 ))}
@@ -145,27 +145,27 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Title</label>
-                            <input name="title" required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000]" placeholder="Exciting announcement..." />
+                            <input name="title" required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary" placeholder="Exciting announcement..." />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Cover Image</label>
                             <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm mb-2" />
-                            {uploading && <p className="text-xs text-[#C9A227]">Uploading image...</p>}
+                            {uploading && <p className="text-xs text-gold">Uploading image...</p>}
                             {imageUrl && (
-                                <div className="relative h-32 rounded-lg overflow-hidden border bg-gray-50">
+                                <div className="relative h-32 rounded-lg overflow-hidden border bg-muted">
                                     <Image src={imageUrl} alt="Preview" fill className="object-cover" />
                                 </div>
                             )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Content</label>
-                            <textarea name="content" required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000]" placeholder="Write the news content here..." />
+                            <textarea name="content" required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary" placeholder="Write the news content here..." />
                         </div>
                         <div className="flex gap-3 pt-2">
-                            <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-[#800000] text-white rounded-lg font-medium hover:bg-[#600000] disabled:opacity-50">
+                            <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50">
                                 {loading ? "Submitting..." : "Submit for Review"}
                             </button>
-                            <button type="button" onClick={() => setIsCreating(false)} className="px-5 py-2 border rounded-lg font-medium hover:bg-gray-50">
+                            <button type="button" onClick={() => setIsCreating(false)} className="px-5 py-2 border rounded-lg font-medium hover:bg-muted">
                                 Cancel
                             </button>
                         </div>
@@ -177,34 +177,34 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
                 <>
                     <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setEditingNews(null)} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                        <div className="bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
                             <div className="p-6">
                                 <h2 className="text-xl font-bold mb-4">Edit Article</h2>
                                 <form onSubmit={handleCreateOrUpdate} className="space-y-4">
                                     <input type="hidden" name="organization_id" value={editingNews.organization_id || ""} />
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Title</label>
-                                        <input name="title" defaultValue={editingNews.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000]" />
+                                        <input name="title" defaultValue={editingNews.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Cover Image</label>
                                         <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm mb-2" />
-                                        {uploading && <p className="text-xs text-[#C9A227]">Uploading image...</p>}
+                                        {uploading && <p className="text-xs text-gold">Uploading image...</p>}
                                         {(imageUrl || editingNews.image_url) && (
-                                            <div className="relative h-32 rounded-lg overflow-hidden border bg-gray-50 mt-2">
+                                            <div className="relative h-32 rounded-lg overflow-hidden border bg-muted mt-2">
                                                 <Image src={imageUrl || editingNews.image_url || ""} alt="Preview" fill className="object-cover" />
                                             </div>
                                         )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Content</label>
-                                        <textarea name="content" defaultValue={editingNews.content} required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000]" />
+                                        <textarea name="content" defaultValue={editingNews.content} required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-2">
-                                        <button type="button" onClick={() => setEditingNews(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-gray-50">
+                                        <button type="button" onClick={() => setEditingNews(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-muted">
                                             Cancel
                                         </button>
-                                        <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-[#800000] text-white rounded-lg font-medium hover:bg-[#600000] disabled:opacity-50">
+                                        <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50">
                                             {loading ? "Saving..." : "Save Changes"}
                                         </button>
                                     </div>
@@ -217,26 +217,26 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
 
             <div className="space-y-4">
                 {news.length === 0 ? (
-                    <div className="p-12 text-center border border-dashed rounded-xl bg-gray-50">
-                        <div className="w-16 h-16 mx-auto rounded-xl bg-[#800000]/10 flex items-center justify-center mb-4">
+                    <div className="p-12 text-center border border-dashed rounded-xl bg-muted">
+                        <div className="w-16 h-16 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                             <span className="text-3xl">📰</span>
                         </div>
-                        <p className="font-semibold text-gray-700 mb-1">
+                        <p className="font-semibold text-muted-foreground mb-1">
                             {userRole === "admin" ? "No news pending review" : "No news articles yet"}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             {userRole === "admin" ? "All clear! News articles will appear here when submitted by officers." : "Create your first news article to get started."}
                         </p>
                     </div>
                 ) : (
                     news.map(item => (
-                        <div key={item.id} className="bg-white border rounded-xl p-5 flex flex-col md:flex-row gap-5">
+                        <div key={item.id} className="bg-card border rounded-xl p-5 flex flex-col md:flex-row gap-5">
                             {item.image_url ? (
-                                <div className="relative w-full md:w-48 h-32 rounded-lg overflow-hidden border bg-gray-50 shrink-0">
+                                <div className="relative w-full md:w-48 h-32 rounded-lg overflow-hidden border bg-muted shrink-0">
                                     <Image src={item.image_url} alt="Cover" fill className="object-cover" />
                                 </div>
                             ) : (
-                                <div className="w-full md:w-48 h-32 bg-gray-100 border rounded-lg flex items-center justify-center text-gray-400 shrink-0">
+                                <div className="w-full md:w-48 h-32 bg-muted border rounded-lg flex items-center justify-center text-muted-foreground shrink-0">
                                     No Image
                                 </div>
                             )}
@@ -246,10 +246,10 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             {getStatusBadge(item.status)}
-                                            <span className="text-xs text-gray-500 font-medium">{item.organizations?.name}</span>
+                                            <span className="text-xs text-muted-foreground font-medium">{item.organizations?.name}</span>
                                         </div>
-                                        <h3 className="text-lg font-bold text-gray-900 border-none m-0 p-0 line-clamp-1">{item.title}</h3>
-                                        <p className="text-sm text-gray-500 line-clamp-2 mt-1 whitespace-pre-wrap">{item.content}</p>
+                                        <h3 className="text-lg font-bold text-foreground border-none m-0 p-0 line-clamp-1">{item.title}</h3>
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1 whitespace-pre-wrap">{item.content}</p>
                                     </div>
 
                                     {/* Actions */}
@@ -268,7 +268,7 @@ export default function NewsManagerClient({ initialNews, userRole, userOrganizat
                                         )}
                                     </div>
                                 </div>
-                                <div className="text-xs text-gray-400 mt-3 pt-3 border-t">
+                                <div className="text-xs text-muted-foreground mt-3 pt-3 border-t">
                                     Submitted {new Date(item.created_at).toLocaleString()}
                                     {item.creator && ` by ${item.creator.full_name}`}
                                 </div>

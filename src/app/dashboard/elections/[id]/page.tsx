@@ -201,12 +201,12 @@ export default async function ElectionDetailPage({ params }: Props) {
     const statusColor = isClosed
         ? "bg-purple-100 text-purple-700"
         : isDraft
-            ? "bg-gray-100 text-gray-600"
+            ? "bg-muted text-muted-foreground"
             : isPublished
                 ? "bg-blue-100 text-blue-700"
                 : isVotingOpen
                     ? "bg-green-100 text-green-700"
-                    : "bg-gray-100 text-gray-600";
+                    : "bg-muted text-muted-foreground";
 
     // Prepare roles data with assigned user info
     const rolesWithAssignments = (orgRoles || []).map((r) => {

@@ -143,8 +143,8 @@ export default function CoCurricularPage() {
     if (loading) {
         return (
             <div className="space-y-6">
-                <div className="h-40 bg-gray-200 rounded-xl animate-pulse" />
-                <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
+                <div className="h-40 bg-muted rounded-xl animate-pulse" />
+                <div className="h-64 bg-muted rounded-xl animate-pulse" />
             </div>
         );
     }
@@ -191,7 +191,7 @@ export default function CoCurricularPage() {
                             {student?.avatarUrl ? (
                                 <Image src={student.avatarUrl} alt={student.fullName} fill className="object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-[#800000]/10 flex items-center justify-center text-2xl font-bold text-[#800000]">
+                                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
                                     {initials}
                                 </div>
                             )}
@@ -254,7 +254,7 @@ export default function CoCurricularPage() {
                                         <div className="min-w-0">
                                             <p className="font-semibold text-sm">{section.entryHeading(record)}</p>
                                             {subtitle && (
-                                                <p className="text-xs text-[#800000] font-medium mt-0.5">{subtitle}</p>
+                                                <p className="text-xs text-primary font-medium mt-0.5">{subtitle}</p>
                                             )}
                                             {record.description && (
                                                 <p className="text-xs text-muted-foreground mt-1">{record.description}</p>

@@ -277,7 +277,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
 
     const getStatusBadge = (status: string) => {
         const colors: Record<string, string> = {
-            draft: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+            draft: "bg-muted text-muted-foreground border-border dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
             pending: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
             published: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
             rejected: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
@@ -294,32 +294,32 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                 <>
                     <div className="fixed inset-0 z-40 bg-black/50" onClick={() => { setEditingNews(null); setEditImageUrl(""); }} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                        <div className="bg-card dark:bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
                             <div className="p-6">
                                 <h2 className="text-xl font-bold mb-4">Edit News Article</h2>
                                 <form onSubmit={handleEditNewsSubmit} className="space-y-4">
                                     <input type="hidden" name="organization_id" value={editingNews.organizations?.name || ""} />
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Title</label>
-                                        <input name="title" defaultValue={editingNews.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        <input name="title" defaultValue={editingNews.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Cover Image</label>
                                         <input type="file" accept="image/*" onChange={handleEditImageUpload} className="w-full text-sm mb-2" />
-                                        {uploading && <p className="text-xs text-[#C9A227]">Uploading...</p>}
+                                        {uploading && <p className="text-xs text-gold">Uploading...</p>}
                                         {(editImageUrl || editingNews.image_url) && (
-                                            <div className="relative h-32 rounded-lg overflow-hidden border bg-gray-50 mt-2">
+                                            <div className="relative h-32 rounded-lg overflow-hidden border bg-muted mt-2">
                                                 <Image src={editImageUrl || editingNews.image_url} alt="Preview" fill className="object-cover" />
                                             </div>
                                         )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Content</label>
-                                        <textarea name="content" defaultValue={editingNews.content} required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        <textarea name="content" defaultValue={editingNews.content} required rows={6} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-2">
-                                        <button type="button" onClick={() => { setEditingNews(null); setEditImageUrl(""); }} className="px-5 py-2 border rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-accent">Cancel</button>
-                                        <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-[#800000] text-white rounded-lg font-medium hover:bg-[#600000] disabled:opacity-50">
+                                        <button type="button" onClick={() => { setEditingNews(null); setEditImageUrl(""); }} className="px-5 py-2 border rounded-lg font-medium hover:bg-muted dark:hover:bg-accent">Cancel</button>
+                                        <button type="submit" disabled={loading || uploading} className="px-5 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50">
                                             {loading ? "Saving..." : "Save Changes"}
                                         </button>
                                     </div>
@@ -335,35 +335,35 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                 <>
                     <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setEditingEvent(null)} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
+                        <div className="bg-card dark:bg-card rounded-xl border shadow-xl w-full max-w-lg overflow-hidden">
                             <div className="p-6">
                                 <h2 className="text-xl font-bold mb-4">Edit Event</h2>
                                 <form onSubmit={handleEditEventSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Event Title</label>
-                                        <input name="title" defaultValue={editingEvent.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        <input name="title" defaultValue={editingEvent.title} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Location</label>
-                                        <input name="location" defaultValue={editingEvent.location} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        <input name="location" defaultValue={editingEvent.location} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Start</label>
-                                            <input type="datetime-local" name="start_datetime" defaultValue={editingEvent.start_datetime?.slice(0, 16)} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                            <input type="datetime-local" name="start_datetime" defaultValue={editingEvent.start_datetime?.slice(0, 16)} required className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium mb-1">End</label>
-                                            <input type="datetime-local" name="end_datetime" defaultValue={editingEvent.end_datetime?.slice(0, 16)} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                            <input type="datetime-local" name="end_datetime" defaultValue={editingEvent.end_datetime?.slice(0, 16)} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Description</label>
-                                        <textarea name="description" defaultValue={editingEvent.description} required rows={4} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-[#800000] focus:border-[#800000] bg-background" />
+                                        <textarea name="description" defaultValue={editingEvent.description} required rows={4} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary bg-background" />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-2">
-                                        <button type="button" onClick={() => setEditingEvent(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-accent">Cancel</button>
-                                        <button type="submit" disabled={loading} className="px-5 py-2 bg-[#800000] text-white rounded-lg font-medium hover:bg-[#600000] disabled:opacity-50">
+                                        <button type="button" onClick={() => setEditingEvent(null)} className="px-5 py-2 border rounded-lg font-medium hover:bg-muted dark:hover:bg-accent">Cancel</button>
+                                        <button type="submit" disabled={loading} className="px-5 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50">
                                             {loading ? "Saving..." : "Save Changes"}
                                         </button>
                                     </div>
@@ -400,7 +400,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                     <div className="px-4 py-3 border-l bg-muted flex items-center justify-center min-w-[150px]">
                         <button
                             onClick={() => setActiveTab("create")}
-                            className="w-full px-4 py-2 bg-[#800000] text-white rounded-lg text-sm font-bold shadow-sm hover:bg-[#600000] transition-colors"
+                            className="w-full px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
                         >
                             + Create New
                         </button>
@@ -436,7 +436,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                             <form onSubmit={handleNewsSubmit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Posting for Organization <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Posting for Organization <span className="text-primary">*</span></label>
                                         <select name="organization_id" required className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors">
                                             {userOrganizations.map(org => (
                                                 <option key={org.id} value={org.id}>{org.name}</option>
@@ -444,26 +444,26 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                         </select>
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Headline <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Headline <span className="text-primary">*</span></label>
                                         <input name="title" required placeholder="Announcement title..." className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" />
                                     </div>
                                     <div className="col-span-2">
                                         <label className="block text-sm font-semibold text-foreground mb-1.5">Cover Image</label>
                                         <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm mb-2" />
-                                        {uploading && <p className="text-xs text-[#C9A227]">Uploading image...</p>}
+                                        {uploading && <p className="text-xs text-gold">Uploading image...</p>}
                                         {imageUrl && (
-                                            <div className="relative h-32 rounded-xl overflow-hidden border bg-gray-100">
+                                            <div className="relative h-32 rounded-xl overflow-hidden border bg-muted">
                                                 <Image src={imageUrl} alt="Preview" fill className="object-cover" />
                                             </div>
                                         )}
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">News Content <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">News Content <span className="text-primary">*</span></label>
                                         <textarea name="content" required rows={6} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" placeholder="Write full details here..." />
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-4 border-t">
-                                    <LoadingButton type="submit" isLoading={loading} loadingText="Submitting…" disabled={loading || uploading} className="px-6 py-2.5 bg-[#800000] text-white rounded-xl font-bold shadow-sm hover:bg-[#600000] disabled:opacity-50 transition-colors">
+                                    <LoadingButton type="submit" isLoading={loading} loadingText="Submitting…" disabled={loading || uploading} className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-colors">
                                         Submit News for Review
                                     </LoadingButton>
                                 </div>
@@ -472,7 +472,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                             <form onSubmit={handleEventSubmit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Hosting Organization <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Hosting Organization <span className="text-primary">*</span></label>
                                         <select name="organization_id" required className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors">
                                             {userOrganizations.map(org => (
                                                 <option key={org.id} value={org.id}>{org.name}</option>
@@ -480,28 +480,28 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                                         </select>
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Event Title <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Event Title <span className="text-primary">*</span></label>
                                         <input name="title" required placeholder="Event name..." className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" />
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Location <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Location <span className="text-primary">*</span></label>
                                         <input name="location" required placeholder="Where will this happen?" className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Start Date & Time <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Start Date & Time <span className="text-primary">*</span></label>
                                         <input type="datetime-local" name="start_datetime" required className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">End Date & Time <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">End Date & Time <span className="text-primary">*</span></label>
                                         <input type="datetime-local" name="end_datetime" required className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" />
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Description <span className="text-[#800000]">*</span></label>
+                                        <label className="block text-sm font-semibold text-foreground mb-1.5">Description <span className="text-primary">*</span></label>
                                         <textarea name="description" required rows={4} className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted focus:bg-background focus:ring-2 focus:ring-primary/30 transition-colors" placeholder="Provide event details..." />
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-4 border-t">
-                                    <LoadingButton type="submit" isLoading={loading} loadingText="Submitting…" disabled={loading} className="px-6 py-2.5 bg-[#800000] text-white rounded-xl font-bold shadow-sm hover:bg-[#600000] disabled:opacity-50 transition-colors">
+                                    <LoadingButton type="submit" isLoading={loading} loadingText="Submitting…" disabled={loading} className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-colors">
                                         Submit Event for Approval
                                     </LoadingButton>
                                 </div>
@@ -516,7 +516,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                     <div className="space-y-4 animate-scale-in">
                         {news.length === 0 ? (
                             <div className="p-12 text-center border border-dashed rounded-xl bg-muted">
-                                <div className="w-16 h-16 mx-auto rounded-xl bg-[#800000]/10 flex items-center justify-center mb-4">
+                                <div className="w-16 h-16 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                                     <span className="text-3xl">📰</span>
                                 </div>
                                 <p className="font-semibold text-foreground mb-1">No news articles yet</p>
@@ -595,7 +595,7 @@ export default function NewsAndEventsClient({ initialNews, initialEvents, userOr
                     <div className="space-y-4 animate-scale-in">
                         {events.length === 0 ? (
                             <div className="p-12 text-center border border-dashed rounded-xl bg-muted">
-                                <div className="w-16 h-16 mx-auto rounded-xl bg-[#800000]/10 flex items-center justify-center mb-4">
+                                <div className="w-16 h-16 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                                     <span className="text-3xl">📅</span>
                                 </div>
                                 <p className="font-semibold text-foreground mb-1">No events scheduled</p>

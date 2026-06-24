@@ -1,21 +1,38 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+    Building2,
+    Newspaper,
+    Vote,
+    Users,
+    CalendarDays,
+    FileCheck2,
+    Settings,
+    Star,
+    Award,
+    Medal,
+    Trophy,
+    ClipboardList,
+    Pin,
+    ChevronRight,
+    type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types";
 
-const typeEmoji: Record<string, string> = {
-    membership: "👥",
-    officer_role: "🎖️",
-    event_attended: "📅",
-    election_winner: "🏆",
-    accreditation: "📋",
+const typeIcon: Record<string, LucideIcon> = {
+    membership: Users,
+    officer_role: Award,
+    event_attended: CalendarDays,
+    election_winner: Trophy,
+    accreditation: ClipboardList,
 };
 
 interface QuickAction {
     label: string;
     description: string;
     href: string;
-    icon: string;
+    icon: LucideIcon;
     gradient: string;
     roles: UserRole[];
 }
@@ -25,7 +42,7 @@ const quickActions: QuickAction[] = [
         label: "Browse Organizations",
         description: "Discover student orgs to join",
         href: "/dashboard/organizations",
-        icon: "🏢",
+        icon: Building2,
         gradient: "from-[#800000] to-[#A52A2A]",
         roles: ["student"],
     },
@@ -33,7 +50,7 @@ const quickActions: QuickAction[] = [
         label: "Browse Organizations",
         description: "Manage organizations under your jurisdiction.",
         href: "/dashboard/organizations",
-        icon: "🏢",
+        icon: Building2,
         gradient: "from-[#800000] to-[#A52A2A]",
         roles: ["officer"],
     },
@@ -41,7 +58,7 @@ const quickActions: QuickAction[] = [
         label: "Browse Organizations",
         description: "Oversee all registered student organizations.",
         href: "/dashboard/organizations",
-        icon: "🏢",
+        icon: Building2,
         gradient: "from-[#800000] to-[#A52A2A]",
         roles: ["admin"],
     },
@@ -49,7 +66,7 @@ const quickActions: QuickAction[] = [
         label: "News & Events",
         description: "Latest campus news and upcoming events",
         href: "/dashboard/news-and-events",
-        icon: "📰",
+        icon: Newspaper,
         gradient: "from-[#C9A227] to-[#E6C84D]",
         roles: ["student"],
     },
@@ -57,7 +74,7 @@ const quickActions: QuickAction[] = [
         label: "Active Elections",
         description: "View active elections happening across organizations",
         href: "/dashboard/elections",
-        icon: "🗳️",
+        icon: Vote,
         gradient: "from-[#2D3748] to-[#4A5568]",
         roles: ["student"],
     },
@@ -65,7 +82,7 @@ const quickActions: QuickAction[] = [
         label: "My Memberships",
         description: "View groups you've joined",
         href: "/dashboard/memberships",
-        icon: "👥",
+        icon: Users,
         gradient: "from-[#C9A227] to-[#E6C84D]",
         roles: ["officer"],
     },
@@ -73,7 +90,7 @@ const quickActions: QuickAction[] = [
         label: "Upcoming Events",
         description: "See what's happening on campus",
         href: "/dashboard/events",
-        icon: "📅",
+        icon: CalendarDays,
         gradient: "from-[#2B6CB0] to-[#4299E1]",
         roles: ["student", "officer"],
     },
@@ -81,7 +98,7 @@ const quickActions: QuickAction[] = [
         label: "Upcoming Events",
         description: "Moderate and approve campus event submissions.",
         href: "/dashboard/events",
-        icon: "📅",
+        icon: CalendarDays,
         gradient: "from-[#2B6CB0] to-[#4299E1]",
         roles: ["admin"],
     },
@@ -89,7 +106,7 @@ const quickActions: QuickAction[] = [
         label: "Active Elections",
         description: "Create, manage, and oversee active organization elections.",
         href: "/dashboard/elections",
-        icon: "🗳️",
+        icon: Vote,
         gradient: "from-[#2D3748] to-[#4A5568]",
         roles: ["officer", "admin"],
     },
@@ -97,7 +114,7 @@ const quickActions: QuickAction[] = [
         label: "Manage Accreditation",
         description: "Review and process organization accreditation applications.",
         href: "/dashboard/accreditation",
-        icon: "📑",
+        icon: FileCheck2,
         gradient: "from-[#22543D] to-[#38A169]",
         roles: ["officer", "admin"],
     },
@@ -105,7 +122,7 @@ const quickActions: QuickAction[] = [
         label: "Admin Panel",
         description: "Manage organizations, events, members, and system configuration.",
         href: "/dashboard/admin",
-        icon: "⚙️",
+        icon: Settings,
         gradient: "from-[#800000] to-[#C9A227]",
         roles: ["admin"],
     },
@@ -214,7 +231,7 @@ export default async function DashboardPage() {
     return (
         <div className="space-y-8">
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#800000] to-[#A52A2A] p-6 sm:p-8 text-white">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#C9A227]/10 rounded-full -translate-y-1/2 translate-x-1/4" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full -translate-y-1/2 translate-x-1/4" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
                 <div className="relative">
                     <p className="text-white/60 text-sm font-medium">Welcome back,</p>
@@ -232,10 +249,10 @@ export default async function DashboardPage() {
                     ? "sm:grid-cols-2 lg:grid-cols-4"
                     : "sm:grid-cols-3"
             }`}>
-                <div className="rounded-xl border bg-card p-5 card-hover">
+                <div className="rounded-xl border border-border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center">
-                            <span className="text-lg">🏢</span>
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-primary" aria-hidden="true" />
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Organizations</p>
@@ -243,10 +260,12 @@ export default async function DashboardPage() {
                         </div>
                     </div>
                 </div>
-                <div className="rounded-xl border bg-card p-5 card-hover">
+                <div className="rounded-xl border border-border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#C9A227]/10 flex items-center justify-center">
-                            <span className="text-lg">{isStudent ? "⭐" : "👥"}</span>
+                        <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
+                            {isStudent
+                                ? <Star className="w-5 h-5 text-gold" aria-hidden="true" />
+                                : <Users className="w-5 h-5 text-gold" aria-hidden="true" />}
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -258,10 +277,10 @@ export default async function DashboardPage() {
                         </div>
                     </div>
                 </div>
-                <div className="rounded-xl border bg-card p-5 card-hover">
+                <div className="rounded-xl border border-border bg-card p-5 card-hover">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#2B6CB0]/10 flex items-center justify-center">
-                            <span className="text-lg">🎖️</span>
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <Award className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Your Role</p>
@@ -270,10 +289,10 @@ export default async function DashboardPage() {
                     </div>
                 </div>
                 {userPositions.map((pos) => (
-                    <div key={pos.title} className="rounded-xl border bg-card p-5 card-hover">
+                    <div key={pos.title} className="rounded-xl border border-border bg-card p-5 card-hover">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#C9A227]/10 flex items-center justify-center">
-                                <span className="text-lg">🏅</span>
+                            <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
+                                <Medal className="w-5 h-5 text-gold" aria-hidden="true" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">My Position</p>
@@ -288,61 +307,65 @@ export default async function DashboardPage() {
             <div>
                 <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredActions.map((action, i) => (
-                        <Link
-                            key={`${action.label}-${action.href}`}
-                            href={action.href}
-                            className="group rounded-xl border bg-card overflow-hidden card-hover"
-                            style={{ animationDelay: `${(i + 3) * 100}ms` }}
-                        >
-                            <div className={`h-2 bg-gradient-to-r ${action.gradient}`} />
-                            <div className="p-5">
-                                <div className="flex items-start gap-3">
-                                    <span className="text-2xl group-hover:animate-float">{action.icon}</span>
-                                    <div>
-                                        <h3 className="font-semibold group-hover:text-primary transition-colors">
-                                            {action.label}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            {action.description}
-                                        </p>
+                    {filteredActions.map((action, i) => {
+                        const Icon = action.icon;
+                        return (
+                            <Link
+                                key={`${action.label}-${action.href}`}
+                                href={action.href}
+                                className="group rounded-xl border border-border bg-card overflow-hidden card-hover"
+                                style={{ animationDelay: `${(i + 3) * 100}ms` }}
+                            >
+                                <div className={`h-2 bg-gradient-to-r ${action.gradient}`} />
+                                <div className="p-5">
+                                    <div className="flex items-start gap-3">
+                                        <Icon className="w-6 h-6 text-primary shrink-0 group-hover:animate-float" aria-hidden="true" />
+                                        <div>
+                                            <h3 className="font-semibold group-hover:text-primary transition-colors">
+                                                {action.label}
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                {action.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Open
+                                        <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                                     </div>
                                 </div>
-                                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Open
-                                    <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </Link>
-                    ))}
+                            </Link>
+                        );
+                    })}
                 </div>
             </div>
 
-            <div className="rounded-xl border bg-card p-6">
+            <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="text-lg font-semibold mb-3">Recent Activity</h2>
                 {recentActivity.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <p className="text-3xl mb-2">📋</p>
+                    <div className="flex flex-col items-center text-center py-8 text-muted-foreground">
+                        <ClipboardList className="w-8 h-8 mb-2" aria-hidden="true" />
                         <p className="text-sm">Your recent activity will appear here as you engage with the platform.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {recentActivity.map((rec) => (
-                            <div key={rec.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
-                                <span className="text-xl shrink-0">{typeEmoji[rec.record_type] || "📌"}</span>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{rec.title}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {rec.organization_name || "—"} · {new Date(rec.date_earned).toLocaleDateString()}
-                                    </p>
+                        {recentActivity.map((rec) => {
+                            const RecIcon = typeIcon[rec.record_type] || Pin;
+                            return (
+                                <div key={rec.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+                                    <RecIcon className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{rec.title}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {rec.organization_name || "—"} · {new Date(rec.date_earned).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize shrink-0">
+                                        {rec.record_type.replace(/_/g, " ")}
+                                    </span>
                                 </div>
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize shrink-0">
-                                    {rec.record_type.replace(/_/g, " ")}
-                                </span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

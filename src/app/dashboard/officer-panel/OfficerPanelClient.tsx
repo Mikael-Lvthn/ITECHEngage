@@ -116,7 +116,7 @@ export default function OfficerPanelClient({
                 <StatCard icon="📋" label="Pending Members" value={pendingMemberships.length} color="bg-yellow-500/10" />
                 <StatCard icon="🚪" label="Leave Requests" value={pendingLeaveRequests.length} color="bg-orange-500/10" />
                 <StatCard icon="📰" label="Pending Content" value={pendingEvents.length + pendingNews.length} color="bg-blue-500/10" />
-                <StatCard icon="👥" label="Total Members" value={approvedMembers.length} color="bg-[#800000]/10" />
+                <StatCard icon="👥" label="Total Members" value={approvedMembers.length} color="bg-primary/10" />
             </div>
 
             {/* Tab Navigation */}
@@ -389,7 +389,7 @@ function ContentTab({ events, news }: { events: PendingEvent[]; news: PendingNew
                                     </div>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                                         ev.status === "draft"
-                                            ? "bg-gray-100 text-gray-600"
+                                            ? "bg-muted text-muted-foreground"
                                             : "bg-yellow-100 text-yellow-700"
                                     }`}>
                                         {ev.status}
@@ -423,7 +423,7 @@ function ContentTab({ events, news }: { events: PendingEvent[]; news: PendingNew
                                     </div>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                                         item.status === "draft"
-                                            ? "bg-gray-100 text-gray-600"
+                                            ? "bg-muted text-muted-foreground"
                                             : "bg-yellow-100 text-yellow-700"
                                     }`}>
                                         {item.status}
@@ -497,7 +497,7 @@ function MemberRosterTab({ members, organizations }: { members: ApprovedMember[]
                                     {m.profiles?.avatar_url ? (
                                         <Image src={m.profiles.avatar_url} alt="" fill className="object-cover" />
                                     ) : (
-                                        <div className="w-full h-full bg-[#800000]/20 flex items-center justify-center text-[10px] font-bold text-[#800000]">
+                                        <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
                                             {m.profiles?.full_name
                                                 ?.split(" ")
                                                 .map((n) => n[0])
@@ -513,7 +513,7 @@ function MemberRosterTab({ members, organizations }: { members: ApprovedMember[]
                                 </div>
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 capitalize ${
                                     m.role === "officer"
-                                        ? "bg-[#C9A227]/20 text-[#C9A227]"
+                                        ? "bg-gold/20 text-gold"
                                         : "bg-muted text-muted-foreground"
                                 }`}>
                                     {m.role}

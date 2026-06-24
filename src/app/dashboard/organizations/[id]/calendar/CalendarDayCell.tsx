@@ -43,8 +43,8 @@ export default function CalendarDayCell({
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
             className={`min-h-[96px] p-1.5 rounded-lg border transition-all duration-150 cursor-pointer group outline-none
                 ${isCurrentMonth ? "bg-card hover:bg-accent/40" : "bg-muted/30 hover:bg-muted/50"}
-                ${isSelected ? "ring-2 ring-[#800000]/40 border-[#800000]/30" : "border-border"}
-                focus-visible:ring-2 focus-visible:ring-[#800000]/50
+                ${isSelected ? "ring-2 ring-primary/40 border-primary/30" : "border-border"}
+                focus-visible:ring-2 focus-visible:ring-primary/50
             `}
         >
             {/* Day number */}
@@ -52,7 +52,7 @@ export default function CalendarDayCell({
                 <span
                     className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-semibold transition-colors
                         ${isToday
-                            ? "bg-[#800000] text-white"
+                            ? "bg-primary text-white"
                             : isCurrentMonth
                                 ? "text-foreground group-hover:bg-accent"
                                 : "text-muted-foreground/50"

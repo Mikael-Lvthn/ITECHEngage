@@ -1,5 +1,6 @@
 "use client";
 
+import { Palette, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
 const fontOptions = [
@@ -20,10 +21,10 @@ export default function AppearanceSettings() {
     const { fontFamily, fontSize, brightness, darkMode, updateTheme, saving } = useTheme();
 
     return (
-        <div className="rounded-xl border bg-card overflow-hidden">
-            <div className="px-6 py-4 border-b">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-6 py-4 border-b border-border">
                 <h2 className="text-lg font-bold flex items-center gap-2">
-                    <span>🎨</span> Appearance
+                    <Palette className="w-5 h-5 text-primary" aria-hidden="true" /> Appearance
                 </h2>
                 <p className="text-sm text-muted-foreground">Customize how ITECHEngage looks for you</p>
             </div>
@@ -36,12 +37,13 @@ export default function AppearanceSettings() {
                     </div>
                     <button
                         onClick={() => updateTheme({ darkMode: !darkMode })}
-                        className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${darkMode ? "bg-[#800000]" : "bg-gray-300"}`}
+                        aria-label="Toggle dark mode"
+                        className={`relative w-14 h-7 rounded-full transition-colors duration-300 cursor-pointer ${darkMode ? "bg-primary" : "bg-muted"}`}
                     >
                         <span
-                            className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center text-xs ${darkMode ? "translate-x-7" : "translate-x-0"}`}
+                            className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-card shadow-md transition-transform duration-300 flex items-center justify-center ${darkMode ? "translate-x-7" : "translate-x-0"}`}
                         >
-                            {darkMode ? "🌙" : "☀️"}
+                            {darkMode ? <Moon className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> : <Sun className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />}
                         </span>
                     </button>
                 </div>
@@ -55,7 +57,7 @@ export default function AppearanceSettings() {
                                 onClick={() => updateTheme({ fontFamily: f.value })}
                                 className={`px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${
                                     fontFamily === f.value
-                                        ? "border-[#800000] bg-[#800000]/5 text-[#800000] ring-1 ring-[#800000]/20"
+                                        ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
                                         : "border-border hover:bg-accent"
                                 }`}
                                 style={{ fontFamily: f.value === "system-ui" ? "system-ui" : `"${f.value}", sans-serif` }}
@@ -75,7 +77,7 @@ export default function AppearanceSettings() {
                                 onClick={() => updateTheme({ fontSize: s.value })}
                                 className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                                     fontSize === s.value
-                                        ? "border-[#800000] bg-[#800000]/5 text-[#800000] ring-1 ring-[#800000]/20"
+                                        ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
                                         : "border-border hover:bg-accent"
                                 }`}
                             >
@@ -97,9 +99,9 @@ export default function AppearanceSettings() {
                         step="5"
                         value={brightness}
                         onChange={(e) => updateTheme({ brightness: Number(e.target.value) })}
-                        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-[#800000]"
+                        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-primary"
                         style={{
-                            background: `linear-gradient(to right, #800000 0%, #800000 ${((brightness - 70) / 60) * 100}%, #e5e5e5 ${((brightness - 70) / 60) * 100}%, #e5e5e5 100%)`,
+                            background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${((brightness - 70) / 60) * 100}%, var(--color-muted) ${((brightness - 70) / 60) * 100}%, var(--color-muted) 100%)`,
                         }}
                     />
                     <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
@@ -110,7 +112,7 @@ export default function AppearanceSettings() {
                 </div>
 
                 {saving && (
-                    <p className="text-xs text-[#C9A227] flex items-center gap-1">
+                    <p className="text-xs text-gold flex items-center gap-1">
                         <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />

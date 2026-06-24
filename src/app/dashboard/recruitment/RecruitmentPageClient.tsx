@@ -91,7 +91,7 @@ export default function RecruitmentPageClient({ positions, recruitments }: Props
                             <select
                                 name="organization_id"
                                 required
-                                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                             >
                                 {orgs.map((o) => (
                                     <option key={o.id} value={o.id}>{o.name}</option>
@@ -112,7 +112,7 @@ export default function RecruitmentPageClient({ positions, recruitments }: Props
                             name="title"
                             required
                             placeholder="e.g. Secretary, Public Relations Officer..."
-                            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-[#800000]"
+                            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>
 
@@ -122,7 +122,7 @@ export default function RecruitmentPageClient({ positions, recruitments }: Props
                             name="description"
                             rows={3}
                             placeholder="Describe the role, responsibilities, and requirements..."
-                            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-[#800000] resize-none"
+                            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                         />
                     </div>
 
@@ -139,7 +139,7 @@ export default function RecruitmentPageClient({ positions, recruitments }: Props
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="px-5 py-2 rounded-lg bg-[#800000] text-white text-sm font-semibold hover:bg-[#600000] transition-colors disabled:opacity-50"
+                            className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                         >
                             {isPending ? "Posting..." : "Post Recruitment"}
                         </button>

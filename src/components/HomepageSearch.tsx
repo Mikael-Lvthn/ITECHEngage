@@ -80,7 +80,7 @@ export default function HomepageSearch({ organizations, events, news, isLoggedIn
                     onFocus={() => setFocused(true)}
                     onBlur={() => setTimeout(() => setFocused(false), 200)}
                     placeholder="Search for organizations, events, or news..."
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-card text-foreground border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#C9A227] shadow-lg"
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-card text-foreground border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold shadow-lg"
                 />
             </div>
 
@@ -99,7 +99,7 @@ export default function HomepageSearch({ organizations, events, news, isLoggedIn
                                         <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
                                         <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
                                     </div>
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#800000]/60 bg-[#800000]/5 px-2 py-0.5 rounded-full shrink-0">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary/60 bg-primary/5 px-2 py-0.5 rounded-full shrink-0">
                                         {item.type}
                                     </span>
                                 </Link>

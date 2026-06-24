@@ -174,11 +174,11 @@ export default function AttendanceQRPanel({ eventId, eventTitle }: AttendanceQRP
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                                 <span className="text-muted-foreground">Scans:</span>
-                                <span className="font-bold text-[#C9A227]">{scanCount}</span>
+                                <span className="font-bold text-gold">{scanCount}</span>
                             </div>
                         </div>
 
-                        <div className="flex justify-center p-4 bg-white rounded-xl border">
+                        <div className="flex justify-center p-4 bg-card rounded-xl border">
                             <Image
                                 src={`/api/attendance-qr?token=${token}`}
                                 alt={`QR Code for ${eventTitle}`}

@@ -78,7 +78,7 @@ function RoleCard({ role, nodeRef }: { role: TreeNode; nodeRef: (el: HTMLDivElem
         >
             {role.can_manage_roles && (
                 <span
-                    className="absolute -top-2 -right-2 text-xs bg-[#C9A227] text-[#2B2B2B] rounded-full w-5 h-5 flex items-center justify-center"
+                    className="absolute -top-2 -right-2 text-xs bg-gold text-[#2B2B2B] rounded-full w-5 h-5 flex items-center justify-center"
                     title="Can manage roles"
                 >
                     ⭐
@@ -87,7 +87,7 @@ function RoleCard({ role, nodeRef }: { role: TreeNode; nodeRef: (el: HTMLDivElem
 
             <div
                 className={`relative w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${hasAssignee
-                    ? "bg-[#C9A227] text-[#2B2B2B]"
+                    ? "bg-gold text-[#2B2B2B]"
                     : "bg-muted text-muted-foreground"
                     }`}
             >

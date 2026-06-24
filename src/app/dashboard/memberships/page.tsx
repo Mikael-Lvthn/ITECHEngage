@@ -77,7 +77,7 @@ export default async function MembershipsPage() {
                     <div className="rounded-2xl border bg-card overflow-hidden">
                         <div className="h-2 bg-gradient-to-r from-[#C9A227] to-[#E6C84D]" />
                         <div className="text-center py-16 px-6">
-                            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#C9A227]/10 flex items-center justify-center mb-4">
+                            <div className="w-16 h-16 mx-auto rounded-2xl bg-gold/10 flex items-center justify-center mb-4">
                                 <span className="text-3xl animate-float">👥</span>
                             </div>
                             <p className="font-semibold">No active memberships</p>
@@ -108,7 +108,7 @@ export default async function MembershipsPage() {
                                     <div className="h-1.5 bg-gradient-to-r from-[#800000] to-[#C9A227]" />
                                     <div className="p-5">
                                         <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-[#800000]/10 flex items-center justify-center text-lg shrink-0">
+                                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-lg shrink-0">
                                                 🏢
                                             </div>
                                             <div>
@@ -116,7 +116,7 @@ export default async function MembershipsPage() {
                                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                                     {org?.description || "No description"}
                                                 </p>
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#800000]/10 text-[#800000] capitalize mt-2">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary capitalize mt-2">
                                                     {m.role}
                                                 </span>
                                             </div>

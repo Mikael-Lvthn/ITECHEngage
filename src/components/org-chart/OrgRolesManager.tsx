@@ -181,7 +181,7 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                                 type="checkbox"
                                 name="can_manage_roles"
                                 value="true"
-                                className="rounded border-gray-300"
+                                className="rounded border-border"
                             />
                             <span className="text-xs font-medium text-foreground">Can manage roles & elections</span>
                         </label>
@@ -227,7 +227,7 @@ export default function OrgRolesManager({ organizationId, roles, members }: OrgR
                                         <div className="flex flex-wrap items-center gap-2">
                                             <p className="font-semibold text-sm">{role.title}</p>
                                             {role.can_manage_roles && (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#C9A227]/10 text-[#C9A227] font-semibold tracking-wide whitespace-nowrap">
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/10 text-gold font-semibold tracking-wide whitespace-nowrap">
                                                     ⭐ MANAGER
                                                 </span>
                                             )}

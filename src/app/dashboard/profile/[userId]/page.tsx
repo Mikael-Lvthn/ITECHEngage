@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import CorViewer from "@/components/profile/CorViewer";
 
 interface Props {
     params: Promise<{ userId: string }>;
@@ -59,6 +60,25 @@ export default async function PublicProfilePage({ params }: Props) {
     const orgRoles = orgRolesResult.data;
     const records = recordsResult.data || [];
 
+    // COR is visible only to the owner and admins.
+    const { data: { user: viewer } } = await supabase.auth.getUser();
+    const isOwner = viewer?.id === userId;
+    let canViewCor = isOwner;
+    if (viewer && !isOwner) {
+        const { data: role } = await supabase.rpc("get_my_role");
+        canViewCor = role === "admin";
+    }
+
+    let hasCor = false;
+    if (canViewCor) {
+        const { data: studentRow } = await supabase
+            .from("students")
+            .select("cor_url")
+            .eq("id", userId)
+            .maybeSingle();
+        hasCor = Boolean(studentRow?.cor_url);
+    }
+
     const initials = profile.full_name
         .split(" ")
         .map((n: string) => n[0])
@@ -93,7 +113,7 @@ export default async function PublicProfilePage({ params }: Props) {
                             {profile.avatar_url ? (
                                 <Image src={profile.avatar_url} alt={profile.full_name} fill className="object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-[#800000]/10 flex items-center justify-center text-2xl font-bold text-[#800000]">
+                                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
                                     {initials}
                                 </div>
                             )}
@@ -101,7 +121,7 @@ export default async function PublicProfilePage({ params }: Props) {
                     </div>
 
                     <h1 className="text-2xl font-bold text-foreground">{profile.full_name}</h1>
-                    <span className="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#800000]/10 text-[#800000] capitalize">
+                    <span className="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
                         {profile.role}
                     </span>
 
@@ -117,6 +137,19 @@ export default async function PublicProfilePage({ params }: Props) {
                     )}
                 </div>
             </div>
+
+            {/* Certificate of Registration — owner & admins only */}
+            {canViewCor && hasCor && (
+                <div className="rounded-xl border bg-card p-5 shadow-sm flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                        <h2 className="text-sm font-semibold text-foreground">📄 Certificate of Registration</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            {isOwner ? "Visible only to you and administrators." : "Restricted document — visible to admins and the owner."}
+                        </p>
+                    </div>
+                    <CorViewer targetUserId={userId} />
+                </div>
+            )}
 
             {/* Organizations */}
             {memberships && memberships.length > 0 && (
@@ -141,7 +174,7 @@ export default async function PublicProfilePage({ params }: Props) {
                                         {org.logo_url ? (
                                             <Image src={org.logo_url} alt={org.name} fill className="object-cover" />
                                         ) : (
-                                            <div className="w-full h-full bg-[#800000]/10 flex items-center justify-center text-lg">🏢</div>
+                                            <div className="w-full h-full bg-primary/10 flex items-center justify-center text-lg">🏢</div>
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -180,11 +213,11 @@ export default async function PublicProfilePage({ params }: Props) {
                         {/* Summary stats */}
                         <div className="grid grid-cols-3 gap-3">
                             <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                                <p className="text-2xl font-bold text-[#800000]">{records.length}</p>
+                                <p className="text-2xl font-bold text-primary">{records.length}</p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">Total Records</p>
                             </div>
                             <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                                <p className="text-2xl font-bold text-[#C9A227]">{totalHours.toFixed(1)}</p>
+                                <p className="text-2xl font-bold text-gold">{totalHours.toFixed(1)}</p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">Total Hours</p>
                             </div>
                             <div className="rounded-lg border bg-muted/30 p-3 text-center">
@@ -198,7 +231,7 @@ export default async function PublicProfilePage({ params }: Props) {
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(byType).map(([type, count]) => (
                                     <span key={type} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border">
-                                        {typeEmoji[type] || "📌"} {typeLabels[type] || type} <span className="font-bold text-[#800000]">{count}</span>
+                                        {typeEmoji[type] || "📌"} {typeLabels[type] || type} <span className="font-bold text-primary">{count}</span>
                                     </span>
                                 ))}
                             </div>

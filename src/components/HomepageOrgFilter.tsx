@@ -36,7 +36,7 @@ export default function HomepageOrgFilter({ organizations, categories, isLoggedI
                         id="category-select"
                         value={activeCategory || ""}
                         onChange={(e) => handleFilter(e.target.value || null)}
-                        className="w-full bg-card border border-border text-foreground rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#800000]/30 focus:border-[#800000] transition-all"
+                        className="w-full bg-card border border-border text-foreground rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     >
                         <option value="">All Categories</option>
                         {categories.map((cat) => (
@@ -68,7 +68,7 @@ export default function HomepageOrgFilter({ organizations, categories, isLoggedI
                                 href={isLoggedIn ? `/dashboard/organizations/${org.id}` : "/login"}
                                 className="rounded-xl bg-card border border-border p-6 hover:shadow-md hover:-translate-y-0.5 transition-all group block text-center flex flex-col items-center justify-center min-h-[180px]"
                             >
-                                <div className="w-24 h-24 rounded-full bg-[#800000]/5 border border-border flex items-center justify-center shrink-0 overflow-hidden mb-4 shadow-sm">
+                                <div className="w-24 h-24 rounded-full bg-primary/5 border border-border flex items-center justify-center shrink-0 overflow-hidden mb-4 shadow-sm">
                                     {org.logo_url ? (
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
@@ -76,7 +76,7 @@ export default function HomepageOrgFilter({ organizations, categories, isLoggedI
                                         <span className="text-4xl">🏢</span>
                                     )}
                                 </div>
-                                <h3 className="font-medium text-foreground group-hover:text-[#800000] transition-colors text-base line-clamp-2">
+                                <h3 className="font-medium text-foreground group-hover:text-primary transition-colors text-base line-clamp-2">
                                     {org.name}
                                 </h3>
                             </a>

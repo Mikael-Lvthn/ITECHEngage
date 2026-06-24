@@ -31,13 +31,13 @@ export default function PositionCard({
     // If there's a winner, show winner card
     if (hasWinner && winnerName) {
         return (
-            <div className="relative rounded-xl border-2 border-[#C9A227] bg-gradient-to-br from-[#C9A227]/20 to-card p-4 shadow-md min-w-[140px]">
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#C9A227] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+            <div className="relative rounded-xl border-2 border-gold bg-gradient-to-br from-[#C9A227]/20 to-card p-4 shadow-md min-w-[140px]">
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
                     🏆 Elected
                 </div>
                 
                 <div className="flex flex-col items-center pt-2">
-                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#C9A227] mb-2">
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gold mb-2">
                         {winnerAvatar ? (
                             <Image
                                 src={winnerAvatar}
@@ -51,7 +51,7 @@ export default function PositionCard({
                             </div>
                         )}
                     </div>
-                    <h4 className="font-bold text-sm text-[#800000] dark:text-[#C9A227] text-center">{title}</h4>
+                    <h4 className="font-bold text-sm text-primary dark:text-gold text-center">{title}</h4>
                     <p className="text-xs text-muted-foreground text-center mt-0.5">{winnerName}</p>
                 </div>
             </div>

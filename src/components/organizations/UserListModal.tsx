@@ -83,7 +83,7 @@ export default function UserListModal({
                                         {u.avatar_url ? (
                                             <Image src={u.avatar_url} alt={u.full_name} fill className="object-cover" />
                                         ) : (
-                                            <div className="w-full h-full bg-[#800000]/20 flex items-center justify-center text-xs font-bold text-[#800000]">
+                                            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                                                 {u.full_name
                                                     .split(" ")
                                                     .map((n) => n[0])

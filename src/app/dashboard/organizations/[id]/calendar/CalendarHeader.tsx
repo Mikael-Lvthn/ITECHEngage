@@ -117,7 +117,7 @@ export default function CalendarHeader({
                 {isOfficer && (
                     <button
                         onClick={onCreateEvent}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#800000] text-white rounded-lg text-sm font-semibold hover:bg-[#600000] transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-[#800000]/40 min-h-[44px]"
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/40 min-h-[44px]"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Create Event</span>

@@ -51,7 +51,7 @@ export default function ListView({ events, isOfficer, onEventClick, onCreateEven
         return (
             <button
                 onClick={() => onEventClick(event)}
-                className={`w-full text-left flex items-stretch gap-0 rounded-xl border overflow-hidden hover:shadow-md transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-[#800000]/40 ${isPast ? "opacity-60" : ""}`}
+                className={`w-full text-left flex items-stretch gap-0 rounded-xl border overflow-hidden hover:shadow-md transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary/40 ${isPast ? "opacity-60" : ""}`}
             >
                 {/* Color stripe */}
                 <div
@@ -61,7 +61,7 @@ export default function ListView({ events, isOfficer, onEventClick, onCreateEven
 
                 <div className="flex-1 px-4 py-3">
                     <div className="flex items-start justify-between gap-2">
-                        <h3 className={`text-sm font-semibold text-foreground group-hover:text-[#800000] transition-colors ${event.status === "cancelled" ? "line-through opacity-60" : ""}`}>
+                        <h3 className={`text-sm font-semibold text-foreground group-hover:text-primary transition-colors ${event.status === "cancelled" ? "line-through opacity-60" : ""}`}>
                             {event.title}
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${statusColors[event.status] || ""}`}>
@@ -81,7 +81,7 @@ export default function ListView({ events, isOfficer, onEventClick, onCreateEven
                             </span>
                         )}
                         {event.recurrence && (
-                            <span className="text-[#800000]/70 font-medium">↻ {event.recurrence}</span>
+                            <span className="text-primary/70 font-medium">↻ {event.recurrence}</span>
                         )}
                     </div>
                 </div>
@@ -94,7 +94,7 @@ export default function ListView({ events, isOfficer, onEventClick, onCreateEven
         const isToday = date.toDateString() === now.toDateString();
         return (
             <div>
-                <div className={`sticky top-0 z-10 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider mb-2 ${isToday ? "bg-[#800000] text-white" : "bg-muted text-muted-foreground"}`}>
+                <div className={`sticky top-0 z-10 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider mb-2 ${isToday ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
                     {isToday ? "Today — " : ""}
                     {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                 </div>
@@ -120,7 +120,7 @@ export default function ListView({ events, isOfficer, onEventClick, onCreateEven
                     {isOfficer && (
                         <button
                             onClick={onCreateEvent}
-                            className="px-5 py-2.5 bg-[#800000] text-white rounded-lg text-sm font-semibold hover:bg-[#600000] transition-colors cursor-pointer"
+                            className="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
                         >
                             Create Event
                         </button>

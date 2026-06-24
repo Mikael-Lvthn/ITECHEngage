@@ -36,6 +36,7 @@ export interface Student {
     school_email?: string | null;
     personal_email?: string | null;
     contact_number?: string | null;
+    cor_url?: string | null;
 }
 
 export interface Organization {

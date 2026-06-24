@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingSpinner } from "@/components/loading/LoadingSpinner";
 import { LoadingButton } from "@/components/loading/LoadingButton";
+import { CheckCircle2 } from "lucide-react";
+import { SiteFooterLinks } from "@/components/SiteFooterLinks";
 
 export default function ResetPasswordPage() {
     const [password, setPassword] = useState("");
@@ -62,11 +64,13 @@ export default function ResetPasswordPage() {
         }, 3000);
     };
 
+    const inputClasses = "flex h-11 w-full rounded-xl border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all";
+
     if (!sessionReady) {
         return (
-            <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
-                <div className="bg-[#800000] px-6 py-2 text-center">
-                    <p className="text-xs text-white/80">
+            <div className="min-h-screen flex flex-col bg-background">
+                <div className="bg-primary px-6 py-2 text-center">
+                    <p className="text-xs text-primary-foreground/80">
                         Polytechnic University of the Philippines — Institute of Technology
                     </p>
                 </div>
@@ -80,16 +84,16 @@ export default function ResetPasswordPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-[#FAFAFA]">
-            <div className="bg-[#800000] px-6 py-2 text-center">
-                <p className="text-xs text-white/80">
+        <div className="min-h-screen flex flex-col bg-background">
+            <div className="bg-primary px-6 py-2 text-center">
+                <p className="text-xs text-primary-foreground/80">
                     Polytechnic University of the Philippines — Institute of Technology
                 </p>
             </div>
 
             <div className="flex-1 flex items-center justify-center px-4">
                 <div className="w-full max-w-md animate-slide-up">
-                    <div className="bg-white rounded-2xl shadow-xl border border-border/50 p-8 space-y-6">
+                    <div className="bg-card rounded-2xl shadow-xl border border-border p-8 space-y-6">
                         <div className="text-center">
                             <Image
                                 src="/logo.png"
@@ -98,7 +102,7 @@ export default function ResetPasswordPage() {
                                 height={72}
                                 className="mx-auto rounded-full shadow-lg"
                             />
-                            <h1 className="mt-4 text-2xl font-bold tracking-tight text-[#2B2B2B]">
+                            <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">
                                 Set new password
                             </h1>
                             <p className="text-muted-foreground mt-1 text-sm">
@@ -108,14 +112,12 @@ export default function ResetPasswordPage() {
 
                         {success ? (
                             <div className="space-y-4 animate-fade-in">
-                                <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center">
-                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
+                                <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center dark:border-green-500/30 dark:bg-green-500/10">
+                                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3 dark:bg-green-500/20">
+                                        <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-300" aria-hidden="true" />
                                     </div>
-                                    <h3 className="font-semibold text-green-800 mb-1">Password updated!</h3>
-                                    <p className="text-sm text-green-700">
+                                    <h3 className="font-semibold text-green-800 mb-1 dark:text-green-200">Password updated!</h3>
+                                    <p className="text-sm text-green-700 dark:text-green-300">
                                         Your password has been successfully changed. Redirecting to dashboard...
                                     </p>
                                 </div>
@@ -141,7 +143,7 @@ export default function ResetPasswordPage() {
                                             placeholder="••••••••"
                                             required
                                             minLength={6}
-                                            className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            className={inputClasses}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -156,12 +158,12 @@ export default function ResetPasswordPage() {
                                             placeholder="••••••••"
                                             required
                                             minLength={6}
-                                            className="flex h-11 w-full rounded-xl border border-input bg-white text-gray-900 px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                                            className={inputClasses}
                                         />
                                     </div>
 
-                                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                                        <p className="text-xs text-amber-800">
+                                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 dark:bg-amber-500/10 dark:border-amber-500/30">
+                                        <p className="text-xs text-amber-800 dark:text-amber-200">
                                             <strong>Password requirements:</strong> At least 6 characters. Use a mix of letters, numbers, and symbols for a stronger password.
                                         </p>
                                     </div>
@@ -170,7 +172,7 @@ export default function ResetPasswordPage() {
                                         type="submit"
                                         isLoading={loading}
                                         loadingText="Updating password…"
-                                        className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-[#800000] text-white font-semibold text-sm hover:bg-[#700000] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none"
+                                        className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                     >
                                         Update Password
                                     </LoadingButton>
@@ -178,6 +180,8 @@ export default function ResetPasswordPage() {
                             </>
                         )}
                     </div>
+
+                    <SiteFooterLinks className="justify-center mt-6 text-xs text-muted-foreground" />
                 </div>
             </div>
         </div>

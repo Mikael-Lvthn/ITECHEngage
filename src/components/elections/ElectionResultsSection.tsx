@@ -77,7 +77,7 @@ export default function ElectionResultsSection({
                                 el.classList.remove("pdf-export-light");
                                 if (wasDark) htmlEl.classList.add("dark");
                             }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#800000]/30 bg-[#800000]/5 text-[#800000] dark:text-[#C9A227] dark:border-[#C9A227]/30 dark:bg-[#C9A227]/5 text-sm font-semibold hover:bg-[#800000]/10 dark:hover:bg-[#C9A227]/10 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary dark:text-gold dark:border-gold/30 dark:bg-gold/5 text-sm font-semibold hover:bg-primary/10 dark:hover:bg-gold/10 transition-colors"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -89,11 +89,11 @@ export default function ElectionResultsSection({
                     {/* Summary stats */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="rounded-lg bg-muted p-4 text-center">
-                            <p className="text-3xl font-bold text-[#800000]">{totalVotes}</p>
+                            <p className="text-3xl font-bold text-primary">{totalVotes}</p>
                             <p className="text-xs text-muted-foreground mt-1">Total Votes Cast</p>
                         </div>
                         <div className="rounded-lg bg-muted p-4 text-center">
-                            <p className="text-3xl font-bold text-[#C9A227]">{filledPositions}</p>
+                            <p className="text-3xl font-bold text-gold">{filledPositions}</p>
                             <p className="text-xs text-muted-foreground mt-1">Positions Filled</p>
                         </div>
                         <div className="rounded-lg bg-muted p-4 text-center">
@@ -147,14 +147,14 @@ export default function ElectionResultsSection({
                                                 <div
                                                     key={candidate.id}
                                                     className={`flex items-center gap-3 p-2 rounded-lg ${
-                                                        isWinner ? "bg-[#C9A227]/10 border border-[#C9A227]/30" : "bg-muted"
+                                                        isWinner ? "bg-gold/10 border border-gold/30" : "bg-muted"
                                                     }`}
                                                 >
                                                     {/* Rank */}
                                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                                                         isWinner
-                                                            ? "bg-[#C9A227] text-white"
-                                                            : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                                                            ? "bg-gold text-white"
+                                                            : "bg-muted dark:bg-gray-700 text-muted-foreground dark:text-gray-300"
                                                     }`}>
                                                         {index + 1}
                                                     </div>
@@ -179,21 +179,21 @@ export default function ElectionResultsSection({
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2">
                                                             <span className={`font-medium text-sm truncate ${
-                                                                isWinner ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"
+                                                                isWinner ? "text-primary dark:text-gold" : "text-foreground"
                                                             }`}>
                                                                 {candidate.name}
                                                             </span>
                                                             {isWinner && (
-                                                                <span className="text-[10px] font-bold text-[#C9A227]">
+                                                                <span className="text-[10px] font-bold text-gold">
                                                                     🏆 WINNER
                                                                 </span>
                                                             )}
                                                         </div>
                                                         {/* Progress bar */}
-                                                        <div className="mt-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                        <div className="mt-1 h-1.5 bg-muted dark:bg-gray-700 rounded-full overflow-hidden">
                                                             <div
                                                                 className={`h-full rounded-full transition-all ${
-                                                                    isWinner ? "bg-[#C9A227]" : "bg-gray-400"
+                                                                    isWinner ? "bg-gold" : "bg-gray-400"
                                                                 }`}
                                                                 style={{ width: `${percentage}%` }}
                                                             />
@@ -203,7 +203,7 @@ export default function ElectionResultsSection({
                                                     {/* Vote count */}
                                                     <div className="text-right shrink-0">
                                                         <p className={`text-sm font-bold ${
-                                                            isWinner ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"
+                                                            isWinner ? "text-primary dark:text-gold" : "text-foreground"
                                                         }`}>
                                                             {candidate.vote_count || 0}
                                                         </p>

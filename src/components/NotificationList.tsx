@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { Vote, CalendarDays, Newspaper, CheckCircle2, XCircle, Bell, type LucideIcon } from "lucide-react";
 import { markAsRead, markAllAsRead } from "@/lib/actions/notifications";
 
 interface Notification {
@@ -28,14 +29,14 @@ function getTimeAgo(dateStr: string) {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function getTypeIcon(type: string) {
+function getTypeIcon(type: string): LucideIcon {
     switch (type) {
-        case "election_started": return "🗳️";
-        case "event_created": return "📅";
-        case "news_published": return "📰";
-        case "membership_approved": return "✅";
-        case "membership_denied": return "❌";
-        default: return "🔔";
+        case "election_started": return Vote;
+        case "event_created": return CalendarDays;
+        case "news_published": return Newspaper;
+        case "membership_approved": return CheckCircle2;
+        case "membership_denied": return XCircle;
+        default: return Bell;
     }
 }
 
@@ -84,15 +85,16 @@ export default function NotificationList({ notifications }: NotificationListProp
                 </h3>
                 <div className="space-y-1">
                     {groupItems.map((n) => {
+                        const Icon = getTypeIcon(n.type);
                         const inner = (
                             <div
                                 className={`flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer ${
-                                    n.status !== "unread" ? "hover:bg-accent/50" : "bg-[#800000]/5 hover:bg-[#800000]/10"
+                                    n.status !== "unread" ? "hover:bg-accent/50" : "bg-primary/5 hover:bg-primary/10"
                                 }`}
                                 onClick={() => n.status === "unread" && handleMarkRead(n.id)}
                             >
-                                <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0 text-lg">
-                                    {getTypeIcon(n.type)}
+                                <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                                    <Icon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
@@ -100,7 +102,7 @@ export default function NotificationList({ notifications }: NotificationListProp
                                             {n.title}
                                         </p>
                                         {n.status === "unread" && (
-                                            <span className="w-2 h-2 rounded-full bg-[#800000] shrink-0" />
+                                            <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
                                         )}
                                     </div>
                                     {n.message && (
@@ -133,7 +135,7 @@ export default function NotificationList({ notifications }: NotificationListProp
                     <button
                         onClick={handleMarkAllRead}
                         disabled={isPending}
-                        className="text-xs text-[#800000] font-medium hover:underline disabled:opacity-50"
+                        className="text-xs text-primary font-medium hover:underline disabled:opacity-50 cursor-pointer"
                     >
                         Mark all as read ({unreadCount})
                     </button>
@@ -145,7 +147,7 @@ export default function NotificationList({ notifications }: NotificationListProp
                     <div className="h-2 bg-gradient-to-r from-[#800000] to-[#C9A227]" />
                     <div className="text-center py-16 px-6">
                         <div className="w-16 h-16 mx-auto rounded-2xl bg-accent flex items-center justify-center mb-4">
-                            <span className="text-3xl">🔔</span>
+                            <Bell className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="font-bold text-lg">No Notifications</p>
                         <p className="text-sm text-muted-foreground mt-2">

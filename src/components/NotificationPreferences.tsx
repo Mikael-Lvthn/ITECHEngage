@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Vote, Users, CalendarDays, Megaphone, ShieldCheck, type LucideIcon } from "lucide-react";
 import {
     getNotificationPreferences,
     updateNotificationPreferences,
@@ -12,7 +13,7 @@ interface PrefConfig {
     key: string;
     label: string;
     description: string;
-    emoji: string;
+    icon: LucideIcon;
 }
 
 const PREF_OPTIONS: PrefConfig[] = [
@@ -20,31 +21,31 @@ const PREF_OPTIONS: PrefConfig[] = [
         key: "election_started",
         label: "Election Notifications",
         description: "When elections start, open for voting, or results are published",
-        emoji: "🗳️",
+        icon: Vote,
     },
     {
         key: "membership_updates",
         label: "Membership Updates",
         description: "When your membership is approved, rejected, or role changes",
-        emoji: "👥",
+        icon: Users,
     },
     {
         key: "event_reminders",
         label: "Event Reminders",
         description: "When new events are submitted or event status changes",
-        emoji: "📅",
+        icon: CalendarDays,
     },
     {
         key: "org_announcements",
         label: "Organization Announcements",
         description: "Announcements from organizations you belong to",
-        emoji: "📢",
+        icon: Megaphone,
     },
     {
         key: "admin_announcements",
         label: "Admin Announcements",
         description: "System-wide announcements and accreditation updates",
-        emoji: "🛡️",
+        icon: ShieldCheck,
     },
 ];
 
@@ -104,7 +105,7 @@ export default function NotificationPreferences() {
         return (
             <div className="space-y-3 animate-pulse">
                 {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-16 bg-gray-200 rounded-lg" />
+                    <div key={i} className="h-16 bg-muted rounded-lg" />
                 ))}
             </div>
         );
@@ -112,13 +113,15 @@ export default function NotificationPreferences() {
 
     return (
         <div className="space-y-3">
-            {PREF_OPTIONS.map((option) => (
+            {PREF_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                return (
                 <div
                     key={option.key}
-                    className="flex items-center justify-between gap-4 rounded-lg border p-4 hover:bg-accent/50 transition-colors"
+                    className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 hover:bg-accent/50 transition-colors"
                 >
                     <div className="flex items-start gap-3 min-w-0">
-                        <span className="text-xl shrink-0">{option.emoji}</span>
+                        <Icon className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                         <div className="min-w-0">
                             <p className="text-sm font-medium">{option.label}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
@@ -128,19 +131,20 @@ export default function NotificationPreferences() {
                         onClick={() => handleToggle(option.key)}
                         disabled={saving}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${
-                            prefs[option.key] ? "bg-[#800000]" : "bg-gray-300"
+                            prefs[option.key] ? "bg-primary" : "bg-muted"
                         }`}
                         role="switch"
                         aria-checked={prefs[option.key]}
                     >
                         <span
-                            className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                            className={`pointer-events-none block h-5 w-5 rounded-full bg-card shadow-lg ring-0 transition-transform ${
                                 prefs[option.key] ? "translate-x-5" : "translate-x-0"
                             }`}
                         />
                     </button>
                 </div>
-            ))}
+                );
+            })}
         </div>
     );
 }

@@ -15,8 +15,8 @@ export default function FollowButton({ organizationId, isFollowing, isOfficer }:
 
     if (isOfficer) {
         return (
-            <div className="px-5 py-2.5 rounded-xl border border-[#C9A227] bg-[#C9A227]/10 text-xs font-semibold text-[#800000] flex items-center justify-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]"></span> Following
+            <div className="px-5 py-2.5 rounded-xl border border-gold bg-gold/10 text-xs font-semibold text-primary flex items-center justify-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold"></span> Following
             </div>
         );
     }
@@ -41,15 +41,15 @@ export default function FollowButton({ organizationId, isFollowing, isOfficer }:
             disabled={isPending}
             className={`px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                 isFollowing
-                    ? "border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100"
-                    : "bg-[#800000] text-primary-foreground shadow-md hover:bg-[#800000]/90"
+                    ? "border border-border bg-muted text-muted-foreground hover:bg-muted"
+                    : "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
             } disabled:opacity-50`}
         >
             {isPending ? (
                 <LoadingSpinner size="sm" />
             ) : isFollowing ? (
                 <>
-                    <span className="text-[#C9A227]">★</span> Following
+                    <span className="text-gold">★</span> Following
                 </>
             ) : (
                 <>

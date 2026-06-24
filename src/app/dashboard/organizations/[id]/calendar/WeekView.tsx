@@ -89,7 +89,7 @@ export default function WeekView({ year, month, events, onEventClick }: WeekView
                             </p>
                             <span
                                 className={`text-xl font-bold mt-0.5 w-9 h-9 flex items-center justify-center mx-auto rounded-full
-                                    ${isToday ? "bg-[#800000] text-white" : "text-foreground"}`}
+                                    ${isToday ? "bg-primary text-white" : "text-foreground"}`}
                             >
                                 {day.getDate()}
                             </span>
@@ -155,7 +155,7 @@ export default function WeekView({ year, month, events, onEventClick }: WeekView
                         return (
                             <div
                                 key={colIdx}
-                                className={`border-r last:border-r-0 relative ${isToday ? "bg-[#800000]/3" : ""}`}
+                                className={`border-r last:border-r-0 relative ${isToday ? "bg-primary/3" : ""}`}
                             >
                                 {/* Hour lines */}
                                 {hours.map((h) => (
@@ -204,8 +204,8 @@ export default function WeekView({ year, month, events, onEventClick }: WeekView
                                             style={{ top: (nowHour - HOUR_START) * HOUR_HEIGHT }}
                                         >
                                             <div className="relative">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-[#800000] -ml-1 absolute -top-1.5" />
-                                                <div className="h-0.5 bg-[#800000] ml-1" />
+                                                <div className="w-2.5 h-2.5 rounded-full bg-primary -ml-1 absolute -top-1.5" />
+                                                <div className="h-0.5 bg-primary ml-1" />
                                             </div>
                                         </div>
                                     );

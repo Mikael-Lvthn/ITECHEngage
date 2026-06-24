@@ -32,13 +32,13 @@ export default function CandidateCard({
         <div
             className={`relative rounded-xl border p-4 transition-all ${
                 isWinner
-                    ? "bg-gradient-to-br from-[#C9A227]/20 to-[#C9A227]/5 border-[#C9A227] ring-2 ring-[#C9A227]/30"
+                    ? "bg-gradient-to-br from-[#C9A227]/20 to-[#C9A227]/5 border-gold ring-2 ring-gold/30"
                     : "bg-card border-border hover:shadow-md"
             }`}
         >
             {/* Winner badge */}
             {isWinner && (
-                <div className="absolute -top-2 -right-2 bg-[#C9A227] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                <div className="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
                     🏆 Winner
                 </div>
             )}
@@ -47,8 +47,8 @@ export default function CandidateCard({
             {typeof voteCount === "number" && (
                 <div className={`absolute -top-2 -left-2 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${
                     isWinner
-                        ? "bg-[#C9A227] text-white"
-                        : "bg-gray-100 text-gray-700 border border-gray-200"
+                        ? "bg-gold text-white"
+                        : "bg-muted text-muted-foreground border border-border"
                 }`}>
                     {voteCount} vote{voteCount !== 1 ? "s" : ""}
                 </div>
@@ -57,7 +57,7 @@ export default function CandidateCard({
             {/* Avatar */}
             <div className="flex justify-center mb-3">
                 <div className={`relative w-16 h-16 rounded-full overflow-hidden border-2 ${
-                    isWinner ? "border-[#C9A227]" : "border-gray-200"
+                    isWinner ? "border-gold" : "border-border"
                 }`}>
                     {avatarUrl ? (
                         <Image
@@ -75,16 +75,16 @@ export default function CandidateCard({
             </div>
 
             {/* Name */}
-            <h4 className={`text-center font-semibold text-sm ${isWinner ? "text-[#800000] dark:text-[#C9A227]" : "text-foreground"}`}>
+            <h4 className={`text-center font-semibold text-sm ${isWinner ? "text-primary dark:text-gold" : "text-foreground"}`}>
                 {name}
                 {isCurrentUser && (
-                    <span className="ml-1 text-[10px] text-gray-500">(You)</span>
+                    <span className="ml-1 text-[10px] text-muted-foreground">(You)</span>
                 )}
             </h4>
 
             {/* Platform excerpt */}
             {platform && (
-                <p className="text-xs text-gray-500 text-center mt-1 line-clamp-2">
+                <p className="text-xs text-muted-foreground text-center mt-1 line-clamp-2">
                     {platform}
                 </p>
             )}
@@ -94,7 +94,7 @@ export default function CandidateCard({
                 <button
                     onClick={onVote}
                     disabled={isVoting}
-                    className="mt-3 w-full px-3 py-1.5 rounded-lg bg-[#800000] text-white text-xs font-semibold hover:bg-[#600000] transition-colors disabled:opacity-50"
+                    className="mt-3 w-full px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                     {isVoting ? "Voting..." : "Vote"}
                 </button>
@@ -112,7 +112,7 @@ export default function CandidateCard({
             {/* Can't vote for yourself */}
             {isCurrentUser && canVote && (
                 <div className="mt-3 text-center">
-                    <span className="text-[10px] text-gray-400 font-medium">
+                    <span className="text-[10px] text-muted-foreground font-medium">
                         You can&apos;t vote for yourself
                     </span>
                 </div>
