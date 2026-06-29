@@ -12,10 +12,9 @@ interface DocumentChecklistProps {
     requirements: AccreditationRequirement[];
     selectedFiles: Record<string, File>;
     onFileSelect: (requirementId: string, file: File) => void;
-    cycleType: "initial" | "revalidation";
 }
 
-export default function DocumentChecklist({ requirements, selectedFiles, onFileSelect, cycleType }: DocumentChecklistProps) {
+export default function DocumentChecklist({ requirements, selectedFiles, onFileSelect }: DocumentChecklistProps) {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, requirementId: string) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -23,12 +22,10 @@ export default function DocumentChecklist({ requirements, selectedFiles, onFileS
         }
     };
 
-    const initialNames = ['Constitution and By-Laws (CBL)', 'General Plan of Activities (GPOA)', 'Advocacy Plan', 'Tracker Form', 'Waiver of Responsibility', 'Officer\'s Profile', 'Official List of Officers'];
+    // Accreditation is revalidation-only; show the revalidation document set.
     const revalidationNames = ['Constitution and By-Laws (CBL)', 'Resolutions', 'Memorandum Order', 'List of Officers/ Organizational Chart', 'General Plan of Activities (GPOA)', 'Minutes of the Meetings', 'Narrative Reports', 'Financial Report', 'Turnover Documents'];
 
-    const filteredRequirements = requirements.filter(r => 
-        cycleType === "initial" ? initialNames.includes(r.name) : revalidationNames.includes(r.name)
-    );
+    const filteredRequirements = requirements.filter(r => revalidationNames.includes(r.name));
 
     return (
         <div className="space-y-4">

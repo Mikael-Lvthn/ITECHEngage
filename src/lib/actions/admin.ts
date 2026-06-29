@@ -59,6 +59,19 @@ export async function createOrganization(formData: FormData) {
 
     if (orgError) throw new Error(orgError.message);
 
+    // Program restrictions: no rows = open to all. If any are selected and the
+    // insert fails, roll back the org (mirrors the initial-student rollback).
+    const allowedPrograms = formData.getAll("allowed_programs") as string[];
+    if (allowedPrograms.length > 0) {
+        const { error: progError } = await supabase
+            .from("organization_allowed_programs")
+            .insert(allowedPrograms.map((program) => ({ organization_id: orgData.id, program })));
+        if (progError) {
+            await supabase.from("organizations").delete().eq("id", orgData.id);
+            throw new Error("Failed to set program restrictions. Organization creation rolled back.");
+        }
+    }
+
     // Only create membership + President role if an initial student was selected
     if (initial_student_id) {
         const { data: newMembership, error: membershipError } = await supabase.from("memberships").insert({
@@ -150,6 +163,20 @@ export async function updateOrganization(formData: FormData) {
         .eq("id", id);
 
     if (error) throw new Error(error.message);
+
+    // Program restrictions: delete-all-then-reinsert for this org. No rows = open to all.
+    const allowedPrograms = formData.getAll("allowed_programs") as string[];
+    const { error: delError } = await supabase
+        .from("organization_allowed_programs")
+        .delete()
+        .eq("organization_id", id);
+    if (delError) throw new Error(delError.message);
+    if (allowedPrograms.length > 0) {
+        const { error: progError } = await supabase
+            .from("organization_allowed_programs")
+            .insert(allowedPrograms.map((program) => ({ organization_id: id, program })));
+        if (progError) throw new Error(progError.message);
+    }
 
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/organizations");

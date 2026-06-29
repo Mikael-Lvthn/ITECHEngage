@@ -97,7 +97,8 @@ async function fetchHomepagePublicData(): Promise<HomepagePublicData> {
                 .from("news")
                 .select("id, title, content, image_url, published_at, created_at, organizations(name), creator:profiles(full_name)")
                 .eq("status", "published")
-                .order("published_at", { ascending: false })
+                .order("published_at", { ascending: false, nullsFirst: false })
+                .order("created_at", { ascending: false })
                 .limit(3),
             supabase
                 .from("elections")

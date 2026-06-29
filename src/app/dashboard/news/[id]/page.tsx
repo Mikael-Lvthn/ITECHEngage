@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import LikeShareButtons from "@/components/LikeShareButtons";
+import NewsImage from "@/components/NewsImage";
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -58,14 +59,7 @@ export default async function NewsDetailPage({ params }: Props) {
 
             <article className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 {newsItem.image_url && (
-                    <div className="relative w-full h-64">
-                        <Image
-                            src={newsItem.image_url}
-                            alt={newsItem.title}
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
+                    <NewsImage src={newsItem.image_url} alt={newsItem.title} />
                 )}
 
                 <div className="p-6 sm:p-8">

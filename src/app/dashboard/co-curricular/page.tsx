@@ -6,7 +6,12 @@ import Link from "next/link";
 import { getUserEngagementSummary, setRecordVisibility } from "@/lib/actions/engagement";
 import { generateCocurricularPDF } from "@/lib/pdf/cocurricular";
 import { createClient } from "@/lib/supabase/client";
+import MyCertificates from "@/components/certificates/MyCertificates";
+import { PUP_PROGRAMS } from "@/lib/constants/programs";
 import type { EngagementRecord } from "@/lib/types";
+
+const programLabel = (code: string | null | undefined): string =>
+    PUP_PROGRAMS.find((p) => p.code === code)?.label || code || "N/A";
 
 type StudentInfo = {
     fullName: string;
@@ -88,14 +93,14 @@ export default function CoCurricularPage() {
             const [summaryData, profileRes, studentRes] = await Promise.all([
                 getUserEngagementSummary(user.id),
                 supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single(),
-                supabase.from("students").select("student_number, program, year_level").eq("id", user.id).maybeSingle(),
+                supabase.from("students").select("student_number, course, year_level").eq("id", user.id).maybeSingle(),
             ]);
 
             setRecords(summaryData.records);
             setStudent({
                 fullName: profileRes.data?.full_name || "Unknown",
                 studentNumber: studentRes.data?.student_number || "N/A",
-                program: studentRes.data?.program || "N/A",
+                program: programLabel(studentRes.data?.course),
                 yearLevel: studentRes.data?.year_level || 0,
                 avatarUrl: profileRes.data?.avatar_url || null,
             });
@@ -280,6 +285,9 @@ export default function CoCurricularPage() {
                     </section>
                 ))
             )}
+
+            {/* Issued membership certificates — not part of the résumé PDF. */}
+            <MyCertificates />
         </div>
     );
 }

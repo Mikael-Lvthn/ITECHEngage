@@ -9,6 +9,7 @@ import { LoadingButton } from "@/components/loading/LoadingButton";
 import { Eye, EyeOff, ArrowLeft, ChevronRight, GraduationCap, ShieldCheck, User } from "lucide-react";
 import { SiteFooterLinks } from "@/components/SiteFooterLinks";
 import { customSignUpAndSendEmail } from "@/lib/actions/signup";
+import { PUP_PROGRAMS } from "@/lib/constants/programs";
 
 type RegistrationType = "student" | "faculty";
 
@@ -414,14 +415,11 @@ export default function SignupPage() {
                                                         className={inputClasses}
                                                     >
                                                         <option value="">Select a program...</option>
-                                                        <option value="DCvET">Diploma in Civil Engineering Technology (DCvET)</option>
-                                                        <option value="DCET">Diploma in Computer Engineering Technology (DCET)</option>
-                                                        <option value="DEET">Diploma in Electrical Engineering Technology (DEET)</option>
-                                                        <option value="DECET">Diploma in Electronics Engineering Technology (DECET)</option>
-                                                        <option value="DIT">Diploma in Information Technology (DIT)</option>
-                                                        <option value="DMET">Diploma in Mechanical Engineering Technology (DMET)</option>
-                                                        <option value="DOMT">Diploma in Office Management Technology (DOMT)</option>
-                                                        <option value="DRET">Diploma in Railway Engineering Technology (DRET)</option>
+                                                        {PUP_PROGRAMS.map((program) => (
+                                                            <option key={program.code} value={program.code}>
+                                                                {program.label}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                 </div>
 

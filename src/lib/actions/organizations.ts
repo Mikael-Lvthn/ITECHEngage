@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getAppSettings } from "@/lib/actions/app-settings";
 import { recordMembershipEngagement } from "@/lib/actions/engagement-internal";
+import { issueMembershipCertificate } from "@/lib/pdf/certificate";
 
 export async function joinOrganization(organizationId: string) {
     const supabase = await createClient();
@@ -12,6 +13,27 @@ export async function joinOrganization(organizationId: string) {
     } = await supabase.auth.getUser();
 
     if (!user) throw new Error("Not authenticated");
+
+    // Program restriction gate (SECURITY — the list filter is cosmetic; a user
+    // could still POST a join with a restricted org's ID). No restriction rows
+    // = open to all. The program code lives in students.course; a missing
+    // student row or course is treated as NOT allowed.
+    const { data: restrictions } = await supabase
+        .from("organization_allowed_programs")
+        .select("program")
+        .eq("organization_id", organizationId);
+
+    if (restrictions && restrictions.length > 0) {
+        const { data: student } = await supabase
+            .from("students")
+            .select("course")
+            .eq("id", user.id)
+            .maybeSingle();
+        const allowed = restrictions.map((r) => r.program);
+        if (!student?.course || !allowed.includes(student.course)) {
+            throw new Error("This organization is not open to your program.");
+        }
+    }
 
     const { data: existing } = await supabase
         .from("memberships")
@@ -46,6 +68,14 @@ export async function joinOrganization(organizationId: string) {
             await recordMembershipEngagement(membership.id);
         } catch (err) {
             console.error("Failed to record membership engagement:", err);
+        }
+
+        // Issue the membership certificate (if the org has a template). Isolated
+        // so a cert failure can never block the auto-approved join.
+        try {
+            await issueMembershipCertificate(membership.id);
+        } catch (err) {
+            console.error("Failed to issue certificate:", err);
         }
         revalidatePath("/dashboard/officer-panel");
     }

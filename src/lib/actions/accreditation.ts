@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { generateEngagementRecord } from "@/lib/actions/engagement-internal";
 import { checkNotificationPreference } from "@/lib/utils/notifications";
 
+// Accreditation access is restricted to officers who hold an ASSIGNED POSITION
+// in the org (an organization_roles row with assigned_user_id = the user).
+// A normal member — or a legacy membership.role='officer' without an assigned
+// position — has no access.
 async function requireOfficerOfOrg(organizationId: string) {
     const supabase = await createClient();
     const {
@@ -13,8 +17,7 @@ async function requireOfficerOfOrg(organizationId: string) {
 
     if (!user) throw new Error("Not authenticated");
 
-    // Check structural roles
-    const { data: structuralRole } = await supabase
+    const { data: position } = await supabase
         .from("organization_roles")
         .select("id")
         .eq("assigned_user_id", user.id)
@@ -22,20 +25,35 @@ async function requireOfficerOfOrg(organizationId: string) {
         .limit(1)
         .maybeSingle();
 
-    if (!structuralRole) {
-        // Fallback: check membership role
-        const { data: membership } = await supabase
-            .from("memberships")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("organization_id", organizationId)
-            .eq("role", "officer")
-            .eq("status", "approved")
-            .maybeSingle();
+    if (!position) {
+        throw new Error("Unauthorized: a position in this organization is required");
+    }
 
-        if (!membership) {
-            throw new Error("Unauthorized: Officer role required");
-        }
+    return { supabase, user };
+}
+
+// Admins (who review) OR an assigned-position officer of the org.
+async function requireAdminOrOfficerOfOrg(organizationId: string) {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Not authenticated");
+
+    const { data: role } = await supabase.rpc("get_my_role");
+    if (role === "admin") return { supabase, user };
+
+    const { data: position } = await supabase
+        .from("organization_roles")
+        .select("id")
+        .eq("assigned_user_id", user.id)
+        .eq("organization_id", organizationId)
+        .limit(1)
+        .maybeSingle();
+
+    if (!position) {
+        throw new Error("Unauthorized: a position in this organization is required");
     }
 
     return { supabase, user };
@@ -60,7 +78,6 @@ async function requireAdmin() {
 export async function submitAccreditation(formData: FormData) {
     const organizationId = formData.get("organization_id") as string;
     const academicYear = formData.get("academic_year") as string;
-    const cycleType = formData.get("cycle_type") as string;
     const notes = formData.get("notes") as string;
 
     if (!organizationId || !academicYear?.trim()) {
@@ -84,7 +101,7 @@ export async function submitAccreditation(formData: FormData) {
     const { data: accreditation, error } = await supabase.from("accreditations").insert({
         organization_id: organizationId,
         academic_year: academicYear.trim(),
-        cycle_type: cycleType || "initial",
+        cycle_type: "revalidation",
         status: "pending",
         notes: notes?.trim() || null,
         submitted_by: user.id,
@@ -272,9 +289,15 @@ export async function uploadAccreditationDocument(formData: FormData) {
         throw new Error("File, accreditationId, and requirementId are required.");
     }
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    // Resolve the owning org and authorize (assigned-position officer or admin).
+    const auth = await createClient();
+    const { data: acc } = await auth
+        .from("accreditations")
+        .select("organization_id")
+        .eq("id", accreditationId)
+        .maybeSingle();
+    if (!acc) throw new Error("Accreditation not found.");
+    const { supabase, user } = await requireAdminOrOfficerOfOrg(acc.organization_id);
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
@@ -304,9 +327,20 @@ export async function uploadAccreditationDocument(formData: FormData) {
 }
 
 export async function getAccreditationFileUrl(path: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    // Storage paths are `${accreditationId}/${fileName}`. Authorize against the
+    // owning org before minting a signed URL (admin or assigned-position officer).
+    const accreditationId = path.split("/")[0];
+    if (!accreditationId) throw new Error("Invalid document path.");
+
+    const lookup = await createClient();
+    const { data: acc } = await lookup
+        .from("accreditations")
+        .select("organization_id")
+        .eq("id", accreditationId)
+        .maybeSingle();
+    if (!acc) throw new Error("Accreditation not found.");
+
+    const { supabase } = await requireAdminOrOfficerOfOrg(acc.organization_id);
 
     const { data, error } = await supabase.storage
         .from("accreditation-documents")

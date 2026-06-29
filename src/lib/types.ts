@@ -51,6 +51,7 @@ export interface Organization {
     visibility: OrgVisibility;
     accreditation_status: AccreditationStatus;
     created_at: string;
+    allowed_programs?: string[] | null; // hydrated from junction; null/[] = open to all programs
 }
 
 export interface Membership {
@@ -210,6 +211,28 @@ export interface EngagementRecord {
     verified_at: string | null;
     is_public: boolean;
     created_at: string;
+}
+
+export interface CertificateTemplate {
+    organization_id: string;
+    template_path: string;
+    name_x: number;
+    name_y: number;
+    font_size: number;
+    color: string;
+    align: string;
+    updated_at: string | null;
+}
+
+export interface Certificate {
+    id: string;
+    membership_id: string | null;
+    user_id: string;
+    organization_id: string;
+    cert_path: string;
+    verification_code: string;
+    issued_at: string;
+    organizations?: Organization;
 }
 
 export interface AccreditationFile {

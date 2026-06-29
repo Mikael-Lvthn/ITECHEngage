@@ -77,6 +77,27 @@ describe("Document Checklist Validation", () => {
     });
 });
 
+describe("Accreditation access — assigned-position officers only", () => {
+    // Mirrors requireAdminOrOfficerOfOrg / requireOfficerOfOrg: access is granted
+    // to admins (review) or users holding an ASSIGNED POSITION (organization_roles)
+    // in that org. A plain member, or a legacy membership-officer with no assigned
+    // position, has no access.
+    const canAccess = (opts: { isAdmin: boolean; hasAssignedPosition: boolean }) =>
+        opts.isAdmin || opts.hasAssignedPosition;
+
+    it("allows an admin", () => {
+        expect(canAccess({ isAdmin: true, hasAssignedPosition: false })).toBe(true);
+    });
+
+    it("allows an officer holding an assigned position", () => {
+        expect(canAccess({ isAdmin: false, hasAssignedPosition: true })).toBe(true);
+    });
+
+    it("blocks a plain member / officer without an assigned position", () => {
+        expect(canAccess({ isAdmin: false, hasAssignedPosition: false })).toBe(false);
+    });
+});
+
 describe("Admin Record Decision", () => {
     it("should default expiry date to 1 year from now if approved", () => {
         const nextYear = new Date();

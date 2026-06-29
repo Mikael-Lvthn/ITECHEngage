@@ -9,6 +9,7 @@ import OrgRolesManager from "@/components/org-chart/OrgRolesManager";
 import OrgDetailTabs from "./OrgDetailTabs";
 import FollowButton from "@/components/organizations/FollowButton";
 import OfficerEditOrgDialog from "./OfficerEditOrgDialog";
+import CertificateTemplateDialog from "../../admin/CertificateTemplateDialog";
 import ElectionsTabContent from "./ElectionsTabContent";
 import MemberFollowerPreview from "@/components/organizations/MemberFollowerPreview";
 import AccreditationBanner from "@/components/accreditation/AccreditationBanner";
@@ -148,6 +149,12 @@ export default async function OrganizationDetailPage({ params }: Props) {
         canManageRoles = hasManagerRole;
     }
 
+    // Anyone holding a position in this org (any organization_roles assignment)
+    // may manage its certificate template — matches the is_org_officer gate.
+    const isPositionHolder = (orgRoles || []).some(
+        (r) => r.assigned_user_id === user!.id
+    );
+
     let orgMembers: { user_id: string; full_name: string }[] = [];
     if (canManageRoles) {
         const { data: membersData } = await supabase
@@ -188,10 +195,10 @@ export default async function OrganizationDetailPage({ params }: Props) {
                 ← Back to Organizations
             </Link>
 
-            <AccreditationBanner 
-                status={org.accreditation_status || 'pending'} 
-                expiresAt={org.accreditation_expires_at} 
-                isOfficer={isOfficer} 
+            <AccreditationBanner
+                status={org.accreditation_status || 'pending'}
+                expiresAt={org.accreditation_expires_at}
+                isOfficer={isPositionHolder}
             />
 
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -225,6 +232,9 @@ export default async function OrganizationDetailPage({ params }: Props) {
                         <div className="flex items-center gap-3 shrink-0">
                             {!isAdmin && <FollowButton organizationId={id} isFollowing={isFollowing} isOfficer={isOfficer} />}
                             {canManageRoles && <OfficerEditOrgDialog org={org} />}
+                            {(isAdmin || isPositionHolder) && (
+                                <CertificateTemplateDialog organizationId={id} organizationName={org.name} />
+                            )}
                             {isOfficer && (
                                 <Link
                                     href={`/dashboard/organizations/${id}/members`}

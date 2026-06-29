@@ -50,7 +50,7 @@ const navItems: NavItem[] = [
     { label: "Elections", href: "/dashboard/elections", icon: Vote, roles: ["student", "officer", "admin"] },
     { label: "Notifications", href: "/dashboard/notifications", icon: Bell, roles: ["student", "officer", "admin"] },
     { label: "My Record", href: "/dashboard/co-curricular", icon: GraduationCap, roles: ["student", "officer"] },
-    { label: "Accreditation", href: "/dashboard/accreditation", icon: FileCheck2, roles: ["officer", "admin"] },
+    { label: "Accreditation", href: "/dashboard/accreditation", icon: FileCheck2, roles: ["officer", "admin"], requireOrgRole: true },
     { label: "Officer Panel", href: "/dashboard/officer-panel", icon: Landmark, roles: ["officer"], requireOrgRole: true },
     { label: "Admin Panel", href: "/dashboard/admin", icon: ShieldCheck, roles: ["admin"] },
     { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["student", "officer", "admin"] },
@@ -74,7 +74,9 @@ export default function MobileNav({ userRole, userName, userEmail, hasOrgRoles =
 
     const filteredNavItems = navItems.filter((item) => {
         if (!item.roles.includes(userRole)) return false;
-        if (item.requireOrgRole && !hasOrgRoles) return false;
+        // requireOrgRole items need an assigned org position — admins (who
+        // review) are exempt so e.g. Accreditation still shows for them.
+        if (item.requireOrgRole && !hasOrgRoles && userRole !== "admin") return false;
         return true;
     });
 

@@ -166,7 +166,6 @@ export default function AccreditationClient({
     const [recordingDecisionFor, setRecordingDecisionFor] = useState<{ id: string; orgName: string } | null>(null);
 
     const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
-    const [cycleType, setCycleType] = useState<"initial" | "revalidation">("initial");
     const [viewingDocument, setViewingDocument] = useState<{url: string, name: string} | null>(null);
 
     const handleDocumentClick = async (doc: { downloadUrl?: string; storage_path: string; file_name: string }) => {
@@ -191,11 +190,10 @@ export default function AccreditationClient({
         setSelectedFiles(prev => ({ ...prev, [requirementId]: file }));
     };
 
-    const initialNames = ['Constitution and By-Laws (CBL)', 'General Plan of Activities (GPOA)', 'Advocacy Plan', 'Tracker Form', 'Waiver of Responsibility', 'Officer\'s Profile', 'Official List of Officers'];
     const revalidationNames = ['Constitution and By-Laws (CBL)', 'Resolutions', 'Memorandum Order', 'List of Officers/ Organizational Chart', 'General Plan of Activities (GPOA)', 'Minutes of the Meetings', 'Narrative Reports', 'Financial Report', 'Turnover Documents'];
 
     const isSubmissionComplete = requirements
-        .filter(r => (cycleType === "initial" ? initialNames.includes(r.name) : revalidationNames.includes(r.name)) && r.is_required)
+        .filter(r => revalidationNames.includes(r.name) && r.is_required)
         .every(r => selectedFiles[r.id]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -519,43 +517,12 @@ export default function AccreditationClient({
                                     </div>
                                 </div>
                                 
-                                <div>
-                                    <label className="block text-sm font-medium mb-1.5">
-                                        Cycle Type <span className="text-destructive">*</span>
-                                    </label>
-                                    <div className="flex gap-4">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input 
-                                                type="radio" 
-                                                name="cycle_type" 
-                                                value="initial" 
-                                                checked={cycleType === "initial"}
-                                                onChange={() => setCycleType("initial")}
-                                                className="accent-primary" 
-                                            />
-                                            <span className="text-sm">Initial Accreditation</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input 
-                                                type="radio" 
-                                                name="cycle_type" 
-                                                value="revalidation" 
-                                                checked={cycleType === "revalidation"}
-                                                onChange={() => setCycleType("revalidation")}
-                                                className="accent-primary" 
-                                            />
-                                            <span className="text-sm">Revalidation</span>
-                                        </label>
-                                    </div>
-                                </div>
-
                                 <div className="pt-4 border-t">
                                     <h4 className="text-sm font-semibold mb-3">Required Documents</h4>
                                     <DocumentChecklist
                                         requirements={requirements}
                                         selectedFiles={selectedFiles}
                                         onFileSelect={handleFileSelect}
-                                        cycleType={cycleType}
                                     />
                                 </div>
 

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { updateOrganization } from "@/lib/actions/admin";
 import { createClient } from "@/lib/supabase/client";
+import { PUP_PROGRAMS } from "@/lib/constants/programs";
 
 interface EditOrgDialogProps {
     org: {
@@ -18,6 +19,7 @@ interface EditOrgDialogProps {
         vision?: string | null;
         core_values?: string | null;
         category_id?: string | null;
+        allowed_programs?: string[] | null;
     };
 }
 
@@ -225,6 +227,33 @@ export default function EditOrgDialog({ org }: EditOrgDialogProps) {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Program restrictions */}
+                                <fieldset className="pt-4 border-t">
+                                    <legend className="text-sm font-semibold text-muted-foreground mb-1">Restrict to programs</legend>
+                                    <p className="text-xs text-muted-foreground mb-3">
+                                        Leave all unchecked to allow every program to see and join this organization.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {PUP_PROGRAMS.map((program) => (
+                                            <label
+                                                key={program.code}
+                                                htmlFor={`allowed_programs_${program.code}`}
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-muted text-sm text-foreground cursor-pointer hover:bg-accent transition-colors"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    id={`allowed_programs_${program.code}`}
+                                                    name="allowed_programs"
+                                                    value={program.code}
+                                                    defaultChecked={org.allowed_programs?.includes(program.code) ?? false}
+                                                    className="h-4 w-4 shrink-0 accent-[#800000] cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                />
+                                                <span>{program.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </fieldset>
 
                                 {/* Full width text areas */}
                                 <div className="space-y-5 pt-4 border-t">

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { recordMembershipEngagement } from "@/lib/actions/engagement-internal";
+import { issueMembershipCertificate } from "@/lib/pdf/certificate";
 import { checkNotificationPreference } from "@/lib/utils/notifications";
 
 export async function approveMembership(membershipId: string) {
@@ -44,6 +45,14 @@ export async function approveMembership(membershipId: string) {
             await recordMembershipEngagement(membershipId);
         } catch (err) {
             console.error("Failed to generate engagement record:", err);
+        }
+
+        // Issue the membership certificate (if the org has a template). Isolated
+        // so a cert failure can never block the approval.
+        try {
+            await issueMembershipCertificate(membershipId);
+        } catch (err) {
+            console.error("Failed to issue certificate:", err);
         }
 
         const shouldNotify = await checkNotificationPreference(membership.user_id, "membership_updates");

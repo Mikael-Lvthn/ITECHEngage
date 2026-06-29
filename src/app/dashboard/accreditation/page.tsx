@@ -41,17 +41,13 @@ export default async function AccreditationPage() {
 
     const isAdmin = userRole === "admin";
 
-    const [membershipOrgsResult, structuralRoleOrgsResult] = await Promise.all([
-        supabase
-            .from("memberships")
-            .select("organization_id, organizations(id, name)")
-            .eq("user_id", user.id)
-            .eq("status", "approved"),
-        supabase
-            .from("organization_roles")
-            .select("organization_id, organizations(id, name)")
-            .eq("assigned_user_id", user.id),
-    ]);
+    // Accreditation access is restricted to officers holding an ASSIGNED
+    // POSITION in the org (organization_roles). Plain members — and legacy
+    // membership-officers without a position — are not officers here.
+    const structuralRoleOrgsResult = await supabase
+        .from("organization_roles")
+        .select("organization_id, organizations(id, name)")
+        .eq("assigned_user_id", user.id);
 
     const collectOrg = (
         item: {
@@ -69,7 +65,6 @@ export default async function AccreditationPage() {
     };
 
     const orgMap = new Map<string, { id: string; name: string }>();
-    (membershipOrgsResult.data || []).forEach((item) => collectOrg(item, orgMap));
     (structuralRoleOrgsResult.data || []).forEach((item) => collectOrg(item, orgMap));
 
     const officerOrgs = Array.from(orgMap.values());

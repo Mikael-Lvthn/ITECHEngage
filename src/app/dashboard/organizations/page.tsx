@@ -5,6 +5,10 @@ import CreateOrgDialog from "../admin/CreateOrgDialog";
 import EditOrgDialog from "../admin/EditOrgDialog";
 import DeleteOrgButton from "../admin/DeleteOrgButton";
 import CategoryDropdown from "./CategoryDropdown";
+import CertificateTemplateDialog from "../admin/CertificateTemplateDialog";
+import type { Organization } from "@/lib/types";
+
+type OrgRow = Organization & { category_id?: string | null };
 
 export default async function OrganizationsPage({
     searchParams,
@@ -32,22 +36,55 @@ export default async function OrganizationsPage({
         if (rpcRole === "admin") isAdmin = true;
     }
 
-    let orgQuery = supabase.from("organizations").select("*").order("name");
+    const { data: categories } = await supabase
+        .from("organization_categories")
+        .select("id, name")
+        .order("name");
 
-    // Non-admins only see public orgs unless it's their own membership
-    if (!isAdmin) {
-        orgQuery = orgQuery.eq("visibility", "public");
+    let organizations: OrgRow[] | null = null;
+
+    if (isAdmin) {
+        // Admins see ALL orgs (incl. restricted + non-public).
+        let orgQuery = supabase.from("organizations").select("*").order("name");
+        if (currentCategory) {
+            orgQuery = orgQuery.eq("category_id", currentCategory);
+        }
+        const { data } = await orgQuery;
+        organizations = data;
+
+        // Hydrate allowed_programs so EditOrgDialog can pre-check restrictions.
+        if (organizations && organizations.length > 0) {
+            const { data: progRows } = await supabase
+                .from("organization_allowed_programs")
+                .select("organization_id, program");
+            const byOrg = new Map<string, string[]>();
+            for (const row of progRows ?? []) {
+                const list = byOrg.get(row.organization_id) ?? [];
+                list.push(row.program);
+                byOrg.set(row.organization_id, list);
+            }
+            organizations = organizations.map((org) => ({
+                ...org,
+                allowed_programs: byOrg.get(org.id) ?? [],
+            }));
+        }
+    } else {
+        // Non-admins: filter by the student's program via the RPC. The PUP
+        // program code lives in students.course (students.program is unused/
+        // empty). Faculty / no-program users pass an empty program, so the RPC
+        // returns only unrestricted public orgs (restricted orgs stay hidden).
+        const { data: student } = await supabase
+            .from("students")
+            .select("course")
+            .eq("id", user!.id)
+            .maybeSingle();
+
+        const { data } = await supabase.rpc("get_orgs_for_program", {
+            p_program: student?.course ?? "",
+            p_category: currentCategory,
+        });
+        organizations = data;
     }
-
-    // Apply category filter if present
-    if (currentCategory) {
-        orgQuery = orgQuery.eq("category_id", currentCategory);
-    }
-
-    const [{ data: organizations }, { data: categories }] = await Promise.all([
-        orgQuery,
-        supabase.from("organization_categories").select("id, name").order("name"),
-    ]);
 
     return (
         <div className="space-y-6">
@@ -109,8 +146,13 @@ export default async function OrganizationsPage({
                                                 mission: org.mission,
                                                 vision: org.vision,
                                                 core_values: org.core_values,
-                                                category_id: org.category_id
+                                                category_id: org.category_id,
+                                                allowed_programs: org.allowed_programs
                                             }}
+                                        />
+                                        <CertificateTemplateDialog
+                                            organizationId={org.id}
+                                            organizationName={org.name}
                                         />
                                         <DeleteOrgButton
                                             organizationId={org.id}

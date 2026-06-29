@@ -31,19 +31,18 @@ export default async function AccreditationManifestPage({ params }: { params: Pr
 
     if (!accreditation) notFound();
 
-    // Verify access
+    // Verify access: admin, or an officer holding an assigned position in the org.
     const { data: role } = await supabase.rpc("get_my_role");
     if (role !== "admin") {
-        const { data: membership } = await supabase
-            .from("memberships")
+        const { data: position } = await supabase
+            .from("organization_roles")
             .select("id")
-            .eq("user_id", user.id)
+            .eq("assigned_user_id", user.id)
             .eq("organization_id", accreditation.organization_id)
-            .eq("role", "officer")
-            .eq("status", "approved")
+            .limit(1)
             .maybeSingle();
 
-        if (!membership) {
+        if (!position) {
             redirect("/dashboard");
         }
     }
